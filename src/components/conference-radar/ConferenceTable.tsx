@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Pencil } from "lucide-react";
 import type { Conference, DecisionStatus } from "@/lib/conferences";
 import { SALES_TEAM, isCoverageGap } from "@/lib/conferences";
 import { TierBadge, CoverageGapBadge } from "./TierBadge";
 import { ScoreCell } from "./ScoreCell";
 import { RepAssigner } from "./RepAssigner";
 import { StatusChip } from "./StatusChip";
+import { EditConferenceDialog } from "./EditConferenceDialog";
 import { cn } from "@/lib/utils";
 
 type SortKey = "name" | "startDate" | "city" | "vertical" | "estimatedAudienceSize" | "icpScore" | "status";
@@ -15,6 +16,7 @@ interface Props {
   conferences: Conference[];
   onToggleRep: (conferenceId: string, rep: string) => void;
   onSetStatus: (conferenceId: string, status: DecisionStatus) => void;
+  onUpdateConference: (updated: Conference) => void;
 }
 
 function formatDateRange(start: string, end: string) {
