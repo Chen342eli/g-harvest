@@ -74,6 +74,10 @@ function Index() {
     setConferences((prev) => prev.map((c) => (c.id === conferenceId ? { ...c, status } : c)));
   };
 
+  const updateConference = (updated: Conference) => {
+    setConferences((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
@@ -128,7 +132,7 @@ function Index() {
           <ViewToggle value={view} onChange={setView} />
         </div>
 
-        {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} onSetStatus={setStatus} />}
+        {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} onSetStatus={setStatus} onUpdateConference={updateConference} />}
         {view === "map" && <MapView conferences={filtered} />}
         {view === "timeline" && <TimelineView conferences={filtered} onSetStatus={setStatus} />}
       </main>

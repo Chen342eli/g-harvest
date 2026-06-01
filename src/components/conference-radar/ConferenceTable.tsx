@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Pencil } from "lucide-react";
 import type { Conference, DecisionStatus } from "@/lib/conferences";
 import { SALES_TEAM, isCoverageGap } from "@/lib/conferences";
 import { TierBadge, CoverageGapBadge } from "./TierBadge";
 import { ScoreCell } from "./ScoreCell";
 import { RepAssigner } from "./RepAssigner";
 import { StatusChip } from "./StatusChip";
+import { EditConferenceDialog } from "./EditConferenceDialog";
 import { cn } from "@/lib/utils";
 
 type SortKey = "name" | "startDate" | "city" | "vertical" | "estimatedAudienceSize" | "icpScore" | "status";
@@ -15,6 +16,7 @@ interface Props {
   conferences: Conference[];
   onToggleRep: (conferenceId: string, rep: string) => void;
   onSetStatus: (conferenceId: string, status: DecisionStatus) => void;
+  onUpdateConference: (updated: Conference) => void;
 }
 
 function formatDateRange(start: string, end: string) {
@@ -31,9 +33,10 @@ function formatDateRange(start: string, end: string) {
 
 const audienceFmt = new Intl.NumberFormat("en-US");
 
-export function ConferenceTable({ conferences, onToggleRep, onSetStatus }: Props) {
+export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdateConference }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("icpScore");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [editing, setEditing] = useState<Conference | null>(null);
 
   const sorted = useMemo(() => {
     const copy = [...conferences];
@@ -89,6 +92,7 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus }: Props
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Tier</th>
               <Th k="status" label="Status" />
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Assigned reps</th>
+              <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">Edit</th>
             </tr>
           </thead>
           <tbody>
@@ -145,12 +149,23 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus }: Props
                       onToggle={(rep) => onToggleRep(c.id, rep)}
                     />
                   </td>
+                  <td className="px-4 py-3 align-top text-right">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(c)}
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
+                      title="Edit conference"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               );
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={10} className="px-4 py-12 text-center text-sm text-muted-foreground">
                   No conferences match the current filters.
                 </td>
               </tr>
@@ -158,6 +173,15 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus }: Props
           </tbody>
         </table>
       </div>
+      <EditConferenceDialog
+        conference={editing}
+        open={!!editing}
+        onOpenChange={(o) => !o && setEditing(null)}
+        onSave={(updated) => {
+          onUpdateConference(updated);
+          setEditing(null);
+        }}
+      />
     </div>
   );
 }
