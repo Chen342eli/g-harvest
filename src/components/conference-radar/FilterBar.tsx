@@ -93,6 +93,7 @@ export function FilterBar({
     filters.verticals.length ||
     filters.regions.length ||
     filters.tiers.length ||
+    filters.statuses.length ||
     filters.dateFrom ||
     filters.dateTo ||
     filters.gapsOnly;
