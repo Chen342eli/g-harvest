@@ -94,18 +94,16 @@ export function ConferenceTable({ conferences, onToggleRep }: Props) {
               return (
                 <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 align-top">
-                    <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    <a
+                      href={c.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 font-medium text-foreground hover:text-primary hover:underline"
+                      title="Visit site"
+                    >
                       {c.name}
-                      <a
-                        href={c.sourceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-muted-foreground hover:text-foreground"
-                        aria-label="Open source"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    </div>
+                      <ExternalLink className="h-3.5 w-3.5 opacity-70" />
+                    </a>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {c.tags.slice(0, 3).map((t) => (
                         <span key={t} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
