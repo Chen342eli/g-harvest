@@ -209,14 +209,26 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
 
         const result = await generateText({
           model,
-          output: Output.object({ schema: ExtractionSchema }),
           prompt:
             `Extract structured data about a single industry conference from the page below.\n` +
+            `Respond with ONLY a single JSON object (no markdown, no code fences, no commentary) matching this exact shape:\n` +
+            `{\n` +
+            `  "name": string,\n` +
+            `  "startDate": "YYYY-MM-DD" | null,\n` +
+            `  "endDate": "YYYY-MM-DD" | null,\n` +
+            `  "city": string | null,\n` +
+            `  "country": string | null,\n` +
+            `  "region": "North America" | "Europe" | "APAC" | "Middle East" | "LATAM" | null,\n` +
+            `  "vertical": "Payments" | "Fintech" | "Treasury" | "Travel" | "SaaS" | "General Tech" | null,\n` +
+            `  "estimatedAudienceSize": integer | null,\n` +
+            `  "tags": string[] (max 8),\n` +
+            `  "isRelevant": boolean,\n` +
+            `  "confidence": integer 0-100\n` +
+            `}\n\n` +
             `Rules:\n` +
-            `- Set isRelevant=false ONLY if this is clearly not a real conference (e.g. blog post, list article, news, past edition with no future date).\n` +
+            `- Set isRelevant=false ONLY if this is clearly NOT a real conference (e.g. blog post, list article, news, past edition with no future date).\n` +
             `- If the page IS a real upcoming fintech/payments/treasury/B2B-SaaS/travel-tech conference, set isRelevant=true even if some details are missing.\n` +
-            `- Use null for any field you cannot determine with confidence. Do NOT invent dates, cities, or audience sizes.\n` +
-            `- Dates must be YYYY-MM-DD.\n\n` +
+            `- Use null for any field you cannot determine with confidence. Do NOT invent dates, cities, or audience sizes.\n\n` +
             `URL: ${hit.url}\n` +
             `Title: ${hit.title ?? ""}\n` +
             `Snippet: ${hit.description ?? ""}\n\n` +
@@ -230,7 +242,23 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           totalTokens += usage.totalTokens ?? 0;
         }
 
-        const parsed = result.output as z.infer<typeof ExtractionSchema>;
+        const rawText = result.text ?? "";
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          skipped++;
+          await logCandidate({ runId, hit, decision: "error", reason: `Model returned no JSON object. Raw: ${rawText.slice(0, 200)}` });
+          continue;
+        }
+        let parsed: z.infer<typeof ExtractionSchema>;
+        try {
+          const obj = JSON.parse(jsonMatch[0]);
+          parsed = ExtractionSchema.parse(obj);
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          skipped++;
+          await logCandidate({ runId, hit, decision: "error", reason: `JSON parse/validation failed: ${msg}. Raw: ${jsonMatch[0].slice(0, 200)}` });
+          continue;
+        }
 
         // Hard filter: not relevant
         if (!parsed.isRelevant) {
