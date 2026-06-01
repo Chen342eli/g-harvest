@@ -2,7 +2,7 @@
 // Server-only — never import from client code.
 
 import Firecrawl from "@mendable/firecrawl-js";
-import { generateText, Output } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
