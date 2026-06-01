@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { CalendarDays, Map as MapIcon, Radar, Table as TableIcon } from "lucide-react";
+import { AlertTriangle, CalendarDays, Map as MapIcon, Radar, Table as TableIcon, X } from "lucide-react";
 import { SEED_CONFERENCES, isCoverageGap, type Conference, type DecisionStatus } from "@/lib/conferences";
 import { ConferenceTable } from "@/components/conference-radar/ConferenceTable";
 import { MapView } from "@/components/conference-radar/MapView";
@@ -105,6 +105,43 @@ function Index() {
 
       <main className="mx-auto max-w-[1400px] space-y-4 px-6 py-6">
         <FilterBar filters={filters} onChange={setFilters} />
+
+        {stats.gaps > 0 && (
+          <button
+            type="button"
+            onClick={() =>
+              setFilters((f) =>
+                f.gapsOnly
+                  ? { ...f, gapsOnly: false }
+                  : { ...DEFAULT_FILTERS, gapsOnly: true },
+              )
+            }
+            className={cn(
+              "flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-2.5 text-left text-sm transition",
+              filters.gapsOnly
+                ? "border-red-300 bg-red-100 text-red-900 hover:bg-red-200"
+                : "border-red-200 bg-red-50 text-red-800 hover:bg-red-100",
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>
+                <span className="font-semibold tabular-nums">{stats.gaps}</span>{" "}
+                {stats.gaps === 1 ? "conference is" : "conferences are"} marked{" "}
+                <span className="font-semibold">Going</span> but have no reps assigned.{" "}
+                {filters.gapsOnly ? (
+                  <span className="font-medium">Showing them now — click to clear.</span>
+                ) : (
+                  <span className="font-medium underline underline-offset-2">
+                    Click to see them.
+                  </span>
+                )}
+              </span>
+            </span>
+            {filters.gapsOnly && <X className="h-4 w-4 shrink-0 opacity-70" />}
+          </button>
+        )}
+
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-xs text-muted-foreground">

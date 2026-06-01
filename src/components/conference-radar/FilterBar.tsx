@@ -1,8 +1,6 @@
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DecisionStatus, Region, Tier, Vertical } from "@/lib/conferences";
@@ -127,16 +125,6 @@ export function FilterBar({
           onChange={(e) => set("dateTo", e.target.value)}
           className="h-9 w-[150px]"
         />
-      </div>
-      <div className="flex items-center gap-2 rounded-md border border-border px-3 h-9">
-        <Switch
-          id="gaps"
-          checked={filters.gapsOnly}
-          onCheckedChange={(c) => set("gapsOnly", Boolean(c))}
-        />
-        <Label htmlFor="gaps" className="text-sm font-normal text-foreground cursor-pointer">
-          Coverage gaps only
-        </Label>
       </div>
       {isDirty && (
         <Button
