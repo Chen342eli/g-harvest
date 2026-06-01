@@ -121,7 +121,7 @@ export function TimelineView({ conferences, onSetStatus }: Props) {
                   <ul className="space-y-1.5">
                     {items.map(({ conference, clusterId }) => (
                       <li key={conference.id}>
-                        <TimelineChip conference={conference} clusterId={clusterId} />
+                        <TimelineChip conference={conference} clusterId={clusterId} onSetStatus={onSetStatus} />
                       </li>
                     ))}
                   </ul>
