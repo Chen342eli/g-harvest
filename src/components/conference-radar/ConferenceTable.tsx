@@ -87,6 +87,7 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus }: Props
               <Th k="estimatedAudienceSize" label="Audience" className="text-right" />
               <Th k="icpScore" label="Score" />
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Tier</th>
+              <Th k="status" label="Status" />
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Assigned reps</th>
             </tr>
           </thead>
