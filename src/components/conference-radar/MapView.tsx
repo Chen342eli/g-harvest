@@ -280,8 +280,8 @@ function MapViewClient({ conferences }: Props) {
       const labelIcon = L.divIcon({
         html: `<div style="white-space:nowrap;border-radius:9999px;background:rgba(15,23,42,.82);color:#fff;padding:3px 9px;font:600 11px ui-sans-serif,system-ui;box-shadow:0 1px 4px rgba(0,0,0,.25);">${escape(items[0].city)}</div>`,
         className: "",
-        iconSize: [0, 0],
-        iconAnchor: [0, 0],
+        iconSize: [90, 22],
+        iconAnchor: [45, 11],
       });
       expandedLayerRef.current.addLayer(L.marker([lat, lng], { icon: labelIcon, interactive: false }));
 
