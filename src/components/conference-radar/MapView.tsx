@@ -100,6 +100,7 @@ export function MapView({ conferences }: Props) {
     ensureLeafletCss();
     (async () => {
       const L = (await import("leaflet")).default;
+      await import("leaflet.markercluster");
       if (cancelled || !containerRef.current || mapRef.current) return;
       LRef.current = L;
       const map = L.map(containerRef.current, {
@@ -112,7 +113,14 @@ export function MapView({ conferences }: Props) {
         attribution: "&copy; OpenStreetMap contributors",
         maxZoom: 18,
       }).addTo(map);
-      layerRef.current = L.layerGroup().addTo(map);
+      layerRef.current = (L as any).markerClusterGroup({
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: true,
+        zoomToBoundsOnClick: true,
+        spiderfyDistanceMultiplier: 1.6,
+        maxClusterRadius: 40,
+      });
+      map.addLayer(layerRef.current);
       mapRef.current = map;
       renderMarkers();
     })();
@@ -132,18 +140,12 @@ export function MapView({ conferences }: Props) {
     if (!L || !layerRef.current) return;
     layerRef.current.clearLayers();
 
-    const byKey = new Map<string, number>();
     const bounds: [number, number][] = [];
 
     conferences.forEach((c) => {
       const base = coordsFor(c.city, c.country);
       if (!base) return;
-      const key = `${c.city}|${c.country}`;
-      const idx = byKey.get(key) ?? 0;
-      byKey.set(key, idx + 1);
-      const offset = idx === 0 ? [0, 0] : [Math.cos(idx * 1.3) * 0.35, Math.sin(idx * 1.3) * 0.35];
-      const lat = base[0] + offset[0];
-      const lng = base[1] + offset[1];
+      const [lat, lng] = base;
       bounds.push([lat, lng]);
 
       const isGap = c.tier === "Tier 1" && c.assignedReps.length === 0;
@@ -159,7 +161,7 @@ export function MapView({ conferences }: Props) {
       const icon = L.divIcon({ html, className: "", iconSize: [22, 22], iconAnchor: [11, 11] });
       const marker = L.marker([lat, lng], { icon });
       marker.bindPopup(popupHtml(c), { maxWidth: 320 });
-      marker.addTo(layerRef.current);
+      layerRef.current.addLayer(marker);
     });
 
     if (bounds.length > 0 && mapRef.current) {
