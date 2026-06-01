@@ -5,13 +5,15 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Region, Tier, Vertical } from "@/lib/conferences";
+import type { DecisionStatus, Region, Tier, Vertical } from "@/lib/conferences";
+import { DECISION_STATUSES } from "@/lib/conferences";
 
 export interface Filters {
   search: string;
   verticals: Vertical[];
   regions: Region[];
   tiers: Tier[];
+  statuses: DecisionStatus[];
   dateFrom: string;
   dateTo: string;
   gapsOnly: boolean;
@@ -22,6 +24,7 @@ export const DEFAULT_FILTERS: Filters = {
   verticals: [],
   regions: [],
   tiers: [],
+  statuses: [],
   dateFrom: "",
   dateTo: "",
   gapsOnly: false,
