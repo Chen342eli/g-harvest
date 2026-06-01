@@ -14,41 +14,100 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_candidates: {
+        Row: {
+          conference_id: string | null
+          created_at: string
+          decision: string
+          description: string | null
+          extracted: Json | null
+          id: string
+          reason: string
+          run_id: string
+          title: string | null
+          url: string
+        }
+        Insert: {
+          conference_id?: string | null
+          created_at?: string
+          decision: string
+          description?: string | null
+          extracted?: Json | null
+          id?: string
+          reason: string
+          run_id: string
+          title?: string | null
+          url: string
+        }
+        Update: {
+          conference_id?: string | null
+          created_at?: string
+          decision?: string
+          description?: string | null
+          extracted?: Json | null
+          id?: string
+          reason?: string
+          run_id?: string
+          title?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_candidates_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "agent_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_runs: {
         Row: {
           added_count: number
+          completion_tokens: number | null
+          duration_ms: number | null
           error: string | null
           finished_at: string | null
           flagged_count: number
           found_count: number
           id: string
+          prompt_tokens: number | null
           skipped_count: number
           started_at: string
           status: string
+          total_tokens: number | null
           trigger: string
         }
         Insert: {
           added_count?: number
+          completion_tokens?: number | null
+          duration_ms?: number | null
           error?: string | null
           finished_at?: string | null
           flagged_count?: number
           found_count?: number
           id?: string
+          prompt_tokens?: number | null
           skipped_count?: number
           started_at?: string
           status?: string
+          total_tokens?: number | null
           trigger?: string
         }
         Update: {
           added_count?: number
+          completion_tokens?: number | null
+          duration_ms?: number | null
           error?: string | null
           finished_at?: string | null
           flagged_count?: number
           found_count?: number
           id?: string
+          prompt_tokens?: number | null
           skipped_count?: number
           started_at?: string
           status?: string
+          total_tokens?: number | null
           trigger?: string
         }
         Relationships: []

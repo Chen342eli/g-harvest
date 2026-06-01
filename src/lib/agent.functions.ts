@@ -17,6 +17,18 @@ export const listAgentRuns = createServerFn({ method: "GET" }).handler(async () 
   return data ?? [];
 });
 
+export const listRunCandidates = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ runId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const { data: rows, error } = await supabaseAdmin
+      .from("agent_candidates")
+      .select("*")
+      .eq("run_id", data.runId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
 export const getLastRun = createServerFn({ method: "GET" }).handler(async () => {
   const { data } = await supabaseAdmin
     .from("agent_runs")
