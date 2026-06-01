@@ -221,19 +221,26 @@ function MapViewClient({ conferences }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const renderMarkers = () => {
+  const renderMarkers = (fitToData = true) => {
     const L = LRef.current;
-    if (!L || !layerRef.current) return;
+    if (!L || !layerRef.current || !expandedLayerRef.current) return;
     layerRef.current.clearLayers();
+    expandedLayerRef.current.clearLayers();
 
     const bounds: [number, number][] = [];
+    const byLocation = new Map<string, { base: [number, number]; items: Conference[] }>();
 
     conferences.forEach((c) => {
       const base = coordsFor(c.city, c.country);
       if (!base) return;
-      const [lat, lng] = base;
-      bounds.push([lat, lng]);
+      const key = locationKey(c);
+      const current = byLocation.get(key);
+      if (current) current.items.push(c);
+      else byLocation.set(key, { base, items: [c] });
+      bounds.push(base);
+    });
 
+    const addConferenceMarker = (c: Conference, lat: number, lng: number, targetLayer: any) => {
       const gap = isCoverageGap(c);
       const going = c.status === "Going";
       const color = TIER_COLOR[c.tier];
@@ -251,11 +258,44 @@ function MapViewClient({ conferences }: Props) {
         </div>`;
       const icon = L.divIcon({ html, className: "", iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
       const marker = L.marker([lat, lng], { icon });
+      marker.__locationKey = locationKey(c);
       marker.bindPopup(popupHtml(c), { maxWidth: 320 });
-      layerRef.current.addLayer(marker);
+      targetLayer.addLayer(marker);
+    };
+
+    byLocation.forEach(({ base, items }) => {
+      const [lat, lng] = base;
+      const map = mapRef.current;
+      const isExpanded =
+        items.length > 1 &&
+        expandedLocationKeysRef.current.has(locationKey(items[0])) &&
+        map &&
+        map.getZoom() >= CITY_EXPAND_MIN_ZOOM;
+
+      if (!isExpanded) {
+        items.forEach((c) => addConferenceMarker(c, lat, lng, layerRef.current));
+        return;
+      }
+
+      const labelIcon = L.divIcon({
+        html: `<div style="white-space:nowrap;border-radius:9999px;background:rgba(15,23,42,.82);color:#fff;padding:3px 9px;font:600 11px ui-sans-serif,system-ui;box-shadow:0 1px 4px rgba(0,0,0,.25);">${escape(items[0].city)}</div>`,
+        className: "",
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+      });
+      expandedLayerRef.current.addLayer(L.marker([lat, lng], { icon: labelIcon, interactive: false }));
+
+      const center = map.latLngToLayerPoint([lat, lng]);
+      const radius = Math.max(34, Math.min(58, 28 + items.length * 5));
+      items.forEach((c, index) => {
+        const angle = -Math.PI / 2 + (Math.PI * 2 * index) / items.length;
+        const point = center.add([Math.cos(angle) * radius, Math.sin(angle) * radius]);
+        const pos = map.layerPointToLatLng(point);
+        addConferenceMarker(c, pos.lat, pos.lng, expandedLayerRef.current);
+      });
     });
 
-    if (bounds.length > 0 && mapRef.current) {
+    if (fitToData && bounds.length > 0 && mapRef.current) {
       try {
         mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 5 });
       } catch {
@@ -264,8 +304,13 @@ function MapViewClient({ conferences }: Props) {
     }
   };
 
+  renderMarkersRef.current = renderMarkers;
+
   useEffect(() => {
-    renderMarkers();
+    expandedLocationKeysRef.current = new Set(
+      [...expandedLocationKeysRef.current].filter((key) => conferences.some((c) => locationKey(c) === key)),
+    );
+    renderMarkers(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conferences]);
 
