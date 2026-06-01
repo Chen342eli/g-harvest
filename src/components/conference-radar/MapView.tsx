@@ -160,9 +160,25 @@ function MapViewClient({ conferences }: Props) {
       layerRef.current = (L as any).markerClusterGroup({
         showCoverageOnHover: false,
         spiderfyOnMaxZoom: true,
-        zoomToBoundsOnClick: true,
+        zoomToBoundsOnClick: false,
         spiderfyDistanceMultiplier: 1.6,
         maxClusterRadius: 40,
+      });
+      // Single-click reveal: if all children share a location, spiderfy immediately;
+      // otherwise zoom straight to the deepest level that fits them, no chained clicks.
+      layerRef.current.on("clusterclick", (a: any) => {
+        const cluster = a.layer;
+        const children = cluster.getAllChildMarkers();
+        const pts = children.map((m: any) => m.getLatLng());
+        const allSame = pts.every(
+          (p: any) => p.lat === pts[0].lat && p.lng === pts[0].lng,
+        );
+        if (allSame) {
+          cluster.spiderfy();
+          return;
+        }
+        const b = L.latLngBounds(pts);
+        map.fitBounds(b, { padding: [60, 60], maxZoom: 18 });
       });
       map.addLayer(layerRef.current);
       mapRef.current = map;
