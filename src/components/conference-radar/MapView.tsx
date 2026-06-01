@@ -200,7 +200,7 @@ function MapViewClient({ conferences }: Props) {
             box-shadow:0 0 0 2px #fff,0 1px 3px rgba(0,0,0,.35);
             display:flex;align-items:center;justify-content:center;
             color:#fff;font-weight:600;font-size:10px;font-family:ui-sans-serif,system-ui;">${c.icpScore}</div>
-          ${isGap ? `<div style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:9999px;background:#dc2626;box-shadow:0 0 0 2px #fff;"></div>` : ""}
+          ${gap ? `<div style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:9999px;background:#dc2626;box-shadow:0 0 0 2px #fff;"></div>` : ""}
         </div>`;
       const icon = L.divIcon({ html, className: "", iconSize: [22, 22], iconAnchor: [11, 11] });
       const marker = L.marker([lat, lng], { icon });
