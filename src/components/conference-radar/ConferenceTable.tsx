@@ -132,8 +132,11 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus }: Props
                   <td className="px-4 py-3 align-top">
                     <div className="flex flex-col items-start gap-1">
                       <TierBadge tier={c.tier} />
-                      {isGap && <CoverageGapBadge />}
+                      {gap && <CoverageGapBadge />}
                     </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <StatusChip status={c.status} onChange={(s) => onSetStatus(c.id, s)} />
                   </td>
                   <td className="px-4 py-3 align-top min-w-[260px]">
                     <RepAssigner
