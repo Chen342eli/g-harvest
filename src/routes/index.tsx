@@ -228,6 +228,46 @@ function ViewToggle({ value, onChange }: { value: ViewMode; onChange: (v: ViewMo
   );
 }
 
+function ExportButton({ conferences }: { conferences: Conference[] }) {
+  const exportCsv = () => {
+    const headers = [
+      "Name","Start Date","End Date","City","Country","Region","Vertical",
+      "Audience","Tier","ICP Score","Status","Assigned Reps","Tags","Source URL",
+    ];
+    const escape = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = conferences.map((c) => [
+      c.name, c.startDate, c.endDate, c.city, c.country, c.region, c.vertical,
+      c.estimatedAudienceSize, c.tier, c.icpScore, c.status,
+      (c.assignedReps ?? []).join("; "), (c.tags ?? []).join("; "), c.sourceUrl ?? "",
+    ].map(escape).join(","));
+    const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `conferences-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${conferences.length} conferences`);
+  };
+  return (
+    <button
+      type="button"
+      onClick={exportCsv}
+      disabled={conferences.length === 0}
+      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <Download className="h-3.5 w-3.5" />
+      Export CSV
+    </button>
+  );
+}
+
 function Stat({ label, value, accent }: { label: string; value: number; accent?: string }) {
   return (
     <div className="flex flex-col items-end">
