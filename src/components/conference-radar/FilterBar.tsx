@@ -126,16 +126,6 @@ export function FilterBar({
           className="h-9 w-[150px]"
         />
       </div>
-      <div className="flex items-center gap-2 rounded-md border border-border px-3 h-9">
-        <Switch
-          id="gaps"
-          checked={filters.gapsOnly}
-          onCheckedChange={(c) => set("gapsOnly", Boolean(c))}
-        />
-        <Label htmlFor="gaps" className="text-sm font-normal text-foreground cursor-pointer">
-          Coverage gaps only
-        </Label>
-      </div>
       {isDirty && (
         <Button
           variant="ghost"
