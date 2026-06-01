@@ -74,6 +74,10 @@ function Index() {
     setConferences((prev) => prev.map((c) => (c.id === conferenceId ? { ...c, status } : c)));
   };
 
+  const updateConference = (updated: Conference) => {
+    setConferences((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
