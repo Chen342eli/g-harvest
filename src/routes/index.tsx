@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { CalendarDays, Map as MapIcon, Radar, Table as TableIcon } from "lucide-react";
-import { SEED_CONFERENCES, type Conference } from "@/lib/conferences";
+import { SEED_CONFERENCES, isCoverageGap, type Conference, type DecisionStatus } from "@/lib/conferences";
 import { ConferenceTable } from "@/components/conference-radar/ConferenceTable";
 import { MapView } from "@/components/conference-radar/MapView";
 import { TimelineView } from "@/components/conference-radar/TimelineView";
