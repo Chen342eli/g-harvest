@@ -64,6 +64,7 @@ export type Database = {
       agent_runs: {
         Row: {
           added_count: number
+          cancel_requested: boolean
           completion_tokens: number | null
           duration_ms: number | null
           error: string | null
@@ -80,6 +81,7 @@ export type Database = {
         }
         Insert: {
           added_count?: number
+          cancel_requested?: boolean
           completion_tokens?: number | null
           duration_ms?: number | null
           error?: string | null
@@ -96,6 +98,7 @@ export type Database = {
         }
         Update: {
           added_count?: number
+          cancel_requested?: boolean
           completion_tokens?: number | null
           duration_ms?: number | null
           error?: string | null

@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Bot, ExternalLink, Loader2 } from "lucide-react";
+import { Bot, ExternalLink, Loader2, Square } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { runAgentNow, getLastRun } from "@/lib/agent.functions";
+import { runAgentNow, getLastRun, cancelRunningAgent } from "@/lib/agent.functions";
 import { toast } from "sonner";
 
 function formatRelative(iso: string | null | undefined): string {
@@ -22,6 +22,7 @@ export function AgentStatusButton() {
   const qc = useQueryClient();
   const fetchLastRun = useServerFn(getLastRun);
   const triggerRun = useServerFn(runAgentNow);
+  const cancelRun = useServerFn(cancelRunningAgent);
 
   const { data: lastRun } = useQuery({
     queryKey: ["lastAgentRun"],
@@ -47,7 +48,18 @@ export function AgentStatusButton() {
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelRun(),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["lastAgentRun"] });
+      if (r.cancelled > 0) toast.success("Stopping scan… will halt after current candidate.");
+      else toast.info("No running scan to stop.");
+    },
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : "Cancel failed"),
+  });
+
   const running = mutation.isPending || lastRun?.status === "running";
+  const cancelRequested = !!(lastRun as { cancel_requested?: boolean } | null)?.cancel_requested;
   const statusColor =
     lastRun?.status === "error" ? "bg-red-500"
     : lastRun?.status === "running" ? "bg-amber-500 animate-pulse"
@@ -69,15 +81,26 @@ export function AgentStatusButton() {
           </span>
         )}
       </div>
-      <button
-        type="button"
-        onClick={() => mutation.mutate()}
-        disabled={running}
-        className="inline-flex items-center gap-1 rounded border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-60"
-      >
-        {running ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-        {running ? "Running" : "Run now"}
-      </button>
+      {running ? (
+        <button
+          type="button"
+          onClick={() => cancelMutation.mutate()}
+          disabled={cancelRequested || cancelMutation.isPending}
+          className="inline-flex items-center gap-1 rounded border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive hover:bg-destructive/20 disabled:opacity-60"
+        >
+          <Square className="h-3 w-3" />
+          {cancelRequested ? "Stopping…" : "Stop"}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => mutation.mutate()}
+          className="inline-flex items-center gap-1 rounded border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-60"
+        >
+          {mutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+          Run now
+        </button>
+      )}
       <Link
         to="/agent"
         className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground"

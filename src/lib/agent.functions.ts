@@ -7,6 +7,16 @@ export const runAgentNow = createServerFn({ method: "POST" }).handler(async () =
   return runDiscoveryAgent("manual");
 });
 
+export const cancelRunningAgent = createServerFn({ method: "POST" }).handler(async () => {
+  const { data, error } = await supabaseAdmin
+    .from("agent_runs")
+    .update({ cancel_requested: true })
+    .eq("status", "running")
+    .select("id");
+  if (error) throw new Error(error.message);
+  return { cancelled: data?.length ?? 0 };
+});
+
 export const listAgentRuns = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await supabaseAdmin
     .from("agent_runs")
