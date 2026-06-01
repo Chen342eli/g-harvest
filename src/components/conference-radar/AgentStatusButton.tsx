@@ -48,7 +48,18 @@ export function AgentStatusButton() {
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelRun(),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["lastAgentRun"] });
+      if (r.cancelled > 0) toast.success("Stopping scan… will halt after current candidate.");
+      else toast.info("No running scan to stop.");
+    },
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : "Cancel failed"),
+  });
+
   const running = mutation.isPending || lastRun?.status === "running";
+  const cancelRequested = !!(lastRun as { cancel_requested?: boolean } | null)?.cancel_requested;
   const statusColor =
     lastRun?.status === "error" ? "bg-red-500"
     : lastRun?.status === "running" ? "bg-amber-500 animate-pulse"
