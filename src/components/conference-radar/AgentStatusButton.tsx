@@ -81,15 +81,26 @@ export function AgentStatusButton() {
           </span>
         )}
       </div>
-      <button
-        type="button"
-        onClick={() => mutation.mutate()}
-        disabled={running}
-        className="inline-flex items-center gap-1 rounded border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-60"
-      >
-        {running ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-        {running ? "Running" : "Run now"}
-      </button>
+      {running ? (
+        <button
+          type="button"
+          onClick={() => cancelMutation.mutate()}
+          disabled={cancelRequested || cancelMutation.isPending}
+          className="inline-flex items-center gap-1 rounded border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive hover:bg-destructive/20 disabled:opacity-60"
+        >
+          <Square className="h-3 w-3" />
+          {cancelRequested ? "Stopping…" : "Stop"}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => mutation.mutate()}
+          className="inline-flex items-center gap-1 rounded border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-60"
+        >
+          {mutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+          Run now
+        </button>
+      )}
       <Link
         to="/agent"
         className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground"
