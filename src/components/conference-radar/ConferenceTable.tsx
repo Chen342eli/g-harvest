@@ -149,15 +149,15 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdat
                       onToggle={(rep) => onToggleRep(c.id, rep)}
                     />
                   </td>
-                  <td className="px-4 py-3 align-top text-right">
+                  <td className="w-8 px-2 py-3 align-top text-right">
                     <button
                       type="button"
                       onClick={() => setEditing(c)}
-                      className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
-                      title="Edit conference"
+                      aria-label={`Edit ${c.name}`}
+                      title="Edit"
+                      className="rounded p-1 text-muted-foreground opacity-0 transition hover:bg-muted hover:text-foreground focus:opacity-100 focus:outline-none focus-visible:ring-1 focus-visible:ring-ring group-hover:opacity-100"
                     >
-                      <Pencil className="h-3 w-3" />
-                      Edit
+                      <Pencil className="h-3.5 w-3.5" />
                     </button>
                   </td>
                 </tr>
