@@ -102,16 +102,35 @@ function Index() {
       <main className="mx-auto max-w-[1400px] space-y-4 px-6 py-6">
         <FilterBar filters={filters} onChange={setFilters} />
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-xs text-muted-foreground">
             Showing <span className="font-medium text-foreground">{filtered.length}</span> of {conferences.length} conferences
+            <span className="mx-2 text-border">|</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Going <span className="font-medium text-foreground tabular-nums">{stats.going}</span>
+            </span>
+            <span className="mx-1.5 text-border">·</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-500" />
+              Considering <span className="font-medium text-foreground tabular-nums">{stats.considering}</span>
+            </span>
+            <span className="mx-1.5 text-border">·</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-400" />
+              Passed <span className="font-medium text-foreground tabular-nums">{stats.passed}</span>
+            </span>
+            <span className="mx-1.5 text-border">·</span>
+            <span className={stats.gaps > 0 ? "text-red-700" : ""}>
+              Gaps (Going &amp; unstaffed) <span className="font-medium tabular-nums">{stats.gaps}</span>
+            </span>
           </div>
           <ViewToggle value={view} onChange={setView} />
         </div>
 
-        {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} />}
+        {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} onSetStatus={setStatus} />}
         {view === "map" && <MapView conferences={filtered} />}
-        {view === "timeline" && <TimelineView conferences={filtered} />}
+        {view === "timeline" && <TimelineView conferences={filtered} onSetStatus={setStatus} />}
       </main>
     </div>
   );
