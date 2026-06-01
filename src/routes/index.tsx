@@ -48,8 +48,11 @@ function Index() {
 
   const stats = useMemo(() => {
     const tier1 = conferences.filter((c) => c.tier === "Tier 1");
-    const gaps = tier1.filter((c) => c.assignedReps.length === 0);
-    return { total: conferences.length, tier1: tier1.length, gaps: gaps.length };
+    const gaps = conferences.filter(isCoverageGap);
+    const going = conferences.filter((c) => c.status === "Going").length;
+    const considering = conferences.filter((c) => c.status === "Considering").length;
+    const passed = conferences.filter((c) => c.status === "Passed").length;
+    return { total: conferences.length, tier1: tier1.length, gaps: gaps.length, going, considering, passed };
   }, [conferences]);
 
   const toggleRep = (conferenceId: string, rep: string) => {
@@ -65,6 +68,10 @@ function Index() {
           : c,
       ),
     );
+  };
+
+  const setStatus = (conferenceId: string, status: DecisionStatus) => {
+    setConferences((prev) => prev.map((c) => (c.id === conferenceId ? { ...c, status } : c)));
   };
 
   return (
