@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Radar } from "lucide-react";
+import { CalendarDays, Map as MapIcon, Radar, Table as TableIcon } from "lucide-react";
 import { SEED_CONFERENCES, type Conference } from "@/lib/conferences";
 import { ConferenceTable } from "@/components/conference-radar/ConferenceTable";
+import { MapView } from "@/components/conference-radar/MapView";
+import { TimelineView } from "@/components/conference-radar/TimelineView";
 import { FilterBar, DEFAULT_FILTERS, type Filters } from "@/components/conference-radar/FilterBar";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,6 +17,8 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
+
+type ViewMode = "table" | "map" | "timeline";
 
 function applyFilters(items: Conference[], f: Filters): Conference[] {
   const q = f.search.trim().toLowerCase();
@@ -36,17 +41,14 @@ function applyFilters(items: Conference[], f: Filters): Conference[] {
 function Index() {
   const [conferences, setConferences] = useState<Conference[]>(SEED_CONFERENCES);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [view, setView] = useState<ViewMode>("table");
 
   const filtered = useMemo(() => applyFilters(conferences, filters), [conferences, filters]);
 
   const stats = useMemo(() => {
     const tier1 = conferences.filter((c) => c.tier === "Tier 1");
     const gaps = tier1.filter((c) => c.assignedReps.length === 0);
-    return {
-      total: conferences.length,
-      tier1: tier1.length,
-      gaps: gaps.length,
-    };
+    return { total: conferences.length, tier1: tier1.length, gaps: gaps.length };
   }, [conferences]);
 
   const toggleRep = (conferenceId: string, rep: string) => {
@@ -91,11 +93,46 @@ function Index() {
 
       <main className="mx-auto max-w-[1400px] space-y-4 px-6 py-6">
         <FilterBar filters={filters} onChange={setFilters} />
-        <div className="text-xs text-muted-foreground">
-          Showing <span className="font-medium text-foreground">{filtered.length}</span> of {conferences.length} conferences
+
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-muted-foreground">
+            Showing <span className="font-medium text-foreground">{filtered.length}</span> of {conferences.length} conferences
+          </div>
+          <ViewToggle value={view} onChange={setView} />
         </div>
-        <ConferenceTable conferences={filtered} onToggleRep={toggleRep} />
+
+        {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} />}
+        {view === "map" && <MapView conferences={filtered} />}
+        {view === "timeline" && <TimelineView conferences={filtered} />}
       </main>
+    </div>
+  );
+}
+
+function ViewToggle({ value, onChange }: { value: ViewMode; onChange: (v: ViewMode) => void }) {
+  const items: { id: ViewMode; label: string; icon: typeof TableIcon }[] = [
+    { id: "table", label: "Table", icon: TableIcon },
+    { id: "map", label: "Map", icon: MapIcon },
+    { id: "timeline", label: "Timeline", icon: CalendarDays },
+  ];
+  return (
+    <div className="inline-flex items-center rounded-md border border-border bg-card p-0.5">
+      {items.map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          onClick={() => onChange(id)}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition",
+            value === id
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          <Icon className="h-3.5 w-3.5" />
+          {label}
+        </button>
+      ))}
     </div>
   );
 }
