@@ -14,17 +14,22 @@ export function ScoreCell({ score, subScores }: { score: number; subScores: SubS
             {score}
           </button>
         </TooltipTrigger>
-        <TooltipContent side="left" className="w-72 p-3">
-          <div className="mb-2 text-xs font-semibold text-foreground">ICP score breakdown</div>
+        <TooltipContent
+          side="left"
+          className="w-72 border border-border bg-popover p-3 text-popover-foreground shadow-md"
+        >
+          <div className="mb-2 text-xs font-semibold text-popover-foreground">
+            ICP score breakdown
+          </div>
           <div className="space-y-1.5">
             {keys.map((k) => {
               const weight = Math.round(SCORE_WEIGHTS[k] * 100);
               const val = subScores[k];
               return (
                 <div key={k} className="flex items-center gap-2 text-xs">
-                  <span className="w-44 text-muted-foreground">
+                  <span className="w-44 text-popover-foreground/80">
                     {WEIGHT_LABELS[k]}{" "}
-                    <span className="text-muted-foreground/70">({weight}%)</span>
+                    <span className="text-popover-foreground/50">({weight}%)</span>
                   </span>
                   <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                     <div
@@ -32,12 +37,14 @@ export function ScoreCell({ score, subScores }: { score: number; subScores: SubS
                       style={{ width: `${val}%` }}
                     />
                   </div>
-                  <span className="w-7 text-right font-medium tabular-nums">{val}</span>
+                  <span className="w-7 text-right font-medium tabular-nums text-popover-foreground">
+                    {val}
+                  </span>
                 </div>
               );
             })}
           </div>
-          <div className="mt-3 border-t border-border pt-2 text-[11px] text-muted-foreground">
+          <div className="mt-3 border-t border-border pt-2 text-[11px] text-popover-foreground/60">
             Scoring methodology is managed by Sales Ops.
           </div>
         </TooltipContent>
