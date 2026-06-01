@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { ClientOnly } from "@tanstack/react-router";
 import type { Conference, Tier } from "@/lib/conferences";
 import { coordsFor } from "@/lib/cityCoords";
 
@@ -85,11 +86,39 @@ function ensureLeafletCss() {
   add("leaflet-mc-default-css", "https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css");
 }
 
+function ensureMarkerClusterScript(): Promise<void> {
+  if (typeof document === "undefined") return Promise.resolve();
+  if ((window as any).L?.MarkerClusterGroup) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const existing = document.getElementById("leaflet-mc-script") as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", reject, { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "leaflet-mc-script";
+    script.src = "https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
 interface Props {
   conferences: Conference[];
 }
 
 export function MapView({ conferences }: Props) {
+  return (
+    <ClientOnly fallback={<MapFallback />}>
+      <MapViewClient conferences={conferences} />
+    </ClientOnly>
+  );
+}
+
+function MapViewClient({ conferences }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
@@ -100,7 +129,8 @@ export function MapView({ conferences }: Props) {
     ensureLeafletCss();
     (async () => {
       const L = (await import("leaflet")).default;
-      await import("leaflet.markercluster");
+      (window as any).L = L;
+      await ensureMarkerClusterScript();
       if (cancelled || !containerRef.current || mapRef.current) return;
       LRef.current = L;
       const map = L.map(containerRef.current, {
@@ -198,6 +228,16 @@ export function MapView({ conferences }: Props) {
             {missing.length} conference{missing.length === 1 ? "" : "s"} missing map coordinates
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function MapFallback() {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <div className="flex h-[600px] w-full items-center justify-center text-sm text-muted-foreground">
+        Loading map…
       </div>
     </div>
   );
