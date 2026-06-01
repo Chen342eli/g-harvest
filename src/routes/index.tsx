@@ -178,7 +178,10 @@ function Index() {
                 Passed <span className="font-medium text-foreground tabular-nums">{stats.passed}</span>
               </span>
             </div>
-            <ViewToggle value={view} onChange={setView} />
+            <div className="flex items-center gap-2">
+              <ExportButton conferences={filtered} />
+              <ViewToggle value={view} onChange={setView} />
+            </div>
           </div>
 
           {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} onSetStatus={setStatus} onUpdateConference={updateConference} />}
