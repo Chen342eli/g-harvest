@@ -185,7 +185,12 @@ function TimelineChip({ conference, clusterId }: { conference: Conference; clust
                 />
               )}
               <div className="flex items-start justify-between gap-1 pl-1">
-                <span className="line-clamp-2 break-words font-medium leading-tight">{c.name}</span>
+                <span
+                  className="font-medium leading-tight"
+                  style={{ overflowWrap: "anywhere", wordBreak: "break-word", hyphens: "auto" }}
+                >
+                  {c.name}
+                </span>
                 {isGap && (
                   <span className="shrink-0 rounded-full bg-red-600 px-1 text-[9px] font-bold uppercase text-white">
                     Gap
