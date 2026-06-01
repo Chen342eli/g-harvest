@@ -33,9 +33,10 @@ function formatDateRange(start: string, end: string) {
 
 const audienceFmt = new Intl.NumberFormat("en-US");
 
-export function ConferenceTable({ conferences, onToggleRep, onSetStatus }: Props) {
+export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdateConference }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("icpScore");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [editing, setEditing] = useState<Conference | null>(null);
 
   const sorted = useMemo(() => {
     const copy = [...conferences];
