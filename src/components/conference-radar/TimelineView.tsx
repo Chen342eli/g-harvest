@@ -160,11 +160,11 @@ function TimelineChip({ conference, clusterId }: { conference: Conference; clust
       : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]}`;
   const isGap = c.tier === "Tier 1" && c.assignedReps.length === 0;
 
-  return (
   const fullRange =
     start.getMonth() === end.getMonth() && start.getDate() === end.getDate()
       ? `${start.getDate()} ${MONTHS[start.getMonth()]} ${start.getFullYear()}`
       : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]} ${end.getFullYear()}`;
+
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
