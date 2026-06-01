@@ -92,6 +92,7 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdat
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Tier</th>
               <Th k="status" label="Status" />
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Assigned reps</th>
+              <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">Edit</th>
             </tr>
           </thead>
           <tbody>
