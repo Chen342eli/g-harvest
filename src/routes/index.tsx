@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarDays, Map as MapIcon, PanelRightClose, PanelRightOpen, Radar, Table as TableIcon } from "lucide-react";
+import { CalendarDays, Download, Map as MapIcon, PanelRightClose, PanelRightOpen, Radar, Table as TableIcon } from "lucide-react";
 import { isCoverageGap, type Conference, type DecisionStatus } from "@/lib/conferences";
 import { listConferences, setStatus as setStatusFn, toggleRep as toggleRepFn, updateConference as updateConferenceFn } from "@/lib/conferences.functions";
 import { ConferenceTable } from "@/components/conference-radar/ConferenceTable";
