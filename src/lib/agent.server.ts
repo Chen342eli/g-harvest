@@ -263,7 +263,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           await logCandidate({ runId, hit, decision: "skipped", reason: `Insert failed (likely duplicate): ${insErr.message}`, extracted: parsed });
         } else {
           added++;
-          await logCandidate({ runId, hit, decision: "added", reason: `Added as ${parsed.tier ?? "scored"} — ${parsed.vertical} / ${parsed.region}`, extracted: parsed, conferenceId: inserted?.id });
+          await logCandidate({ runId, hit, decision: "added", reason: `Added — ${parsed.vertical} / ${parsed.region}`, extracted: parsed, conferenceId: inserted?.id });
         }
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
