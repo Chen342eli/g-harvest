@@ -1,15 +1,85 @@
 import { useEffect, useRef } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import "leaflet/dist/leaflet.css";
 import type { Conference, Tier } from "@/lib/conferences";
 import { coordsFor } from "@/lib/cityCoords";
-import { ConferenceDetail } from "./ConferenceDetail";
 
 const TIER_COLOR: Record<Tier, string> = {
-  "Tier 1": "#10b981", // emerald-500
-  "Tier 2": "#f59e0b", // amber-500
-  "Tier 3": "#94a3b8", // slate-400
+  "Tier 1": "#10b981",
+  "Tier 2": "#f59e0b",
+  "Tier 3": "#94a3b8",
 };
+
+const TIER_BG: Record<Tier, string> = {
+  "Tier 1": "#d1fae5",
+  "Tier 2": "#fef3c7",
+  "Tier 3": "#f1f5f9",
+};
+
+const TIER_TEXT: Record<Tier, string> = {
+  "Tier 1": "#065f46",
+  "Tier 2": "#92400e",
+  "Tier 3": "#334155",
+};
+
+const audienceFmt = new Intl.NumberFormat("en-US");
+
+function escape(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function dateRange(start: string, end: string) {
+  const s = new Date(start);
+  const e = new Date(end);
+  const sameMonth = s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear();
+  const monthFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
+  const yearFmt = new Intl.DateTimeFormat("en-US", { year: "numeric" });
+  if (sameMonth) return `${monthFmt.format(s)}–${e.getDate()}, ${yearFmt.format(s)}`;
+  return `${monthFmt.format(s)} – ${monthFmt.format(e)}, ${yearFmt.format(e)}`;
+}
+
+function popupHtml(c: Conference): string {
+  const isGap = c.tier === "Tier 1" && c.assignedReps.length === 0;
+  const reps = c.assignedReps.length
+    ? escape(c.assignedReps.join(", "))
+    : `<span style="color:#64748b">Unassigned</span>`;
+  return `
+    <div style="font-family:ui-sans-serif,system-ui;color:#0f172a;width:240px;">
+      <a href="${escape(c.sourceUrl)}" target="_blank" rel="noreferrer"
+         style="font-weight:600;color:#0f172a;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+         ${escape(c.name)}
+         <span style="opacity:.6;font-size:11px;">↗</span>
+      </a>
+      <div style="font-size:11px;color:#64748b;margin-top:2px;">${escape(c.city)}, ${escape(c.country)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+        <span style="background:${TIER_BG[c.tier]};color:${TIER_TEXT[c.tier]};
+          padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">${c.tier}</span>
+        <span style="background:#f1f5f9;color:#0f172a;
+          padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;">Score ${c.icpScore}</span>
+        ${isGap ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">Coverage gap</span>` : ""}
+      </div>
+      <table style="margin-top:8px;font-size:11px;border-collapse:collapse;">
+        <tr><td style="color:#64748b;padding-right:8px;">Dates</td><td>${escape(dateRange(c.startDate, c.endDate))}</td></tr>
+        <tr><td style="color:#64748b;padding-right:8px;">Vertical</td><td>${escape(c.vertical)}</td></tr>
+        <tr><td style="color:#64748b;padding-right:8px;">Audience</td><td>${audienceFmt.format(c.estimatedAudienceSize)}</td></tr>
+        <tr><td style="color:#64748b;padding-right:8px;vertical-align:top;">Reps</td><td>${reps}</td></tr>
+      </table>
+    </div>`;
+}
+
+function ensureLeafletCss() {
+  if (typeof document === "undefined") return;
+  const id = "leaflet-css";
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+  document.head.appendChild(link);
+}
 
 interface Props {
   conferences: Conference[];
@@ -21,9 +91,9 @@ export function MapView({ conferences }: Props) {
   const layerRef = useRef<any>(null);
   const LRef = useRef<any>(null);
 
-  // Initialize map once
   useEffect(() => {
     let cancelled = false;
+    ensureLeafletCss();
     (async () => {
       const L = (await import("leaflet")).default;
       if (cancelled || !containerRef.current || mapRef.current) return;
@@ -40,7 +110,6 @@ export function MapView({ conferences }: Props) {
       }).addTo(map);
       layerRef.current = L.layerGroup().addTo(map);
       mapRef.current = map;
-      // Trigger render of markers now that map exists
       renderMarkers();
     })();
     return () => {
@@ -59,21 +128,16 @@ export function MapView({ conferences }: Props) {
     if (!L || !layerRef.current) return;
     layerRef.current.clearLayers();
 
-    // Group multiple conferences in the same city to offset them slightly.
     const byKey = new Map<string, number>();
-
     const bounds: [number, number][] = [];
+
     conferences.forEach((c) => {
       const base = coordsFor(c.city, c.country);
       if (!base) return;
       const key = `${c.city}|${c.country}`;
       const idx = byKey.get(key) ?? 0;
       byKey.set(key, idx + 1);
-      // tiny radial offset so overlapping markers are still clickable
-      const offset = idx === 0 ? [0, 0] : [
-        Math.cos(idx * 1.3) * 0.35,
-        Math.sin(idx * 1.3) * 0.35,
-      ];
+      const offset = idx === 0 ? [0, 0] : [Math.cos(idx * 1.3) * 0.35, Math.sin(idx * 1.3) * 0.35];
       const lat = base[0] + offset[0];
       const lng = base[1] + offset[1];
       bounds.push([lat, lng]);
@@ -82,26 +146,15 @@ export function MapView({ conferences }: Props) {
       const color = TIER_COLOR[c.tier];
       const html = `
         <div style="position:relative;width:22px;height:22px;">
-          <div style="
-            width:22px;height:22px;border-radius:9999px;
-            background:${color};
-            box-shadow:0 0 0 2px #fff, 0 1px 3px rgba(0,0,0,.35);
+          <div style="width:22px;height:22px;border-radius:9999px;background:${color};
+            box-shadow:0 0 0 2px #fff,0 1px 3px rgba(0,0,0,.35);
             display:flex;align-items:center;justify-content:center;
-            color:#fff;font-weight:600;font-size:10px;font-family:ui-sans-serif,system-ui;
-          ">${c.icpScore}</div>
+            color:#fff;font-weight:600;font-size:10px;font-family:ui-sans-serif,system-ui;">${c.icpScore}</div>
           ${isGap ? `<div style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:9999px;background:#dc2626;box-shadow:0 0 0 2px #fff;"></div>` : ""}
         </div>`;
-      const icon = L.divIcon({
-        html,
-        className: "",
-        iconSize: [22, 22],
-        iconAnchor: [11, 11],
-      });
+      const icon = L.divIcon({ html, className: "", iconSize: [22, 22], iconAnchor: [11, 11] });
       const marker = L.marker([lat, lng], { icon });
-      marker.bindPopup(renderToStaticMarkup(<ConferenceDetail conference={c} />), {
-        maxWidth: 320,
-        className: "conference-popup",
-      });
+      marker.bindPopup(popupHtml(c), { maxWidth: 320 });
       marker.addTo(layerRef.current);
     });
 
@@ -114,7 +167,6 @@ export function MapView({ conferences }: Props) {
     }
   };
 
-  // Re-render markers when filter results change
   useEffect(() => {
     renderMarkers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,18 +180,9 @@ export function MapView({ conferences }: Props) {
         <div ref={containerRef} className="h-[600px] w-full" />
       </div>
       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-3 rounded-full" style={{ background: TIER_COLOR["Tier 1"] }} />
-          Tier 1
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-3 rounded-full" style={{ background: TIER_COLOR["Tier 2"] }} />
-          Tier 2
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-3 rounded-full" style={{ background: TIER_COLOR["Tier 3"] }} />
-          Tier 3
-        </div>
+        <Legend color={TIER_COLOR["Tier 1"]} label="Tier 1" />
+        <Legend color={TIER_COLOR["Tier 2"]} label="Tier 2" />
+        <Legend color={TIER_COLOR["Tier 3"]} label="Tier 3" />
         <div className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-white" />
           Coverage gap
@@ -150,6 +193,15 @@ export function MapView({ conferences }: Props) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="inline-block h-3 w-3 rounded-full" style={{ background: color }} />
+      {label}
     </div>
   );
 }
