@@ -86,10 +86,11 @@ export function AgentStatusButton() {
           type="button"
           onClick={() => cancelMutation.mutate()}
           disabled={cancelRequested || cancelMutation.isPending}
-          className="inline-flex items-center gap-1 rounded border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive hover:bg-destructive/20 disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 hover:bg-amber-500/20 disabled:opacity-60 dark:text-amber-400"
         >
-          <Square className="h-3 w-3" />
-          {cancelRequested ? "Stopping…" : "Stop"}
+          <Loader2 className="h-3 w-3 animate-spin" />
+          <span className="uppercase tracking-wide">{cancelRequested ? "Stopping…" : "Running"}</span>
+          {!cancelRequested && <Square className="h-2.5 w-2.5 fill-current" />}
         </button>
       ) : (
         <button
