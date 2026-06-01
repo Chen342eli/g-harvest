@@ -93,7 +93,7 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus }: Props
           </thead>
           <tbody>
             {sorted.map((c) => {
-              const isGap = c.tier === "Tier 1" && c.assignedReps.length === 0;
+              const gap = isCoverageGap(c);
               return (
                 <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 align-top">
