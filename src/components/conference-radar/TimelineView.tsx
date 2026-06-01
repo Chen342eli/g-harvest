@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Conference, Tier } from "@/lib/conferences";
 import { ConferenceDetail } from "./ConferenceDetail";
 import { cn } from "@/lib/utils";
