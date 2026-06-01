@@ -192,7 +192,7 @@ function MapViewClient({ conferences }: Props) {
       const [lat, lng] = base;
       bounds.push([lat, lng]);
 
-      const isGap = c.tier === "Tier 1" && c.assignedReps.length === 0;
+      const gap = isCoverageGap(c);
       const color = TIER_COLOR[c.tier];
       const html = `
         <div style="position:relative;width:22px;height:22px;">
