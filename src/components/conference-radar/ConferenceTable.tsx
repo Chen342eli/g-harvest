@@ -31,7 +31,7 @@ function formatDateRange(start: string, end: string) {
 
 const audienceFmt = new Intl.NumberFormat("en-US");
 
-export function ConferenceTable({ conferences, onToggleRep }: Props) {
+export function ConferenceTable({ conferences, onToggleRep, onSetStatus }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("icpScore");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
