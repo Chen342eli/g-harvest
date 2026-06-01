@@ -1,14 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { CalendarDays, Map as MapIcon, PanelRightClose, PanelRightOpen, Radar, Table as TableIcon } from "lucide-react";
-import { SEED_CONFERENCES, isCoverageGap, type Conference, type DecisionStatus } from "@/lib/conferences";
+import { isCoverageGap, type Conference, type DecisionStatus } from "@/lib/conferences";
+import { listConferences, setStatus as setStatusFn, toggleRep as toggleRepFn, updateConference as updateConferenceFn } from "@/lib/conferences.functions";
 import { ConferenceTable } from "@/components/conference-radar/ConferenceTable";
 import { MapView } from "@/components/conference-radar/MapView";
 import { TimelineView } from "@/components/conference-radar/TimelineView";
 import { FilterBar, DEFAULT_FILTERS, type Filters } from "@/components/conference-radar/FilterBar";
 import { DecisionPanel } from "@/components/conference-radar/DecisionPanel";
+import { AgentStatusButton } from "@/components/conference-radar/AgentStatusButton";
 import type { Insight } from "@/lib/insights";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,7 +49,51 @@ function applyFilters(items: Conference[], f: Filters): Conference[] {
 }
 
 function Index() {
-  const [conferences, setConferences] = useState<Conference[]>(SEED_CONFERENCES);
+  const qc = useQueryClient();
+  const fetchAll = useServerFn(listConferences);
+  const callSetStatus = useServerFn(setStatusFn);
+  const callToggleRep = useServerFn(toggleRepFn);
+  const callUpdate = useServerFn(updateConferenceFn);
+
+  const { data: conferences = [], isLoading } = useQuery({
+    queryKey: ["conferences"],
+    queryFn: () => fetchAll(),
+  });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["conferences"] });
+
+  const statusMutation = useMutation({
+    mutationFn: (v: { id: string; status: DecisionStatus }) => callSetStatus({ data: v }),
+    onSuccess: invalidate,
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to update"),
+  });
+
+  const repMutation = useMutation({
+    mutationFn: (v: { id: string; rep: string }) => callToggleRep({ data: v }),
+    onSuccess: invalidate,
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to update"),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (c: Conference) => callUpdate({
+      data: {
+        id: c.id,
+        name: c.name,
+        startDate: c.startDate,
+        endDate: c.endDate,
+        city: c.city,
+        country: c.country,
+        region: c.region,
+        vertical: c.vertical,
+        estimatedAudienceSize: c.estimatedAudienceSize,
+        tags: c.tags,
+        sourceUrl: c.sourceUrl,
+      },
+    }),
+    onSuccess: () => { invalidate(); toast.success("Saved"); },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to update"),
+  });
+
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [view, setView] = useState<ViewMode>("table");
   const [panelOpen, setPanelOpen] = useState(true);
@@ -60,45 +109,18 @@ function Index() {
     return { total: conferences.length, tier1: tier1.length, gaps: gaps.length, going, considering, passed };
   }, [conferences]);
 
-  const toggleRep = (conferenceId: string, rep: string) => {
-    setConferences((prev) =>
-      prev.map((c) =>
-        c.id === conferenceId
-          ? {
-              ...c,
-              assignedReps: c.assignedReps.includes(rep)
-                ? c.assignedReps.filter((r) => r !== rep)
-                : [...c.assignedReps, rep],
-            }
-          : c,
-      ),
-    );
-  };
-
-  const setStatus = (conferenceId: string, status: DecisionStatus) => {
-    setConferences((prev) => prev.map((c) => (c.id === conferenceId ? { ...c, status } : c)));
-  };
-
-  const updateConference = (updated: Conference) => {
-    setConferences((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-  };
+  const toggleRep = (conferenceId: string, rep: string) => repMutation.mutate({ id: conferenceId, rep });
+  const setStatus = (conferenceId: string, status: DecisionStatus) => statusMutation.mutate({ id: conferenceId, status });
+  const updateConference = (updated: Conference) => updateMutation.mutate(updated);
 
   const applyInsight = (insight: Insight) => {
     if (!insight.action) return;
     const next = { ...DEFAULT_FILTERS };
     switch (insight.action.kind) {
-      case "filter-ids":
-        next.ids = insight.action.ids;
-        break;
-      case "filter-vertical":
-        next.verticals = [insight.action.vertical];
-        break;
-      case "filter-region":
-        next.regions = [insight.action.region];
-        break;
-      case "filter-gaps":
-        next.gapsOnly = true;
-        break;
+      case "filter-ids": next.ids = insight.action.ids; break;
+      case "filter-vertical": next.verticals = [insight.action.vertical]; break;
+      case "filter-region": next.regions = [insight.action.region]; break;
+      case "filter-gaps": next.gapsOnly = true; break;
     }
     setFilters(next);
   };
@@ -106,21 +128,18 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-6 py-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <Radar className="h-4 w-4" />
             </div>
             <div>
-              <h1 className="text-base font-semibold tracking-tight text-foreground">
-                Grain Conference Radar
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                Prioritize where to invest and who covers it.
-              </p>
+              <h1 className="text-base font-semibold tracking-tight text-foreground">Grain Conference Radar</h1>
+              <p className="text-xs text-muted-foreground">Prioritize where to invest and who covers it.</p>
             </div>
           </div>
-          <div className="flex items-center gap-6 text-sm">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <AgentStatusButton />
             <Stat label="Conferences" value={stats.total} />
             <Stat label="Going" value={stats.going} accent="text-emerald-700" />
             <Stat label="Coverage gaps" value={stats.gaps} accent={stats.gaps > 0 ? "text-red-700" : "text-foreground"} />
@@ -142,7 +161,7 @@ function Index() {
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="text-xs text-muted-foreground">
-              Showing <span className="font-medium text-foreground">{filtered.length}</span> of {conferences.length} conferences
+              {isLoading ? "Loading…" : <>Showing <span className="font-medium text-foreground">{filtered.length}</span> of {conferences.length} conferences</>}
               <span className="mx-2 text-border">|</span>
               <span className="inline-flex items-center gap-1">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -195,9 +214,7 @@ function ViewToggle({ value, onChange }: { value: ViewMode; onChange: (v: ViewMo
           onClick={() => onChange(id)}
           className={cn(
             "inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition",
-            value === id
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            value === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >
           <Icon className="h-3.5 w-3.5" />

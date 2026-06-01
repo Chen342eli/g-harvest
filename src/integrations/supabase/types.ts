@@ -14,7 +14,197 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agent_runs: {
+        Row: {
+          added_count: number
+          error: string | null
+          finished_at: string | null
+          flagged_count: number
+          found_count: number
+          id: string
+          skipped_count: number
+          started_at: string
+          status: string
+          trigger: string
+        }
+        Insert: {
+          added_count?: number
+          error?: string | null
+          finished_at?: string | null
+          flagged_count?: number
+          found_count?: number
+          id?: string
+          skipped_count?: number
+          started_at?: string
+          status?: string
+          trigger?: string
+        }
+        Update: {
+          added_count?: number
+          error?: string | null
+          finished_at?: string | null
+          flagged_count?: number
+          found_count?: number
+          id?: string
+          skipped_count?: number
+          started_at?: string
+          status?: string
+          trigger?: string
+        }
+        Relationships: []
+      }
+      conference_change_flags: {
+        Row: {
+          conference_id: string
+          created_at: string
+          field: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          source_url: string | null
+          status: string
+        }
+        Insert: {
+          conference_id: string
+          created_at?: string
+          field: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          source_url?: string | null
+          status?: string
+        }
+        Update: {
+          conference_id?: string
+          created_at?: string
+          field?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          source_url?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conference_change_flags_conference_id_fkey"
+            columns: ["conference_id"]
+            isOneToOne: false
+            referencedRelation: "conferences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conferences: {
+        Row: {
+          assigned_reps: string[]
+          city: string
+          confidence: number | null
+          country: string
+          created_at: string
+          deleted_at: string | null
+          end_date: string
+          estimated_audience_size: number
+          icp_score: number
+          id: string
+          name: string
+          provenance: Database["public"]["Enums"]["conf_provenance"]
+          region: string
+          source_url: string
+          start_date: string
+          status: Database["public"]["Enums"]["conf_decision_status"]
+          sub_accessibility: number
+          sub_audience_quality: number
+          sub_decision_maker_presence: number
+          sub_past_performance: number
+          sub_vertical_fit: number
+          tags: string[]
+          tier: string
+          updated_at: string
+          vertical: string
+        }
+        Insert: {
+          assigned_reps?: string[]
+          city: string
+          confidence?: number | null
+          country: string
+          created_at?: string
+          deleted_at?: string | null
+          end_date: string
+          estimated_audience_size?: number
+          icp_score?: number
+          id?: string
+          name: string
+          provenance?: Database["public"]["Enums"]["conf_provenance"]
+          region: string
+          source_url: string
+          start_date: string
+          status?: Database["public"]["Enums"]["conf_decision_status"]
+          sub_accessibility?: number
+          sub_audience_quality?: number
+          sub_decision_maker_presence?: number
+          sub_past_performance?: number
+          sub_vertical_fit?: number
+          tags?: string[]
+          tier?: string
+          updated_at?: string
+          vertical: string
+        }
+        Update: {
+          assigned_reps?: string[]
+          city?: string
+          confidence?: number | null
+          country?: string
+          created_at?: string
+          deleted_at?: string | null
+          end_date?: string
+          estimated_audience_size?: number
+          icp_score?: number
+          id?: string
+          name?: string
+          provenance?: Database["public"]["Enums"]["conf_provenance"]
+          region?: string
+          source_url?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["conf_decision_status"]
+          sub_accessibility?: number
+          sub_audience_quality?: number
+          sub_decision_maker_presence?: number
+          sub_past_performance?: number
+          sub_vertical_fit?: number
+          tags?: string[]
+          tier?: string
+          updated_at?: string
+          vertical?: string
+        }
+        Relationships: []
+      }
+      do_not_resurrect: {
+        Row: {
+          city_lower: string
+          created_at: string
+          id: string
+          name_lower: string
+          reason: string | null
+          year: number
+        }
+        Insert: {
+          city_lower: string
+          created_at?: string
+          id?: string
+          name_lower: string
+          reason?: string | null
+          year: number
+        }
+        Update: {
+          city_lower?: string
+          created_at?: string
+          id?: string
+          name_lower?: string
+          reason?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +213,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      conf_decision_status: "Considering" | "Going" | "Passed"
+      conf_provenance: "verified" | "ai_added"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +341,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      conf_decision_status: ["Considering", "Going", "Passed"],
+      conf_provenance: ["verified", "ai_added"],
+    },
   },
 } as const
