@@ -160,9 +160,25 @@ function MapViewClient({ conferences }: Props) {
       layerRef.current = (L as any).markerClusterGroup({
         showCoverageOnHover: false,
         spiderfyOnMaxZoom: true,
-        zoomToBoundsOnClick: true,
+        zoomToBoundsOnClick: false,
         spiderfyDistanceMultiplier: 1.6,
         maxClusterRadius: 40,
+      });
+      // Single-click reveal: if all children share a location, spiderfy immediately;
+      // otherwise zoom straight to the deepest level that fits them, no chained clicks.
+      layerRef.current.on("clusterclick", (a: any) => {
+        const cluster = a.layer;
+        const children = cluster.getAllChildMarkers();
+        const pts = children.map((m: any) => m.getLatLng());
+        const allSame = pts.every(
+          (p: any) => p.lat === pts[0].lat && p.lng === pts[0].lng,
+        );
+        if (allSame) {
+          cluster.spiderfy();
+          return;
+        }
+        const b = L.latLngBounds(pts);
+        map.fitBounds(b, { padding: [60, 60], maxZoom: 18 });
       });
       map.addLayer(layerRef.current);
       mapRef.current = map;
@@ -193,16 +209,21 @@ function MapViewClient({ conferences }: Props) {
       bounds.push([lat, lng]);
 
       const gap = isCoverageGap(c);
+      const going = c.status === "Going";
       const color = TIER_COLOR[c.tier];
+      const ringShadow = going
+        ? "box-shadow:0 0 0 2px #fff, 0 0 0 4px #16a34a, 0 1px 4px rgba(0,0,0,.35);"
+        : "box-shadow:0 0 0 2px #fff, 0 1px 3px rgba(0,0,0,.35);";
+      const size = going ? 26 : 22;
       const html = `
-        <div style="position:relative;width:22px;height:22px;">
-          <div style="width:22px;height:22px;border-radius:9999px;background:${color};
-            box-shadow:0 0 0 2px #fff,0 1px 3px rgba(0,0,0,.35);
+        <div style="position:relative;width:${size}px;height:${size}px;">
+          <div style="width:${size}px;height:${size}px;border-radius:9999px;background:${color};
+            ${ringShadow}
             display:flex;align-items:center;justify-content:center;
             color:#fff;font-weight:600;font-size:10px;font-family:ui-sans-serif,system-ui;">${c.icpScore}</div>
           ${gap ? `<div style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:9999px;background:#dc2626;box-shadow:0 0 0 2px #fff;"></div>` : ""}
         </div>`;
-      const icon = L.divIcon({ html, className: "", iconSize: [22, 22], iconAnchor: [11, 11] });
+      const icon = L.divIcon({ html, className: "", iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
       const marker = L.marker([lat, lng], { icon });
       marker.bindPopup(popupHtml(c), { maxWidth: 320 });
       layerRef.current.addLayer(marker);
@@ -233,6 +254,13 @@ function MapViewClient({ conferences }: Props) {
         <Legend color={TIER_COLOR["Tier 1"]} label="Tier 1" />
         <Legend color={TIER_COLOR["Tier 2"]} label="Tier 2" />
         <Legend color={TIER_COLOR["Tier 3"]} label="Tier 3" />
+        <div className="flex items-center gap-1.5">
+          <span
+            className="inline-block h-3 w-3 rounded-full bg-slate-400"
+            style={{ boxShadow: "0 0 0 1.5px #fff, 0 0 0 3px #16a34a" }}
+          />
+          Going (confirmed)
+        </div>
         <div className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-white" />
           Coverage gap
