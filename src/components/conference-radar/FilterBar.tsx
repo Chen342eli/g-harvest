@@ -112,6 +112,7 @@ export function FilterBar({
       <MultiSelect label="Vertical" options={VERTICALS} values={filters.verticals} onChange={(v) => set("verticals", v)} />
       <MultiSelect label="Region" options={REGIONS} values={filters.regions} onChange={(v) => set("regions", v)} />
       <MultiSelect label="Tier" options={TIERS} values={filters.tiers} onChange={(v) => set("tiers", v)} />
+      <MultiSelect label="Status" options={DECISION_STATUSES} values={filters.statuses} onChange={(v) => set("statuses", v)} />
       <div className="flex items-center gap-1.5">
         <Input
           type="date"
