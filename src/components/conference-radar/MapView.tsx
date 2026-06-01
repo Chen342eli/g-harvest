@@ -72,13 +72,17 @@ function popupHtml(c: Conference): string {
 
 function ensureLeafletCss() {
   if (typeof document === "undefined") return;
-  const id = "leaflet-css";
-  if (document.getElementById(id)) return;
-  const link = document.createElement("link");
-  link.id = id;
-  link.rel = "stylesheet";
-  link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-  document.head.appendChild(link);
+  const add = (id: string, href: string) => {
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = href;
+    document.head.appendChild(link);
+  };
+  add("leaflet-css", "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");
+  add("leaflet-mc-css", "https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css");
+  add("leaflet-mc-default-css", "https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css");
 }
 
 interface Props {
