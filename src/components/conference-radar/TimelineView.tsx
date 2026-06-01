@@ -31,7 +31,7 @@ interface ChipData {
 
 const dayMs = 24 * 60 * 60 * 1000;
 
-export function TimelineView({ conferences }: Props) {
+export function TimelineView({ conferences, onSetStatus }: Props) {
   // Filter to YEAR and group by month index of startDate.
   const byMonth = useMemo(() => {
     const groups: ChipData[][] = Array.from({ length: 12 }, () => []);
