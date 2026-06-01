@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Conference, Tier } from "@/lib/conferences";
 import { ConferenceDetail } from "./ConferenceDetail";
 import { cn } from "@/lib/utils";
@@ -78,6 +79,7 @@ export function TimelineView({ conferences }: Props) {
   const otherCount = conferences.length - totalInYear;
 
   return (
+    <TooltipProvider delayDuration={150}>
     <div className="space-y-3">
       <div className="rounded-lg border border-border bg-card p-4">
         <div className="mb-3 flex items-center justify-between">
@@ -93,7 +95,7 @@ export function TimelineView({ conferences }: Props) {
           </div>
         </div>
 
-        <div className="grid grid-cols-12 gap-2">
+        <div className="grid grid-cols-12 items-start gap-2">
           {MONTHS.map((m, idx) => {
             const items = byMonth[idx];
             const isEmpty = items.length === 0;
@@ -134,6 +136,7 @@ export function TimelineView({ conferences }: Props) {
         </div>
       )}
     </div>
+    </TooltipProvider>
   );
 }
 
@@ -157,33 +160,47 @@ function TimelineChip({ conference, clusterId }: { conference: Conference; clust
       : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]}`;
   const isGap = c.tier === "Tier 1" && c.assignedReps.length === 0;
 
+  const fullRange =
+    start.getMonth() === end.getMonth() && start.getDate() === end.getDate()
+      ? `${start.getDate()} ${MONTHS[start.getMonth()]} ${start.getFullYear()}`
+      : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]} ${end.getFullYear()}`;
+
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "group relative block w-full rounded-md px-2 py-1.5 text-left text-[11px] ring-1 ring-inset transition",
-            TIER_CHIP[c.tier],
-          )}
-        >
-          {clusterId !== null && (
-            <span
-              className="absolute left-0 top-0 h-full w-1 rounded-l-md bg-fuchsia-500/80"
-              aria-hidden="true"
-            />
-          )}
-          <div className="flex items-center justify-between gap-1 pl-1">
-            <span className="truncate font-medium">{c.name}</span>
-            {isGap && (
-              <span className="shrink-0 rounded-full bg-red-600 px-1 text-[9px] font-bold uppercase text-white">
-                Gap
-              </span>
-            )}
-          </div>
-          <div className="pl-1 text-[10px] opacity-80 tabular-nums">{range}</div>
-        </button>
-      </PopoverTrigger>
+      <Tooltip>
+        <PopoverTrigger asChild>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                "group relative block w-full rounded-md px-2 py-1.5 text-left text-[11px] ring-1 ring-inset transition",
+                TIER_CHIP[c.tier],
+              )}
+            >
+              {clusterId !== null && (
+                <span
+                  className="absolute left-0 top-0 h-full w-1 rounded-l-md bg-fuchsia-500/80"
+                  aria-hidden="true"
+                />
+              )}
+              <div className="flex items-start justify-between gap-1 pl-1">
+                <span className="line-clamp-2 break-words font-medium leading-tight">{c.name}</span>
+                {isGap && (
+                  <span className="shrink-0 rounded-full bg-red-600 px-1 text-[9px] font-bold uppercase text-white">
+                    Gap
+                  </span>
+                )}
+              </div>
+              <div className="pl-1 text-[10px] opacity-80 tabular-nums">{range}</div>
+            </button>
+          </TooltipTrigger>
+        </PopoverTrigger>
+        <TooltipContent side="top" className="max-w-xs">
+          <div className="font-medium">{c.name}</div>
+          <div className="text-xs opacity-80">{fullRange}</div>
+        </TooltipContent>
+      </Tooltip>
       <PopoverContent align="start" className="w-auto p-3">
         <ConferenceDetail conference={c} />
       </PopoverContent>
