@@ -1,4 +1,4 @@
-// Discovery agent: Firecrawl search + Gemini structured extraction.
+// Discovery agent: Firecrawl search + scrape + Gemini structured extraction.
 // Server-only — never import from client code.
 
 import Firecrawl from "@mendable/firecrawl-js";
@@ -13,6 +13,7 @@ const ALLOWED_REGIONS: Region[] = ["North America", "Europe", "APAC", "Middle Ea
 const ALLOWED_VERTICALS: Vertical[] = ["Payments", "Fintech", "Treasury", "Travel", "SaaS", "General Tech"];
 
 const MAX_CANDIDATES = 50;
+const SCRAPE_TIMEOUT_MS = 20_000;
 
 const SEARCH_QUERIES = [
   "fintech conferences 2026 site:.com",
@@ -22,18 +23,25 @@ const SEARCH_QUERIES = [
   "travel tech payments conference 2026",
 ];
 
+// Relaxed schema: anything that isn't certain from the page can be null.
+// We will keep the conference anyway and flag it for human review.
 const ExtractionSchema = z.object({
   name: z.string(),
-  startDate: z.string().describe("ISO date YYYY-MM-DD"),
-  endDate: z.string().describe("ISO date YYYY-MM-DD"),
-  city: z.string(),
-  country: z.string(),
-  region: z.enum(["North America", "Europe", "APAC", "Middle East", "LATAM"]),
-  vertical: z.enum(["Payments", "Fintech", "Treasury", "Travel", "SaaS", "General Tech"]),
-  estimatedAudienceSize: z.number().int().nonnegative(),
-  tags: z.array(z.string()).max(8),
-  sourceUrl: z.string().url(),
-  isRelevant: z.boolean().describe("True only if conference targets fintech, payments, treasury, B2B SaaS, or travel-tech buyers"),
+  startDate: z.string().nullable().describe("ISO date YYYY-MM-DD or null if not stated"),
+  endDate: z.string().nullable().describe("ISO date YYYY-MM-DD or null if not stated"),
+  city: z.string().nullable(),
+  country: z.string().nullable(),
+  region: z
+    .enum(["North America", "Europe", "APAC", "Middle East", "LATAM"])
+    .nullable(),
+  vertical: z
+    .enum(["Payments", "Fintech", "Treasury", "Travel", "SaaS", "General Tech"])
+    .nullable(),
+  estimatedAudienceSize: z.number().int().nonnegative().nullable(),
+  tags: z.array(z.string()).max(8).default([]),
+  isRelevant: z
+    .boolean()
+    .describe("True only if this is a real fintech/payments/treasury/B2B-SaaS/travel-tech conference (not a blog post, list article, past edition, or news)"),
   confidence: z.number().int().min(0).max(100),
 });
 
@@ -55,13 +63,26 @@ function yearsAllowed(): Set<number> {
   return new Set([y, y + 1]);
 }
 
+function normalizeUrl(u: string): string {
+  try {
+    const x = new URL(u);
+    x.hash = "";
+    x.search = "";
+    const path = x.pathname.replace(/\/+$/, "");
+    return (x.host + path).toLowerCase();
+  } catch {
+    return u.trim().toLowerCase().replace(/\/+$/, "");
+  }
+}
+
 function normalizeHits(raw: unknown): SearchHit[] {
   const out: SearchHit[] = [];
   if (!raw) return out;
-  const arr = (raw as { web?: SearchHit[]; results?: SearchHit[] }).web
-    ?? (raw as { results?: SearchHit[] }).results
-    ?? (raw as { data?: SearchHit[] }).data
-    ?? (Array.isArray(raw) ? (raw as SearchHit[]) : []);
+  const arr =
+    (raw as { web?: SearchHit[] }).web ??
+    (raw as { results?: SearchHit[] }).results ??
+    (raw as { data?: SearchHit[] }).data ??
+    (Array.isArray(raw) ? (raw as SearchHit[]) : []);
   for (const h of arr) {
     if (h && typeof h.url === "string") out.push(h);
   }
@@ -90,6 +111,26 @@ async function logCandidate(args: {
   });
 }
 
+async function scrapeMarkdown(firecrawl: Firecrawl, url: string): Promise<string | null> {
+  try {
+    const res = await Promise.race([
+      firecrawl.scrape(url, { formats: ["markdown"], onlyMainContent: true }),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), SCRAPE_TIMEOUT_MS)),
+    ]);
+    if (!res) return null;
+    const md =
+      (res as { markdown?: string }).markdown ??
+      (res as { data?: { markdown?: string } }).data?.markdown ??
+      null;
+    if (!md) return null;
+    // Truncate to keep token cost bounded.
+    return md.length > 8000 ? md.slice(0, 8000) : md;
+  } catch (e) {
+    console.error("Scrape failed for", url, e);
+    return null;
+  }
+}
+
 export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<AgentRunResult> {
   const fcKey = process.env.FIRECRAWL_API_KEY;
   const lovableKey = process.env.LOVABLE_API_KEY;
@@ -116,8 +157,9 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
   try {
     const firecrawl = new Firecrawl({ apiKey: fcKey });
     const gateway = createLovableAiGatewayProvider(lovableKey);
-    const model = gateway("google/gemini-3-flash-preview");
+    const model = gateway("google/gemini-2.5-flash");
 
+    // 1) Search
     const candidates: SearchHit[] = [];
     const seenUrls = new Set<string>();
     for (const q of SEARCH_QUERIES) {
@@ -125,8 +167,9 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
       try {
         const res = await firecrawl.search(q, { limit: 10 });
         for (const hit of normalizeHits(res)) {
-          if (seenUrls.has(hit.url)) continue;
-          seenUrls.add(hit.url);
+          const key = normalizeUrl(hit.url);
+          if (seenUrls.has(key)) continue;
+          seenUrls.add(key);
           candidates.push(hit);
           if (candidates.length >= MAX_CANDIDATES) break;
         }
@@ -136,6 +179,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
     }
     found = candidates.length;
 
+    // 2) Load existing + blocklist for dedup
     const { data: blocked } = await supabaseAdmin
       .from("do_not_resurrect")
       .select("name_lower, year, city_lower");
@@ -148,22 +192,35 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
       .is("deleted_at", null);
     const existingByKey = new Map<string, NonNullable<typeof existing>[number]>();
     for (const e of existing ?? []) {
-      const key = `${e.name.toLowerCase()}|${new Date(e.start_date).getUTCFullYear()}|${e.city.toLowerCase()}`;
-      existingByKey.set(key, e);
+      const k = `${e.name.toLowerCase()}|${new Date(e.start_date).getUTCFullYear()}|${e.city.toLowerCase()}`;
+      existingByKey.set(k, e);
     }
 
     const yrs = yearsAllowed();
 
+    // 3) For each candidate: scrape -> extract -> filter -> upsert/flag
     for (const hit of candidates) {
       try {
+        const markdown = await scrapeMarkdown(firecrawl, hit.url);
+
+        const pageContext = markdown
+          ? `--- PAGE CONTENT (markdown, possibly truncated) ---\n${markdown}`
+          : `(Page could not be scraped — rely on snippet only.)`;
+
         const result = await generateText({
           model,
           output: Output.object({ schema: ExtractionSchema }),
           prompt:
-            `You are extracting structured data about a single industry conference from a web search result. ` +
-            `Return only what you can verify from the snippet. Set isRelevant=false if it's not a fintech/payments/treasury/B2B-SaaS/travel-tech conference, or if it's a past edition, blog post, list article, or generic news. ` +
-            `sourceUrl MUST equal the URL provided.\n\n` +
-            `URL: ${hit.url}\nTitle: ${hit.title ?? ""}\nDescription: ${hit.description ?? ""}`,
+            `Extract structured data about a single industry conference from the page below.\n` +
+            `Rules:\n` +
+            `- Set isRelevant=false ONLY if this is clearly not a real conference (e.g. blog post, list article, news, past edition with no future date).\n` +
+            `- If the page IS a real upcoming fintech/payments/treasury/B2B-SaaS/travel-tech conference, set isRelevant=true even if some details are missing.\n` +
+            `- Use null for any field you cannot determine with confidence. Do NOT invent dates, cities, or audience sizes.\n` +
+            `- Dates must be YYYY-MM-DD.\n\n` +
+            `URL: ${hit.url}\n` +
+            `Title: ${hit.title ?? ""}\n` +
+            `Snippet: ${hit.description ?? ""}\n\n` +
+            pageContext,
         });
 
         const usage = result.usage;
@@ -175,46 +232,82 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
 
         const parsed = result.output as z.infer<typeof ExtractionSchema>;
 
+        // Hard filter: not relevant
         if (!parsed.isRelevant) {
           skipped++;
-          await logCandidate({ runId, hit, decision: "skipped", reason: "AI marked as not relevant (not fintech/payments/treasury/SaaS/travel-tech, or past/blog/list)", extracted: parsed });
+          await logCandidate({ runId, hit, decision: "skipped", reason: "AI marked as not relevant (blog/list/past/news)", extracted: parsed });
           continue;
         }
-        if (parsed.sourceUrl !== hit.url) {
+
+        // LATAM excluded for now (per product decision)
+        if (parsed.region === "LATAM") {
           skipped++;
-          await logCandidate({ runId, hit, decision: "skipped", reason: `sourceUrl mismatch: AI returned ${parsed.sourceUrl}`, extracted: parsed });
+          await logCandidate({ runId, hit, decision: "skipped", reason: "LATAM excluded (not in active regions)", extracted: parsed });
           continue;
         }
-        const year = new Date(parsed.startDate).getUTCFullYear();
-        if (!yrs.has(year)) {
-          skipped++;
-          await logCandidate({ runId, hit, decision: "skipped", reason: `Year ${year} outside allowed window (${[...yrs].join(", ")})`, extracted: parsed });
-          continue;
-        }
-        if (!ALLOWED_REGIONS.includes(parsed.region as Region)) {
+
+        // If region is known but outside allowed set
+        if (parsed.region && !ALLOWED_REGIONS.includes(parsed.region as Region)) {
           skipped++;
           await logCandidate({ runId, hit, decision: "skipped", reason: `Region "${parsed.region}" not in allowed regions`, extracted: parsed });
           continue;
         }
-        if (!ALLOWED_VERTICALS.includes(parsed.vertical as Vertical)) {
+
+        // If vertical is known but outside allowed set
+        if (parsed.vertical && !ALLOWED_VERTICALS.includes(parsed.vertical as Vertical)) {
           skipped++;
           await logCandidate({ runId, hit, decision: "skipped", reason: `Vertical "${parsed.vertical}" not in allowed verticals`, extracted: parsed });
           continue;
         }
 
-        const key = `${parsed.name.toLowerCase()}|${year}|${parsed.city.toLowerCase()}`;
-        if (blockedKeys.has(key)) {
+        // Year window check (only when we have a date)
+        const year = parsed.startDate ? new Date(parsed.startDate).getUTCFullYear() : null;
+        if (year !== null && !yrs.has(year)) {
+          skipped++;
+          await logCandidate({ runId, hit, decision: "skipped", reason: `Year ${year} outside allowed window (${[...yrs].join(", ")})`, extracted: parsed });
+          continue;
+        }
+
+        // Track missing-but-keep fields so we can flag for human review
+        const missing: string[] = [];
+        if (!parsed.startDate) missing.push("start_date");
+        if (!parsed.endDate) missing.push("end_date");
+        if (!parsed.city) missing.push("city");
+        if (!parsed.country) missing.push("country");
+        if (!parsed.region) missing.push("region");
+        if (!parsed.vertical) missing.push("vertical");
+        if (parsed.estimatedAudienceSize == null) missing.push("estimated_audience_size");
+
+        // Sentinels (DB columns are NOT NULL). UI can spot these + the needs_review flag.
+        const startDate = parsed.startDate ?? "9999-12-31";
+        const endDate = parsed.endDate ?? startDate;
+        const city = parsed.city ?? "Unknown";
+        const country = parsed.country ?? "Unknown";
+        const region = (parsed.region ?? "North America") as Region;
+        const vertical = (parsed.vertical ?? "Fintech") as Vertical;
+        const audience = parsed.estimatedAudienceSize ?? 0;
+        const dedupYear = year ?? 0;
+
+        const dedupKey = `${parsed.name.toLowerCase()}|${dedupYear}|${city.toLowerCase()}`;
+
+        if (blockedKeys.has(dedupKey)) {
           skipped++;
           await logCandidate({ runId, hit, decision: "skipped", reason: "On do-not-resurrect blocklist", extracted: parsed });
           continue;
         }
 
-        const dupe = existingByKey.get(key);
+        const dupe = existingByKey.get(dedupKey);
         if (dupe) {
           const changes: { field: string; old: unknown; next: unknown }[] = [];
-          if (dupe.start_date !== parsed.startDate) changes.push({ field: "start_date", old: dupe.start_date, next: parsed.startDate });
-          if (dupe.end_date !== parsed.endDate) changes.push({ field: "end_date", old: dupe.end_date, next: parsed.endDate });
-          if (Math.abs((dupe.estimated_audience_size ?? 0) - parsed.estimatedAudienceSize) > Math.max(500, (dupe.estimated_audience_size ?? 0) * 0.2)) {
+          if (parsed.startDate && dupe.start_date !== parsed.startDate)
+            changes.push({ field: "start_date", old: dupe.start_date, next: parsed.startDate });
+          if (parsed.endDate && dupe.end_date !== parsed.endDate)
+            changes.push({ field: "end_date", old: dupe.end_date, next: parsed.endDate });
+          if (
+            parsed.estimatedAudienceSize != null &&
+            Math.abs((dupe.estimated_audience_size ?? 0) - parsed.estimatedAudienceSize) >
+              Math.max(500, (dupe.estimated_audience_size ?? 0) * 0.2)
+          ) {
             changes.push({ field: "estimated_audience_size", old: dupe.estimated_audience_size, next: parsed.estimatedAudienceSize });
           }
           if (changes.length) {
@@ -236,34 +329,62 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           continue;
         }
 
+        // Insert (using sentinels for any missing required fields)
         const scoring = computeScoring({
-          vertical: parsed.vertical as Vertical,
-          region: parsed.region as Region,
-          audienceSize: parsed.estimatedAudienceSize,
+          vertical,
+          region,
+          audienceSize: audience,
           tags: parsed.tags,
         });
 
-        const { data: inserted, error: insErr } = await supabaseAdmin.from("conferences").insert({
-          name: parsed.name,
-          start_date: parsed.startDate,
-          end_date: parsed.endDate,
-          city: parsed.city,
-          country: parsed.country,
-          region: parsed.region,
-          vertical: parsed.vertical,
-          estimated_audience_size: parsed.estimatedAudienceSize,
-          tags: parsed.tags,
-          source_url: parsed.sourceUrl,
-          ...scoring,
-          provenance: "ai_added",
-          confidence: parsed.confidence,
-        }).select("id").single();
+        const { data: inserted, error: insErr } = await supabaseAdmin
+          .from("conferences")
+          .insert({
+            name: parsed.name,
+            start_date: startDate,
+            end_date: endDate,
+            city,
+            country,
+            region,
+            vertical,
+            estimated_audience_size: audience,
+            tags: parsed.tags,
+            source_url: hit.url,
+            ...scoring,
+            provenance: "ai_added",
+            confidence: parsed.confidence,
+          })
+          .select("id")
+          .single();
+
         if (insErr) {
           skipped++;
-          await logCandidate({ runId, hit, decision: "skipped", reason: `Insert failed (likely duplicate): ${insErr.message}`, extracted: parsed });
+          await logCandidate({ runId, hit, decision: "skipped", reason: `Insert failed: ${insErr.message}`, extracted: parsed });
+          continue;
+        }
+
+        // If anything was missing, raise a needs_review flag so a human can fill it in.
+        if (missing.length && inserted?.id) {
+          await supabaseAdmin.from("conference_change_flags").insert({
+            conference_id: inserted.id,
+            field: "needs_review",
+            old_value: null as never,
+            new_value: { missing } as never,
+            source_url: hit.url,
+          });
+          flagged += 1;
+          added++;
+          await logCandidate({
+            runId,
+            hit,
+            decision: "added",
+            reason: `Added with needs_review flag — missing: ${missing.join(", ")}`,
+            extracted: parsed,
+            conferenceId: inserted.id,
+          });
         } else {
           added++;
-          await logCandidate({ runId, hit, decision: "added", reason: `Added — ${parsed.vertical} / ${parsed.region}`, extracted: parsed, conferenceId: inserted?.id });
+          await logCandidate({ runId, hit, decision: "added", reason: `Added — ${vertical} / ${region}`, extracted: parsed, conferenceId: inserted?.id });
         }
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
@@ -274,36 +395,42 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
     }
 
     const durationMs = Date.now() - startedAt;
-    await supabaseAdmin.from("agent_runs").update({
-      status: "success",
-      finished_at: new Date().toISOString(),
-      found_count: found,
-      added_count: added,
-      flagged_count: flagged,
-      skipped_count: skipped,
-      duration_ms: durationMs,
-      prompt_tokens: promptTokens,
-      completion_tokens: completionTokens,
-      total_tokens: totalTokens,
-    }).eq("id", runId);
+    await supabaseAdmin
+      .from("agent_runs")
+      .update({
+        status: "success",
+        finished_at: new Date().toISOString(),
+        found_count: found,
+        added_count: added,
+        flagged_count: flagged,
+        skipped_count: skipped,
+        duration_ms: durationMs,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: totalTokens,
+      })
+      .eq("id", runId);
 
     return { runId, found, added, flagged, skipped, durationMs, totalTokens };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const durationMs = Date.now() - startedAt;
-    await supabaseAdmin.from("agent_runs").update({
-      status: "error",
-      finished_at: new Date().toISOString(),
-      found_count: found,
-      added_count: added,
-      flagged_count: flagged,
-      skipped_count: skipped,
-      duration_ms: durationMs,
-      prompt_tokens: promptTokens,
-      completion_tokens: completionTokens,
-      total_tokens: totalTokens,
-      error: message,
-    }).eq("id", runId);
+    await supabaseAdmin
+      .from("agent_runs")
+      .update({
+        status: "error",
+        finished_at: new Date().toISOString(),
+        found_count: found,
+        added_count: added,
+        flagged_count: flagged,
+        skipped_count: skipped,
+        duration_ms: durationMs,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: totalTokens,
+        error: message,
+      })
+      .eq("id", runId);
     return { runId, found, added, flagged, skipped, durationMs, totalTokens, error: message };
   }
 }
