@@ -124,6 +124,13 @@ interface Props {
   conferences: Conference[];
 }
 
+const CITY_EXPAND_MIN_ZOOM = 5;
+const CITY_AUTO_EXPAND_ZOOM = 8;
+
+function locationKey(c: Conference) {
+  return `${c.city.trim().toLowerCase()}|${c.country.trim().toLowerCase()}`;
+}
+
 export function MapView({ conferences }: Props) {
   return (
     <ClientOnly fallback={<MapFallback />}>
@@ -136,6 +143,9 @@ function MapViewClient({ conferences }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
+  const expandedLayerRef = useRef<any>(null);
+  const expandedLocationKeysRef = useRef<Set<string>>(new Set());
+  const renderMarkersRef = useRef<(fitToData?: boolean) => void>(() => {});
   const LRef = useRef<any>(null);
 
   useEffect(() => {
@@ -159,56 +169,45 @@ function MapViewClient({ conferences }: Props) {
       }).addTo(map);
       layerRef.current = (L as any).markerClusterGroup({
         showCoverageOnHover: false,
-        spiderfyOnMaxZoom: true,
+        spiderfyOnMaxZoom: false,
         zoomToBoundsOnClick: false,
-        spiderfyDistanceMultiplier: 1.6,
         maxClusterRadius: 40,
       });
-      // Helper: spiderfy every visible cluster whose children share the same coords.
-      // This means same-city groups always fan out individually, never staying as a number.
-      const spiderfyCoincidentClusters = () => {
-        const group = layerRef.current;
-        if (!group) return;
-        const seen = new Set<any>();
-        group.getLayers().forEach((m: any) => {
-          const parent = group.getVisibleParent(m);
-          if (!parent || parent === m || seen.has(parent)) return;
-          seen.add(parent);
-          const subs = parent.getAllChildMarkers?.() ?? [];
-          if (subs.length < 2) return;
-          const p0 = subs[0].getLatLng();
-          const same = subs.every((x: any) => {
-            const p = x.getLatLng();
-            return p.lat === p0.lat && p.lng === p0.lng;
-          });
-          if (same) parent.spiderfy();
-        });
-      };
+      expandedLayerRef.current = L.layerGroup().addTo(map);
 
-      // Single-click reveal: same-location clusters spiderfy immediately;
-      // mixed-location clusters zoom to fit, then any same-city sub-cluster
-      // auto-spiderfies so the user never has to click a number twice.
+      // First click keeps the broad cluster behavior, then reveals same-city
+      // events as separate score markers around the city label on the next level.
       layerRef.current.on("clusterclick", (a: any) => {
         const cluster = a.layer;
         const children = cluster.getAllChildMarkers();
+        const byLocation = new Map<string, any[]>();
+        children.forEach((m: any) => {
+          const key = m.__locationKey;
+          if (!key) return;
+          byLocation.set(key, [...(byLocation.get(key) ?? []), m]);
+        });
+        byLocation.forEach((markers, key) => {
+          if (markers.length > 1) expandedLocationKeysRef.current.add(key);
+        });
+
         const pts = children.map((m: any) => m.getLatLng());
-        const allSame = pts.every(
-          (p: any) => p.lat === pts[0].lat && p.lng === pts[0].lng,
-        );
-        if (allSame) {
-          cluster.spiderfy();
+        if (byLocation.size === 1) {
+          const target = pts[0];
+          const targetZoom = Math.max(map.getZoom() + 2, CITY_AUTO_EXPAND_ZOOM);
+          map.once("moveend", () => renderMarkersRef.current(false));
+          map.setView(target, targetZoom, { animate: true });
+          window.setTimeout(() => renderMarkersRef.current(false), 80);
           return;
         }
         const b = L.latLngBounds(pts);
-        map.once("moveend", () => {
-          // wait for cluster icons to settle after the zoom animation
-          setTimeout(spiderfyCoincidentClusters, 50);
-        });
-        map.fitBounds(b, { padding: [60, 60], maxZoom: 18 });
+        map.once("moveend", () => renderMarkersRef.current(false));
+        map.fitBounds(b, { padding: [80, 80], maxZoom: CITY_AUTO_EXPAND_ZOOM });
+        window.setTimeout(() => renderMarkersRef.current(false), 80);
       });
+      map.on("zoomend", () => renderMarkersRef.current(false));
       map.addLayer(layerRef.current);
       mapRef.current = map;
-      renderMarkers();
+      renderMarkersRef.current(true);
     })();
     return () => {
       cancelled = true;
@@ -216,6 +215,7 @@ function MapViewClient({ conferences }: Props) {
         mapRef.current.remove();
         mapRef.current = null;
         layerRef.current = null;
+        expandedLayerRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
