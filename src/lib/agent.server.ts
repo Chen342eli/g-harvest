@@ -12,7 +12,7 @@ import type { Region, Vertical } from "./conferences";
 const ALLOWED_REGIONS: Region[] = ["North America", "Europe", "APAC", "Middle East"];
 const ALLOWED_VERTICALS: Vertical[] = ["Payments", "Fintech", "Treasury", "Travel", "SaaS", "General Tech"];
 
-const MAX_CANDIDATES = 50;
+const MAX_CANDIDATES = 10; // TEMP: lowered for testing — restore to 50 once verified
 const SCRAPE_TIMEOUT_MS = 20_000;
 
 const SEARCH_QUERIES = [
