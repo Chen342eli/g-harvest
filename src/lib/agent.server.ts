@@ -198,8 +198,20 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
 
     const yrs = yearsAllowed();
 
+    let cancelled = false;
+
     // 3) For each candidate: scrape -> extract -> filter -> upsert/flag
     for (const hit of candidates) {
+      // Cooperative cancel — check the flag before each candidate.
+      const { data: runState } = await supabaseAdmin
+        .from("agent_runs")
+        .select("cancel_requested")
+        .eq("id", runId)
+        .single();
+      if (runState?.cancel_requested) {
+        cancelled = true;
+        break;
+      }
       try {
         const markdown = await scrapeMarkdown(firecrawl, hit.url);
 
