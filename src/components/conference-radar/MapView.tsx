@@ -124,6 +124,13 @@ interface Props {
   conferences: Conference[];
 }
 
+const CITY_EXPAND_MIN_ZOOM = 5;
+const CITY_AUTO_EXPAND_ZOOM = 8;
+
+function locationKey(c: Conference) {
+  return `${c.city.trim().toLowerCase()}|${c.country.trim().toLowerCase()}`;
+}
+
 export function MapView({ conferences }: Props) {
   return (
     <ClientOnly fallback={<MapFallback />}>
@@ -136,6 +143,9 @@ function MapViewClient({ conferences }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
+  const expandedLayerRef = useRef<any>(null);
+  const expandedLocationKeysRef = useRef<Set<string>>(new Set());
+  const renderMarkersRef = useRef<(fitToData?: boolean) => void>(() => {});
   const LRef = useRef<any>(null);
 
   useEffect(() => {
@@ -159,56 +169,45 @@ function MapViewClient({ conferences }: Props) {
       }).addTo(map);
       layerRef.current = (L as any).markerClusterGroup({
         showCoverageOnHover: false,
-        spiderfyOnMaxZoom: true,
+        spiderfyOnMaxZoom: false,
         zoomToBoundsOnClick: false,
-        spiderfyDistanceMultiplier: 1.6,
         maxClusterRadius: 40,
       });
-      // Helper: spiderfy every visible cluster whose children share the same coords.
-      // This means same-city groups always fan out individually, never staying as a number.
-      const spiderfyCoincidentClusters = () => {
-        const group = layerRef.current;
-        if (!group) return;
-        const seen = new Set<any>();
-        group.getLayers().forEach((m: any) => {
-          const parent = group.getVisibleParent(m);
-          if (!parent || parent === m || seen.has(parent)) return;
-          seen.add(parent);
-          const subs = parent.getAllChildMarkers?.() ?? [];
-          if (subs.length < 2) return;
-          const p0 = subs[0].getLatLng();
-          const same = subs.every((x: any) => {
-            const p = x.getLatLng();
-            return p.lat === p0.lat && p.lng === p0.lng;
-          });
-          if (same) parent.spiderfy();
-        });
-      };
+      expandedLayerRef.current = L.layerGroup().addTo(map);
 
-      // Single-click reveal: same-location clusters spiderfy immediately;
-      // mixed-location clusters zoom to fit, then any same-city sub-cluster
-      // auto-spiderfies so the user never has to click a number twice.
+      // First click keeps the broad cluster behavior, then reveals same-city
+      // events as separate score markers around the city label on the next level.
       layerRef.current.on("clusterclick", (a: any) => {
         const cluster = a.layer;
         const children = cluster.getAllChildMarkers();
+        const byLocation = new Map<string, any[]>();
+        children.forEach((m: any) => {
+          const key = m.__locationKey;
+          if (!key) return;
+          byLocation.set(key, [...(byLocation.get(key) ?? []), m]);
+        });
+        byLocation.forEach((markers, key) => {
+          if (markers.length > 1) expandedLocationKeysRef.current.add(key);
+        });
+
         const pts = children.map((m: any) => m.getLatLng());
-        const allSame = pts.every(
-          (p: any) => p.lat === pts[0].lat && p.lng === pts[0].lng,
-        );
-        if (allSame) {
-          cluster.spiderfy();
+        if (byLocation.size === 1) {
+          const target = pts[0];
+          const targetZoom = Math.max(map.getZoom() + 2, CITY_AUTO_EXPAND_ZOOM);
+          map.once("moveend", () => renderMarkersRef.current(false));
+          map.setView(target, targetZoom, { animate: true });
+          window.setTimeout(() => renderMarkersRef.current(false), 80);
           return;
         }
         const b = L.latLngBounds(pts);
-        map.once("moveend", () => {
-          // wait for cluster icons to settle after the zoom animation
-          setTimeout(spiderfyCoincidentClusters, 50);
-        });
-        map.fitBounds(b, { padding: [60, 60], maxZoom: 18 });
+        map.once("moveend", () => renderMarkersRef.current(false));
+        map.fitBounds(b, { padding: [80, 80], maxZoom: CITY_AUTO_EXPAND_ZOOM });
+        window.setTimeout(() => renderMarkersRef.current(false), 80);
       });
+      map.on("zoomend", () => renderMarkersRef.current(false));
       map.addLayer(layerRef.current);
       mapRef.current = map;
-      renderMarkers();
+      renderMarkersRef.current(true);
     })();
     return () => {
       cancelled = true;
@@ -216,24 +215,32 @@ function MapViewClient({ conferences }: Props) {
         mapRef.current.remove();
         mapRef.current = null;
         layerRef.current = null;
+        expandedLayerRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const renderMarkers = () => {
+  const renderMarkers = (fitToData = true) => {
     const L = LRef.current;
-    if (!L || !layerRef.current) return;
+    if (!L || !layerRef.current || !expandedLayerRef.current) return;
     layerRef.current.clearLayers();
+    expandedLayerRef.current.clearLayers();
 
     const bounds: [number, number][] = [];
+    const byLocation = new Map<string, { base: [number, number]; items: Conference[] }>();
 
     conferences.forEach((c) => {
       const base = coordsFor(c.city, c.country);
       if (!base) return;
-      const [lat, lng] = base;
-      bounds.push([lat, lng]);
+      const key = locationKey(c);
+      const current = byLocation.get(key);
+      if (current) current.items.push(c);
+      else byLocation.set(key, { base, items: [c] });
+      bounds.push(base);
+    });
 
+    const addConferenceMarker = (c: Conference, lat: number, lng: number, targetLayer: any) => {
       const gap = isCoverageGap(c);
       const going = c.status === "Going";
       const color = TIER_COLOR[c.tier];
@@ -251,11 +258,44 @@ function MapViewClient({ conferences }: Props) {
         </div>`;
       const icon = L.divIcon({ html, className: "", iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
       const marker = L.marker([lat, lng], { icon });
+      marker.__locationKey = locationKey(c);
       marker.bindPopup(popupHtml(c), { maxWidth: 320 });
-      layerRef.current.addLayer(marker);
+      targetLayer.addLayer(marker);
+    };
+
+    byLocation.forEach(({ base, items }) => {
+      const [lat, lng] = base;
+      const map = mapRef.current;
+      const isExpanded =
+        items.length > 1 &&
+        expandedLocationKeysRef.current.has(locationKey(items[0])) &&
+        map &&
+        map.getZoom() >= CITY_EXPAND_MIN_ZOOM;
+
+      if (!isExpanded) {
+        items.forEach((c) => addConferenceMarker(c, lat, lng, layerRef.current));
+        return;
+      }
+
+      const labelIcon = L.divIcon({
+        html: `<div style="white-space:nowrap;border-radius:9999px;background:rgba(15,23,42,.82);color:#fff;padding:3px 9px;font:600 11px ui-sans-serif,system-ui;box-shadow:0 1px 4px rgba(0,0,0,.25);">${escape(items[0].city)}</div>`,
+        className: "",
+        iconSize: [90, 22],
+        iconAnchor: [45, 11],
+      });
+      expandedLayerRef.current.addLayer(L.marker([lat, lng], { icon: labelIcon, interactive: false }));
+
+      const center = map.latLngToLayerPoint([lat, lng]);
+      const radius = Math.max(34, Math.min(58, 28 + items.length * 5));
+      items.forEach((c, index) => {
+        const angle = -Math.PI / 2 + (Math.PI * 2 * index) / items.length;
+        const point = center.add([Math.cos(angle) * radius, Math.sin(angle) * radius]);
+        const pos = map.layerPointToLatLng(point);
+        addConferenceMarker(c, pos.lat, pos.lng, expandedLayerRef.current);
+      });
     });
 
-    if (bounds.length > 0 && mapRef.current) {
+    if (fitToData && bounds.length > 0 && mapRef.current) {
       try {
         mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 5 });
       } catch {
@@ -264,8 +304,13 @@ function MapViewClient({ conferences }: Props) {
     }
   };
 
+  renderMarkersRef.current = renderMarkers;
+
   useEffect(() => {
-    renderMarkers();
+    expandedLocationKeysRef.current = new Set(
+      [...expandedLocationKeysRef.current].filter((key) => conferences.some((c) => locationKey(c) === key)),
+    );
+    renderMarkers(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conferences]);
 
