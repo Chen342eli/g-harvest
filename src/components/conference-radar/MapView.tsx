@@ -42,8 +42,19 @@ function dateRange(start: string, end: string) {
   return `${monthFmt.format(s)} – ${monthFmt.format(e)}, ${yearFmt.format(e)}`;
 }
 
+const STATUS_BG: Record<string, string> = {
+  Going: "#dcfce7",
+  Considering: "#e0f2fe",
+  Passed: "#f4f4f5",
+};
+const STATUS_TEXT: Record<string, string> = {
+  Going: "#166534",
+  Considering: "#075985",
+  Passed: "#52525b",
+};
+
 function popupHtml(c: Conference): string {
-  const isGap = c.tier === "Tier 1" && c.assignedReps.length === 0;
+  const gap = isCoverageGap(c);
   const reps = c.assignedReps.length
     ? escape(c.assignedReps.join(", "))
     : `<span style="color:#64748b">Unassigned</span>`;
@@ -58,9 +69,11 @@ function popupHtml(c: Conference): string {
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
         <span style="background:${TIER_BG[c.tier]};color:${TIER_TEXT[c.tier]};
           padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">${c.tier}</span>
+        <span style="background:${STATUS_BG[c.status]};color:${STATUS_TEXT[c.status]};
+          padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">${escape(c.status)}</span>
         <span style="background:#f1f5f9;color:#0f172a;
           padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;">Score ${c.icpScore}</span>
-        ${isGap ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">Coverage gap</span>` : ""}
+        ${gap ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">Coverage gap</span>` : ""}
       </div>
       <table style="margin-top:8px;font-size:11px;border-collapse:collapse;">
         <tr><td style="color:#64748b;padding-right:8px;">Dates</td><td>${escape(dateRange(c.startDate, c.endDate))}</td></tr>
