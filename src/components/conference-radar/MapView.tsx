@@ -209,16 +209,21 @@ function MapViewClient({ conferences }: Props) {
       bounds.push([lat, lng]);
 
       const gap = isCoverageGap(c);
+      const going = c.status === "Going";
       const color = TIER_COLOR[c.tier];
+      const ringShadow = going
+        ? "box-shadow:0 0 0 2px #fff, 0 0 0 4px #16a34a, 0 1px 4px rgba(0,0,0,.35);"
+        : "box-shadow:0 0 0 2px #fff, 0 1px 3px rgba(0,0,0,.35);";
+      const size = going ? 26 : 22;
       const html = `
-        <div style="position:relative;width:22px;height:22px;">
-          <div style="width:22px;height:22px;border-radius:9999px;background:${color};
-            box-shadow:0 0 0 2px #fff,0 1px 3px rgba(0,0,0,.35);
+        <div style="position:relative;width:${size}px;height:${size}px;">
+          <div style="width:${size}px;height:${size}px;border-radius:9999px;background:${color};
+            ${ringShadow}
             display:flex;align-items:center;justify-content:center;
             color:#fff;font-weight:600;font-size:10px;font-family:ui-sans-serif,system-ui;">${c.icpScore}</div>
           ${gap ? `<div style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:9999px;background:#dc2626;box-shadow:0 0 0 2px #fff;"></div>` : ""}
         </div>`;
-      const icon = L.divIcon({ html, className: "", iconSize: [22, 22], iconAnchor: [11, 11] });
+      const icon = L.divIcon({ html, className: "", iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
       const marker = L.marker([lat, lng], { icon });
       marker.bindPopup(popupHtml(c), { maxWidth: 320 });
       layerRef.current.addLayer(marker);
