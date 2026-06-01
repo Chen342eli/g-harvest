@@ -29,11 +29,12 @@ function applyFilters(items: Conference[], f: Filters): Conference[] {
     if (f.verticals.length && !f.verticals.includes(c.vertical)) return false;
     if (f.regions.length && !f.regions.includes(c.region)) return false;
     if (f.tiers.length && !f.tiers.includes(c.tier)) return false;
+    if (f.statuses.length && !f.statuses.includes(c.status)) return false;
     const start = new Date(c.startDate).getTime();
     const end = new Date(c.endDate).getTime();
     if (from !== null && end < from) return false;
     if (to !== null && start > to) return false;
-    if (f.gapsOnly && !(c.tier === "Tier 1" && c.assignedReps.length === 0)) return false;
+    if (f.gapsOnly && !isCoverageGap(c)) return false;
     return true;
   });
 }
