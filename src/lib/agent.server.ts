@@ -438,7 +438,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
     await supabaseAdmin
       .from("agent_runs")
       .update({
-        status: "success",
+        status: cancelled ? "cancelled" : "success",
         finished_at: new Date().toISOString(),
         found_count: found,
         added_count: added,
