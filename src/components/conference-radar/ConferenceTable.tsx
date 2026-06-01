@@ -149,12 +149,23 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdat
                       onToggle={(rep) => onToggleRep(c.id, rep)}
                     />
                   </td>
+                  <td className="px-4 py-3 align-top text-right">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(c)}
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
+                      title="Edit conference"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               );
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={10} className="px-4 py-12 text-center text-sm text-muted-foreground">
                   No conferences match the current filters.
                 </td>
               </tr>
@@ -162,6 +173,15 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdat
           </tbody>
         </table>
       </div>
+      <EditConferenceDialog
+        conference={editing}
+        open={!!editing}
+        onOpenChange={(o) => !o && setEditing(null)}
+        onSave={(updated) => {
+          onUpdateConference(updated);
+          setEditing(null);
+        }}
+      />
     </div>
   );
 }
