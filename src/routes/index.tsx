@@ -132,7 +132,7 @@ function Index() {
           <ViewToggle value={view} onChange={setView} />
         </div>
 
-        {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} onSetStatus={setStatus} />}
+        {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} onSetStatus={setStatus} onUpdateConference={updateConference} />}
         {view === "map" && <MapView conferences={filtered} />}
         {view === "timeline" && <TimelineView conferences={filtered} onSetStatus={setStatus} />}
       </main>
