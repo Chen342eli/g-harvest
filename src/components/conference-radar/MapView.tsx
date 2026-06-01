@@ -164,8 +164,30 @@ function MapViewClient({ conferences }: Props) {
         spiderfyDistanceMultiplier: 1.6,
         maxClusterRadius: 40,
       });
-      // Single-click reveal: if all children share a location, spiderfy immediately;
-      // otherwise zoom straight to the deepest level that fits them, no chained clicks.
+      // Helper: spiderfy every visible cluster whose children share the same coords.
+      // This means same-city groups always fan out individually, never staying as a number.
+      const spiderfyCoincidentClusters = () => {
+        const group = layerRef.current;
+        if (!group) return;
+        const seen = new Set<any>();
+        group.getLayers().forEach((m: any) => {
+          const parent = group.getVisibleParent(m);
+          if (!parent || parent === m || seen.has(parent)) return;
+          seen.add(parent);
+          const subs = parent.getAllChildMarkers?.() ?? [];
+          if (subs.length < 2) return;
+          const p0 = subs[0].getLatLng();
+          const same = subs.every((x: any) => {
+            const p = x.getLatLng();
+            return p.lat === p0.lat && p.lng === p0.lng;
+          });
+          if (same) parent.spiderfy();
+        });
+      };
+
+      // Single-click reveal: same-location clusters spiderfy immediately;
+      // mixed-location clusters zoom to fit, then any same-city sub-cluster
+      // auto-spiderfies so the user never has to click a number twice.
       layerRef.current.on("clusterclick", (a: any) => {
         const cluster = a.layer;
         const children = cluster.getAllChildMarkers();
@@ -178,6 +200,10 @@ function MapViewClient({ conferences }: Props) {
           return;
         }
         const b = L.latLngBounds(pts);
+        map.once("moveend", () => {
+          // wait for cluster icons to settle after the zoom animation
+          setTimeout(spiderfyCoincidentClusters, 50);
+        });
         map.fitBounds(b, { padding: [60, 60], maxZoom: 18 });
       });
       map.addLayer(layerRef.current);
