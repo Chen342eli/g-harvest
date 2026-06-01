@@ -53,8 +53,7 @@ export const resolveFlag = createServerFn({ method: "POST" })
         .eq("id", data.id)
         .single();
       if (flag) {
-        const update: Record<string, unknown> = {};
-        update[flag.field as string] = flag.new_value;
+        const update = { [flag.field as string]: flag.new_value } as never;
         await supabaseAdmin.from("conferences").update(update).eq("id", flag.conference_id);
       }
     }
