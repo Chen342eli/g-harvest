@@ -8,13 +8,31 @@ export const runAgentNow = createServerFn({ method: "POST" }).handler(async () =
 });
 
 export const cancelRunningAgent = createServerFn({ method: "POST" }).handler(async () => {
-  const { data, error } = await supabaseAdmin
+  const { data: runningRuns, error: selectError } = await supabaseAdmin
     .from("agent_runs")
-    .update({ cancel_requested: true })
+    .select("id, started_at")
     .eq("status", "running")
-    .select("id");
-  if (error) throw new Error(error.message);
-  return { cancelled: data?.length ?? 0 };
+  if (selectError) throw new Error(selectError.message);
+
+  const now = Date.now();
+  const finishedAt = new Date(now).toISOString();
+  const runs = runningRuns ?? [];
+
+  for (const run of runs) {
+    const startedAt = new Date(run.started_at).getTime();
+    const { error } = await supabaseAdmin
+      .from("agent_runs")
+      .update({
+        cancel_requested: true,
+        status: "cancelled",
+        finished_at: finishedAt,
+        duration_ms: Number.isFinite(startedAt) ? Math.max(0, now - startedAt) : null,
+      })
+      .eq("id", run.id);
+    if (error) throw new Error(error.message);
+  }
+
+  return { cancelled: runs.length };
 });
 
 export const listAgentRuns = createServerFn({ method: "GET" }).handler(async () => {
