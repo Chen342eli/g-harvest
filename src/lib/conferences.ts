@@ -45,6 +45,11 @@ export interface Conference {
   icpScore: number;
   tier: Tier;
   assignedReps: string[];
+  status: DecisionStatus;
+}
+
+export function isCoverageGap(c: Conference): boolean {
+  return c.status === "Going" && c.assignedReps.length === 0;
 }
 
 export const SALES_TEAM: string[] = [
