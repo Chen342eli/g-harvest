@@ -22,6 +22,7 @@ export function AgentStatusButton() {
   const qc = useQueryClient();
   const fetchLastRun = useServerFn(getLastRun);
   const triggerRun = useServerFn(runAgentNow);
+  const cancelRun = useServerFn(cancelRunningAgent);
 
   const { data: lastRun } = useQuery({
     queryKey: ["lastAgentRun"],
