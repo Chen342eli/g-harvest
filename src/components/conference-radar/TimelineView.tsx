@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Conference, Tier } from "@/lib/conferences";
+import type { Conference, DecisionStatus, Tier } from "@/lib/conferences";
+import { isCoverageGap } from "@/lib/conferences";
 import { ConferenceDetail } from "./ConferenceDetail";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,7 @@ const YEAR = 2026;
 
 interface Props {
   conferences: Conference[];
+  onSetStatus?: (id: string, status: DecisionStatus) => void;
 }
 
 interface ChipData {
@@ -29,7 +31,7 @@ interface ChipData {
 
 const dayMs = 24 * 60 * 60 * 1000;
 
-export function TimelineView({ conferences }: Props) {
+export function TimelineView({ conferences, onSetStatus }: Props) {
   // Filter to YEAR and group by month index of startDate.
   const byMonth = useMemo(() => {
     const groups: ChipData[][] = Array.from({ length: 12 }, () => []);
@@ -119,7 +121,7 @@ export function TimelineView({ conferences }: Props) {
                   <ul className="space-y-1.5">
                     {items.map(({ conference, clusterId }) => (
                       <li key={conference.id}>
-                        <TimelineChip conference={conference} clusterId={clusterId} />
+                        <TimelineChip conference={conference} clusterId={clusterId} onSetStatus={onSetStatus} />
                       </li>
                     ))}
                   </ul>
@@ -149,7 +151,15 @@ function LegendDot({ className, label }: { className: string; label: string }) {
   );
 }
 
-function TimelineChip({ conference, clusterId }: { conference: Conference; clusterId: number | null }) {
+function TimelineChip({
+  conference,
+  clusterId,
+  onSetStatus,
+}: {
+  conference: Conference;
+  clusterId: number | null;
+  onSetStatus?: (id: string, status: DecisionStatus) => void;
+}) {
   const [open, setOpen] = useState(false);
   const c = conference;
   const start = new Date(c.startDate);
@@ -158,13 +168,12 @@ function TimelineChip({ conference, clusterId }: { conference: Conference; clust
     start.getMonth() === end.getMonth()
       ? `${start.getDate()}–${end.getDate()}`
       : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]}`;
-  const isGap = c.tier === "Tier 1" && c.assignedReps.length === 0;
+  const gap = isCoverageGap(c);
 
   const fullRange =
     start.getMonth() === end.getMonth() && start.getDate() === end.getDate()
       ? `${start.getDate()} ${MONTHS[start.getMonth()]} ${start.getFullYear()}`
       : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]} ${end.getFullYear()}`;
-
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -176,6 +185,7 @@ function TimelineChip({ conference, clusterId }: { conference: Conference; clust
               className={cn(
                 "group relative block w-full rounded-md px-2 py-1.5 text-left text-[11px] ring-1 ring-inset transition",
                 TIER_CHIP[c.tier],
+                c.status === "Passed" && "opacity-50",
               )}
             >
               {clusterId !== null && (
@@ -186,12 +196,15 @@ function TimelineChip({ conference, clusterId }: { conference: Conference; clust
               )}
               <div className="flex items-start justify-between gap-1 pl-1">
                 <span
-                  className="font-medium leading-tight"
+                  className={cn(
+                    "font-medium leading-tight",
+                    c.status === "Passed" && "line-through",
+                  )}
                   style={{ overflowWrap: "anywhere", wordBreak: "break-word", hyphens: "auto" }}
                 >
                   {c.name}
                 </span>
-                {isGap && (
+                {gap && (
                   <span className="shrink-0 rounded-full bg-red-600 px-1 text-[9px] font-bold uppercase text-white">
                     Gap
                   </span>
@@ -204,10 +217,11 @@ function TimelineChip({ conference, clusterId }: { conference: Conference; clust
         <TooltipContent side="top" className="max-w-xs">
           <div className="font-medium">{c.name}</div>
           <div className="text-xs opacity-80">{fullRange}</div>
+          <div className="text-xs opacity-80">Status: {c.status}</div>
         </TooltipContent>
       </Tooltip>
       <PopoverContent align="start" className="w-auto p-3">
-        <ConferenceDetail conference={c} />
+        <ConferenceDetail conference={c} onSetStatus={onSetStatus} />
       </PopoverContent>
     </Popover>
   );

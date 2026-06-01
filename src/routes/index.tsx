@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { CalendarDays, Map as MapIcon, Radar, Table as TableIcon } from "lucide-react";
-import { SEED_CONFERENCES, type Conference } from "@/lib/conferences";
+import { SEED_CONFERENCES, isCoverageGap, type Conference, type DecisionStatus } from "@/lib/conferences";
 import { ConferenceTable } from "@/components/conference-radar/ConferenceTable";
 import { MapView } from "@/components/conference-radar/MapView";
 import { TimelineView } from "@/components/conference-radar/TimelineView";
@@ -29,11 +29,12 @@ function applyFilters(items: Conference[], f: Filters): Conference[] {
     if (f.verticals.length && !f.verticals.includes(c.vertical)) return false;
     if (f.regions.length && !f.regions.includes(c.region)) return false;
     if (f.tiers.length && !f.tiers.includes(c.tier)) return false;
+    if (f.statuses.length && !f.statuses.includes(c.status)) return false;
     const start = new Date(c.startDate).getTime();
     const end = new Date(c.endDate).getTime();
     if (from !== null && end < from) return false;
     if (to !== null && start > to) return false;
-    if (f.gapsOnly && !(c.tier === "Tier 1" && c.assignedReps.length === 0)) return false;
+    if (f.gapsOnly && !isCoverageGap(c)) return false;
     return true;
   });
 }
@@ -47,8 +48,11 @@ function Index() {
 
   const stats = useMemo(() => {
     const tier1 = conferences.filter((c) => c.tier === "Tier 1");
-    const gaps = tier1.filter((c) => c.assignedReps.length === 0);
-    return { total: conferences.length, tier1: tier1.length, gaps: gaps.length };
+    const gaps = conferences.filter(isCoverageGap);
+    const going = conferences.filter((c) => c.status === "Going").length;
+    const considering = conferences.filter((c) => c.status === "Considering").length;
+    const passed = conferences.filter((c) => c.status === "Passed").length;
+    return { total: conferences.length, tier1: tier1.length, gaps: gaps.length, going, considering, passed };
   }, [conferences]);
 
   const toggleRep = (conferenceId: string, rep: string) => {
@@ -64,6 +68,10 @@ function Index() {
           : c,
       ),
     );
+  };
+
+  const setStatus = (conferenceId: string, status: DecisionStatus) => {
+    setConferences((prev) => prev.map((c) => (c.id === conferenceId ? { ...c, status } : c)));
   };
 
   return (
@@ -94,16 +102,35 @@ function Index() {
       <main className="mx-auto max-w-[1400px] space-y-4 px-6 py-6">
         <FilterBar filters={filters} onChange={setFilters} />
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-xs text-muted-foreground">
             Showing <span className="font-medium text-foreground">{filtered.length}</span> of {conferences.length} conferences
+            <span className="mx-2 text-border">|</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Going <span className="font-medium text-foreground tabular-nums">{stats.going}</span>
+            </span>
+            <span className="mx-1.5 text-border">·</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-500" />
+              Considering <span className="font-medium text-foreground tabular-nums">{stats.considering}</span>
+            </span>
+            <span className="mx-1.5 text-border">·</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-400" />
+              Passed <span className="font-medium text-foreground tabular-nums">{stats.passed}</span>
+            </span>
+            <span className="mx-1.5 text-border">·</span>
+            <span className={stats.gaps > 0 ? "text-red-700" : ""}>
+              Gaps (Going &amp; unstaffed) <span className="font-medium tabular-nums">{stats.gaps}</span>
+            </span>
           </div>
           <ViewToggle value={view} onChange={setView} />
         </div>
 
-        {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} />}
+        {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} onSetStatus={setStatus} />}
         {view === "map" && <MapView conferences={filtered} />}
-        {view === "timeline" && <TimelineView conferences={filtered} />}
+        {view === "timeline" && <TimelineView conferences={filtered} onSetStatus={setStatus} />}
       </main>
     </div>
   );

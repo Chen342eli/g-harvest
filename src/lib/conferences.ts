@@ -1,6 +1,9 @@
 export type Region = "North America" | "Europe" | "APAC" | "Middle East" | "LATAM";
 export type Vertical = "Payments" | "Fintech" | "Treasury" | "Travel" | "SaaS" | "General Tech";
 export type Tier = "Tier 1" | "Tier 2" | "Tier 3";
+export type DecisionStatus = "Considering" | "Going" | "Passed";
+
+export const DECISION_STATUSES: DecisionStatus[] = ["Considering", "Going", "Passed"];
 
 export const SCORE_WEIGHTS = {
   verticalFit: 0.4,
@@ -42,6 +45,11 @@ export interface Conference {
   icpScore: number;
   tier: Tier;
   assignedReps: string[];
+  status: DecisionStatus;
+}
+
+export function isCoverageGap(c: Conference): boolean {
+  return c.status === "Going" && c.assignedReps.length === 0;
 }
 
 export const SALES_TEAM: string[] = [
@@ -270,4 +278,5 @@ export const SEED_CONFERENCES: Conference[] = RAW.map((c) => ({
   ...c,
   id: slug(c.name),
   tier: (`Tier ${c.tier}` as Tier),
+  status: "Considering" as DecisionStatus,
 }));
