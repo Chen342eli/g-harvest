@@ -150,7 +150,7 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus }: Props
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={9} className="px-4 py-12 text-center text-sm text-muted-foreground">
                   No conferences match the current filters.
                 </td>
               </tr>
