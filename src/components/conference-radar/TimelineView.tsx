@@ -21,6 +21,7 @@ const YEAR = 2026;
 
 interface Props {
   conferences: Conference[];
+  onSetStatus?: (id: string, status: DecisionStatus) => void;
 }
 
 interface ChipData {
