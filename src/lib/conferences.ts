@@ -278,4 +278,6 @@ export const SEED_CONFERENCES: Conference[] = RAW.map((c) => ({
   ...c,
   id: slug(c.name),
   tier: (`Tier ${c.tier}` as Tier),
+  status: "Considering" as DecisionStatus,
+}));
 }));
