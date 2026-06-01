@@ -79,6 +79,7 @@ export function TimelineView({ conferences }: Props) {
   const otherCount = conferences.length - totalInYear;
 
   return (
+    <TooltipProvider delayDuration={150}>
     <div className="space-y-3">
       <div className="rounded-lg border border-border bg-card p-4">
         <div className="mb-3 flex items-center justify-between">
@@ -94,7 +95,7 @@ export function TimelineView({ conferences }: Props) {
           </div>
         </div>
 
-        <div className="grid grid-cols-12 gap-2">
+        <div className="grid grid-cols-12 items-start gap-2">
           {MONTHS.map((m, idx) => {
             const items = byMonth[idx];
             const isEmpty = items.length === 0;
@@ -135,6 +136,7 @@ export function TimelineView({ conferences }: Props) {
         </div>
       )}
     </div>
+    </TooltipProvider>
   );
 }
 
