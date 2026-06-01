@@ -15,6 +15,7 @@ export interface Filters {
   dateFrom: string;
   dateTo: string;
   gapsOnly: boolean;
+  ids: string[];
 }
 
 export const DEFAULT_FILTERS: Filters = {
@@ -26,6 +27,7 @@ export const DEFAULT_FILTERS: Filters = {
   dateFrom: "",
   dateTo: "",
   gapsOnly: false,
+  ids: [],
 };
 
 const VERTICALS: Vertical[] = ["Payments", "Fintech", "Treasury", "Travel", "SaaS", "General Tech"];
@@ -94,7 +96,8 @@ export function FilterBar({
     filters.statuses.length ||
     filters.dateFrom ||
     filters.dateTo ||
-    filters.gapsOnly;
+    filters.gapsOnly ||
+    filters.ids.length;
 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3">
