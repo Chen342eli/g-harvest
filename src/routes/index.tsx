@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarDays, Map as MapIcon, PanelRightClose, PanelRightOpen, Radar, Table as TableIcon } from "lucide-react";
+import { CalendarDays, Download, Map as MapIcon, PanelRightClose, PanelRightOpen, Radar, Table as TableIcon } from "lucide-react";
 import { isCoverageGap, type Conference, type DecisionStatus } from "@/lib/conferences";
 import { listConferences, setStatus as setStatusFn, toggleRep as toggleRepFn, updateConference as updateConferenceFn } from "@/lib/conferences.functions";
 import { ConferenceTable } from "@/components/conference-radar/ConferenceTable";
@@ -178,7 +178,10 @@ function Index() {
                 Passed <span className="font-medium text-foreground tabular-nums">{stats.passed}</span>
               </span>
             </div>
-            <ViewToggle value={view} onChange={setView} />
+            <div className="flex items-center gap-2">
+              <ExportButton conferences={filtered} />
+              <ViewToggle value={view} onChange={setView} />
+            </div>
           </div>
 
           {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} onSetStatus={setStatus} onUpdateConference={updateConference} />}
@@ -222,6 +225,46 @@ function ViewToggle({ value, onChange }: { value: ViewMode; onChange: (v: ViewMo
         </button>
       ))}
     </div>
+  );
+}
+
+function ExportButton({ conferences }: { conferences: Conference[] }) {
+  const exportCsv = () => {
+    const headers = [
+      "Name","Start Date","End Date","City","Country","Region","Vertical",
+      "Audience","Tier","ICP Score","Status","Assigned Reps","Tags","Source URL",
+    ];
+    const escape = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = conferences.map((c) => [
+      c.name, c.startDate, c.endDate, c.city, c.country, c.region, c.vertical,
+      c.estimatedAudienceSize, c.tier, c.icpScore, c.status,
+      (c.assignedReps ?? []).join("; "), (c.tags ?? []).join("; "), c.sourceUrl ?? "",
+    ].map(escape).join(","));
+    const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `conferences-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${conferences.length} conferences`);
+  };
+  return (
+    <button
+      type="button"
+      onClick={exportCsv}
+      disabled={conferences.length === 0}
+      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <Download className="h-3.5 w-3.5" />
+      Export CSV
+    </button>
   );
 }
 
