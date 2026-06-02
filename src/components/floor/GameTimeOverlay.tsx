@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Flame, Search, Sparkles, X } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowRight, Copy, Flame, Mail, Search, Sparkles, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { findMatch, derivePerson, computeBadges } from "@/lib/matching";
 import { BadgeList } from "@/components/people/Badges";
-import { TempDot } from "@/components/people/TempControls";
 import {
   usePeopleData,
   addPerson,
@@ -17,6 +17,7 @@ import { ENCOUNTER_VERTICALS } from "@/lib/people-types";
 import { useSettings } from "@/lib/settings-store";
 import { isHotAccountCompany, useHotAccounts } from "@/lib/hot-accounts-store";
 import { cn } from "@/lib/utils";
+import { analyzeRelationship } from "@/lib/relationship-ai.functions";
 
 interface Props {
   onExit: () => void;
