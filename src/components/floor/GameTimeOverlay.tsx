@@ -37,7 +37,7 @@ export function GameTimeOverlay({ onExit }: Props) {
   const [temperature, setTemperature] = useState<Temperature | null>(null);
   const [vertical, setVertical] = useState<EncounterVertical | "">("");
   const [note, setNote] = useState("");
-  const [exitConfirm, setExitConfirm] = useState(false);
+  
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
