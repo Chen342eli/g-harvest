@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, CalendarPlus, Check, ExternalLink, Pencil } from "lucide-react";
 import type { Conference } from "@/lib/conferences";
-import { SALES_TEAM, isCoverageGap } from "@/lib/conferences";
-import { TierBadge, CoverageGapBadge } from "./TierBadge";
+import { SALES_TEAM } from "@/lib/conferences";
+import { TierBadge } from "./TierBadge";
 import { ScoreCell } from "./ScoreCell";
 import { RepAssigner } from "./RepAssigner";
 import { EditConferenceDialog } from "./EditConferenceDialog";
@@ -99,7 +99,6 @@ export function ConferenceTable({ conferences, onToggleRep, onUpdateConference, 
           </thead>
           <tbody>
             {sorted.map((c) => {
-              const gap = isCoverageGap(c, committedIds);
               return (
                 <tr key={c.id} className="group border-b border-border last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 align-top">
@@ -129,10 +128,7 @@ export function ConferenceTable({ conferences, onToggleRep, onUpdateConference, 
                     <ScoreCell score={c.icpScore} subScores={c.subScores} />
                   </td>
                   <td className="px-4 py-3 align-top">
-                    <div className="flex flex-col items-start gap-1">
-                      <TierBadge tier={c.tier} />
-                      {gap && <CoverageGapBadge />}
-                    </div>
+                    <TierBadge tier={c.tier} />
                   </td>
                   <td className="px-4 py-3 align-top min-w-[260px]">
                     <RepAssigner
