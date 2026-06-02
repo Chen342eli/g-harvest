@@ -295,12 +295,31 @@ export function GameTimeOverlay({ onExit }: Props) {
             )}
 
             {/* Capture controls */}
-            <div className="mt-auto border-t border-white/10 bg-white/[0.02] p-6 space-y-5">
+            <div className="mt-auto border-t border-white/10 bg-white/[0.04] p-6 space-y-5">
 
-              {/* Temperature */}
+              {/* Helper banner — clarifies what's required vs optional */}
+              <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] leading-relaxed text-brand-base-foreground/70">
+                <span className="font-bold text-brand-base-foreground">Did you meet them just now?</span>{" "}
+                Tap a temperature to log it. Everything else is optional.
+                {" "}If you were only checking a name,{" "}
+                <button
+                  type="button"
+                  onClick={closeSheet}
+                  className="font-bold text-brand-accent underline-offset-2 hover:underline"
+                >
+                  close without saving
+                </button>
+                .
+              </div>
+
+              {/* Temperature — REQUIRED */}
               <div>
-                <p className="mb-2 text-[10px] font-bold tracking-[0.2em] text-brand-base-foreground/40 uppercase">
+                <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold tracking-[0.2em] text-brand-base-foreground/60 uppercase">
                   Today's read
+                  <span className="text-temp-hot">*</span>
+                  <span className="ml-auto text-[9px] font-medium normal-case tracking-normal text-brand-base-foreground/40">
+                    required to save
+                  </span>
                 </p>
                 <div className="grid grid-cols-3 gap-3">
                   {(["hot", "warm", "cold"] as Temperature[]).map((t) => {
@@ -320,7 +339,7 @@ export function GameTimeOverlay({ onExit }: Props) {
                           "flex flex-col items-center justify-center gap-1 rounded-xl border p-4 transition active:scale-95",
                           active
                             ? tone
-                            : "border-white/10 bg-white/5 text-brand-base-foreground/50 hover:bg-white/10",
+                            : "border-white/10 bg-white/[0.06] text-brand-base-foreground/60 hover:bg-white/10",
                         )}
                       >
                         <span className="text-xl">
@@ -335,49 +354,68 @@ export function GameTimeOverlay({ onExit }: Props) {
                 </div>
               </div>
 
+              {/* Optional section divider */}
+              <div className="flex items-center gap-2 pt-1">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="text-[9px] font-bold uppercase tracking-widest text-brand-base-foreground/30">
+                  Optional context
+                </span>
+                <div className="h-px flex-1 bg-white/10" />
+              </div>
+
               {/* Company */}
               <div className="relative">
-                <label className="absolute -top-2 left-3 bg-brand-base px-1 text-[9px] font-black uppercase tracking-widest text-brand-base-foreground/40">
+                <label className="absolute -top-2 left-3 bg-brand-base px-1 text-[9px] font-black uppercase tracking-widest text-brand-base-foreground/50">
                   Company
                 </label>
                 <input
                   value={draft.company}
                   onChange={(e) => setDraft({ ...draft, company: e.target.value })}
-                  placeholder="—"
-                  className="w-full rounded-lg border border-white/10 bg-transparent p-3 text-sm font-medium text-brand-base-foreground outline-none focus:border-brand-accent/60"
+                  placeholder="Where do they work?"
+                  className="w-full rounded-lg border border-white/15 bg-white/[0.06] p-3 text-sm font-medium text-brand-base-foreground placeholder:text-brand-base-foreground/30 outline-none focus:border-brand-accent/60 focus:bg-white/[0.08]"
                 />
               </div>
 
               {/* Vertical chips */}
-              <div className="flex flex-wrap gap-2">
-                {ENCOUNTER_VERTICALS.map((v) => {
-                  const on = vertical === v;
-                  return (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setVertical(on ? "" : v)}
-                      className={cn(
-                        "rounded-full border px-3 py-1.5 text-xs font-bold transition",
-                        on
-                          ? "border-brand-accent bg-brand-accent text-brand-accent-foreground"
-                          : "border-white/10 bg-white/5 text-brand-base-foreground/60 hover:bg-white/10",
-                      )}
-                    >
-                      {v}
-                    </button>
-                  );
-                })}
+              <div>
+                <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-brand-base-foreground/50">
+                  Vertical
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ENCOUNTER_VERTICALS.map((v) => {
+                    const on = vertical === v;
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setVertical(on ? "" : v)}
+                        className={cn(
+                          "rounded-full border px-3 py-1.5 text-xs font-bold transition",
+                          on
+                            ? "border-brand-accent bg-brand-accent text-brand-accent-foreground"
+                            : "border-white/15 bg-white/[0.06] text-brand-base-foreground/70 hover:bg-white/10",
+                        )}
+                      >
+                        {v}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Note */}
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Tap to add note (the gold)…"
-                rows={2}
-                className="w-full resize-none rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-brand-base-foreground outline-none focus:border-brand-accent/60"
-              />
+              <div className="relative">
+                <label className="absolute -top-2 left-3 bg-brand-base px-1 text-[9px] font-black uppercase tracking-widest text-brand-base-foreground/50">
+                  Note · the gold
+                </label>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="What did they say? What's the hook?"
+                  rows={2}
+                  className="w-full resize-none rounded-lg border border-white/15 bg-white/[0.06] p-3 text-sm text-brand-base-foreground placeholder:text-brand-base-foreground/30 outline-none focus:border-brand-accent/60 focus:bg-white/[0.08]"
+                />
+              </div>
 
               {isHotAccountCompany(draft.company, accounts) && (
                 <div className="rounded-md border border-temp-hot/40 bg-temp-hot/10 px-3 py-2 text-xs font-medium text-brand-base-foreground">
@@ -386,20 +424,29 @@ export function GameTimeOverlay({ onExit }: Props) {
                 </div>
               )}
 
-              {/* CTA */}
-              <button
-                type="button"
-                disabled={!canSave}
-                onClick={save}
-                className={cn(
-                  "w-full rounded-xl py-4 text-sm font-extrabold uppercase tracking-[0.2em] transition active:scale-[0.98]",
-                  canSave
-                    ? "bg-brand-base-foreground text-brand-base shadow-xl shadow-black/40 hover:opacity-90"
-                    : "bg-white/10 text-brand-base-foreground/40",
-                )}
-              >
-                Save & Next
-              </button>
+              {/* CTA row */}
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  disabled={!canSave}
+                  onClick={save}
+                  className={cn(
+                    "w-full rounded-xl py-4 text-sm font-extrabold uppercase tracking-[0.2em] transition active:scale-[0.98]",
+                    canSave
+                      ? "bg-brand-base-foreground text-brand-base shadow-xl shadow-black/40 hover:opacity-90"
+                      : "bg-white/10 text-brand-base-foreground/40",
+                  )}
+                >
+                  {canSave ? "Save & Next" : "Pick a temperature to save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={closeSheet}
+                  className="w-full rounded-xl border border-white/10 py-2.5 text-[11px] font-bold uppercase tracking-widest text-brand-base-foreground/60 hover:bg-white/5"
+                >
+                  Didn't meet — close
+                </button>
+              </div>
             </div>
           </div>
         </div>
