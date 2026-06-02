@@ -122,14 +122,28 @@ export function DuringPhase({ conferenceId, onEnterGameTime, canEnterGameTime }:
             )}
           </div>
 
-          {/* My leads at this event */}
+          {/* Leads at this event */}
           <div className="rounded-xl border border-border bg-card">
             <header className="flex items-center gap-2 border-b border-border px-4 py-3">
               <Flame className="h-4 w-4 text-temp-hot" />
-              <h2 className="text-sm font-semibold">My leads at this event</h2>
+              <h2 className="text-sm font-semibold">Leads at this event</h2>
               <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">
                 {myLeads.length} captured
               </span>
+              <button
+                type="button"
+                onClick={() => setMineOnly((v) => !v)}
+                disabled={!repId}
+                className={cn(
+                  "rounded-md border px-2 py-0.5 text-[10px] uppercase tracking-wide transition disabled:opacity-40",
+                  mineOnly
+                    ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
+                    : "border-border bg-background text-muted-foreground hover:bg-muted",
+                )}
+                title={repId ? "Show only leads I captured" : "Set active rep in Settings"}
+              >
+                Mine only
+              </button>
             </header>
             {myLeads.length === 0 ? (
               <p className="px-4 py-6 text-center text-xs text-muted-foreground">
@@ -165,17 +179,23 @@ export function DuringPhase({ conferenceId, onEnterGameTime, canEnterGameTime }:
                         </div>
                       )}
                     </div>
-                    <span className="text-[10px] text-muted-foreground tabular-nums">
-                      {new Date(encounter.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-0.5">
+                      <span className="text-[10px] text-muted-foreground tabular-nums">
+                        {new Date(encounter.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        entered by {encounter.repId}
+                      </span>
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
+
         </section>
 
         <HotLeadsSidebar />
