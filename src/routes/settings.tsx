@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { Check, Loader2 } from "lucide-react";
 import { TopNav } from "@/components/TopNav";
 import { useSettings, updateSettings } from "@/lib/settings-store";
 import { resetSeed } from "@/lib/people-store";
@@ -20,11 +22,21 @@ function SettingsPage() {
     queryKey: ["conferences"],
     queryFn: () => fetchConfs(),
   });
+  const [busy, setBusy] = useState<DemoState | null>(null);
+  const [done, setDone] = useState<DemoState | null>(null);
 
   const handleLoadDemo = (state: DemoState) => {
-    loadDemoState(state, conferences);
-    toast.success(`Loaded demo ${state}. Reloading…`);
-    setTimeout(() => window.location.reload(), 350);
+    setBusy(state);
+    try {
+      loadDemoState(state, conferences);
+      setDone(state);
+      toast.success(`Demo ${state} loaded — reloading…`);
+      setTimeout(() => window.location.reload(), 900);
+    } catch (err) {
+      setBusy(null);
+      toast.error(`Failed to load demo ${state}`);
+      console.error(err);
+    }
   };
 
   return (
@@ -42,17 +54,31 @@ function SettingsPage() {
             </p>
           </div>
           <div className="grid gap-2">
-            {DEMO_STATES.map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => handleLoadDemo(d.id)}
-                className="rounded-md border border-border bg-background p-3 text-left transition hover:border-foreground/40"
-              >
-                <div className="text-sm font-semibold text-foreground">{d.title}</div>
-                <div className="mt-0.5 text-xs text-muted-foreground">{d.desc}</div>
-              </button>
-            ))}
+            {DEMO_STATES.map((d) => {
+              const isBusy = busy === d.id;
+              const isDone = done === d.id;
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => handleLoadDemo(d.id)}
+                  className="flex items-start justify-between gap-3 rounded-md border border-border bg-background p-3 text-left transition hover:border-foreground/40 disabled:opacity-60"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">{d.title}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">{d.desc}</div>
+                  </div>
+                  <div className="shrink-0 pt-0.5">
+                    {isDone ? (
+                      <Check className="h-4 w-4 text-green-600" aria-label="Loaded" />
+                    ) : isBusy ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : null}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </section>
 
