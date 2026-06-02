@@ -343,6 +343,7 @@ export type Database = {
           is_active: boolean
           name: string
           planned_reps_per_conference: number
+          status: string
           updated_at: string
           year: number
         }
@@ -354,6 +355,7 @@ export type Database = {
           is_active?: boolean
           name: string
           planned_reps_per_conference?: number
+          status?: string
           updated_at?: string
           year: number
         }
@@ -365,6 +367,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           planned_reps_per_conference?: number
+          status?: string
           updated_at?: string
           year?: number
         }
