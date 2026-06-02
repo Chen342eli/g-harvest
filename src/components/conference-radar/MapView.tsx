@@ -61,11 +61,12 @@ function popupHtml(c: Conference): string {
     : `<span style="color:#64748b">Unassigned</span>`;
   return `
     <div style="font-family:ui-sans-serif,system-ui;color:#0f172a;width:240px;">
-      <a href="${escape(c.sourceUrl)}" target="_blank" rel="noreferrer"
-         style="font-weight:600;color:#0f172a;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
-         ${escape(c.name)}
-         <span style="opacity:.6;font-size:11px;">↗</span>
-      </a>
+      <button type="button" data-action="open-in-table" data-id="${escape(c.id)}"
+         style="background:none;border:0;padding:0;cursor:pointer;font:inherit;
+                font-weight:600;color:#0f172a;display:inline-flex;align-items:center;gap:4px;text-align:left;">
+         <span style="text-decoration:underline;text-decoration-color:rgba(15,23,42,.25);text-underline-offset:2px;">${escape(c.name)}</span>
+         <span style="opacity:.6;font-size:11px;">→</span>
+      </button>
       <div style="font-size:11px;color:#64748b;margin-top:2px;">${escape(c.city)}, ${escape(c.country)}</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
         <span style="background:${TIER_BG[c.tier]};color:${TIER_TEXT[c.tier]};
@@ -81,6 +82,7 @@ function popupHtml(c: Conference): string {
         <tr><td style="color:#64748b;padding-right:8px;">Vertical</td><td>${escape(c.vertical)}</td></tr>
         <tr><td style="color:#64748b;padding-right:8px;">Audience</td><td>${audienceFmt.format(c.estimatedAudienceSize)}</td></tr>
         <tr><td style="color:#64748b;padding-right:8px;vertical-align:top;">Reps</td><td>${reps}</td></tr>
+        ${c.sourceUrl ? `<tr><td style="color:#64748b;padding-right:8px;">Website</td><td><a href="${escape(c.sourceUrl)}" target="_blank" rel="noreferrer" style="color:#2563eb;text-decoration:underline;">Open ↗</a></td></tr>` : ""}
       </table>
     </div>`;
 }
