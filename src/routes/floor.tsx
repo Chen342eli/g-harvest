@@ -20,14 +20,6 @@ export const Route = createFileRoute("/floor")({
 
 type Phase = "before" | "during" | "after";
 
-function inferPhase(startDate: string, endDate: string): Phase {
-  const now = Date.now();
-  const s = new Date(startDate).getTime();
-  const e = new Date(endDate).getTime() + 24 * 60 * 60 * 1000 - 1; // include end day
-  if (now < s) return "before";
-  if (now > e) return "after";
-  return "during";
-}
 
 function FloorPage() {
   const fetchConfs = useServerFn(listConferences);
