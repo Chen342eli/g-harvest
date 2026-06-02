@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState, useEffect } from "react";
@@ -34,7 +34,6 @@ function CapturePage() {
   const data = usePeopleData();
 
   const [name, setName] = useState("");
-  const [linkedIn, setLinkedIn] = useState("");
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
   const [vertical, setVertical] = useState<EncounterVertical | "">("");
@@ -44,7 +43,7 @@ function CapturePage() {
   const [matchDismissed, setMatchDismissed] = useState(false);
   const [lastSaved, setLastSaved] = useState<{ name: string; badges: ReturnType<typeof computeBadges> } | null>(null);
 
-  // Default rep & conference
+  // Default rep & conference (rep would normally come from login; conference from the active conf page)
   useEffect(() => {
     if (!settings.activeRepId && SALES_TEAM.length) {
       updateSettings({ activeRepId: SALES_TEAM[0] });
@@ -60,8 +59,8 @@ function CapturePage() {
 
   const match = useMemo(() => {
     if (name.trim().length < 2) return null;
-    return findMatch({ fullName: name, linkedInUrl: linkedIn || undefined, company: company || undefined }, data.people);
-  }, [name, linkedIn, company, data.people]);
+    return findMatch({ fullName: name, company: company || undefined }, data.people);
+  }, [name, company, data.people]);
 
   const matchedPerson = match?.person && !matchDismissed ? match.person : null;
 
@@ -71,16 +70,14 @@ function CapturePage() {
       setMatchedId(matchedPerson.id);
       if (!company && matchedPerson.currentCompany) setCompany(matchedPerson.currentCompany);
       if (!role && matchedPerson.currentRole) setRole(matchedPerson.currentRole);
-      if (!linkedIn && matchedPerson.linkedInUrl) setLinkedIn(matchedPerson.linkedInUrl);
       if (!vertical && matchedPerson.currentVertical) setVertical(matchedPerson.currentVertical);
     }
-  }, [matchedPerson, match, matchedId, company, role, linkedIn, vertical]);
+  }, [matchedPerson, match, matchedId, company, role, vertical]);
 
   const canSave = name.trim().length > 0 && !!settings.activeConferenceId && !!settings.activeRepId && temperature !== null;
 
   function reset() {
     setName("");
-    setLinkedIn("");
     setCompany("");
     setRole("");
     setVertical("");
@@ -89,6 +86,7 @@ function CapturePage() {
     setMatchedId(null);
     setMatchDismissed(false);
   }
+
 
   function handleSave() {
     if (!canSave) return;
