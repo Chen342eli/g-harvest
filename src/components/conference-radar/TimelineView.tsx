@@ -44,6 +44,7 @@ type GroupBy = "rep" | "vertical" | "region" | "tier" | "none";
 interface Props {
   conferences: Conference[];
   onSetStatus?: (id: string, status: DecisionStatus) => void;
+  onOpenInTable?: (id: string) => void;
 }
 
 interface PlacedBar {
@@ -73,7 +74,7 @@ function pctOf(ts: number) {
   return ((ts - YEAR_START) / YEAR_SPAN) * 100;
 }
 
-export function TimelineView({ conferences, onSetStatus }: Props) {
+export function TimelineView({ conferences, onSetStatus, onOpenInTable }: Props) {
   const [groupBy, setGroupBy] = useState<GroupBy>("none");
 
   const inYear = useMemo(
@@ -287,6 +288,7 @@ export function TimelineView({ conferences, onSetStatus }: Props) {
                             bar={bar}
                             top={LANE_PAD_Y + bar.subRow * (ROW_H + ROW_GAP)}
                             onSetStatus={onSetStatus}
+                            onOpenInTable={onOpenInTable}
                           />
                         ))}
                       </div>
@@ -353,10 +355,12 @@ function BarChip({
   bar,
   top,
   onSetStatus,
+  onOpenInTable,
 }: {
   bar: PlacedBar;
   top: number;
   onSetStatus?: (id: string, status: DecisionStatus) => void;
+  onOpenInTable?: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const c = bar.conference;
@@ -436,7 +440,7 @@ function BarChip({
         </TooltipContent>
       </Tooltip>
       <PopoverContent align="start" className="w-auto p-3">
-        <ConferenceDetail conference={c} onSetStatus={onSetStatus} />
+        <ConferenceDetail conference={c} onSetStatus={onSetStatus} onOpenInTable={onOpenInTable} />
       </PopoverContent>
     </Popover>
   );

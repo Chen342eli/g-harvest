@@ -61,11 +61,12 @@ function popupHtml(c: Conference): string {
     : `<span style="color:#64748b">Unassigned</span>`;
   return `
     <div style="font-family:ui-sans-serif,system-ui;color:#0f172a;width:240px;">
-      <a href="${escape(c.sourceUrl)}" target="_blank" rel="noreferrer"
-         style="font-weight:600;color:#0f172a;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
-         ${escape(c.name)}
-         <span style="opacity:.6;font-size:11px;">↗</span>
-      </a>
+      <button type="button" data-action="open-in-table" data-id="${escape(c.id)}"
+         style="background:none;border:0;padding:0;cursor:pointer;font:inherit;
+                font-weight:600;color:#0f172a;display:inline-flex;align-items:center;gap:4px;text-align:left;">
+         <span style="text-decoration:underline;text-decoration-color:rgba(15,23,42,.25);text-underline-offset:2px;">${escape(c.name)}</span>
+         <span style="opacity:.6;font-size:11px;">→</span>
+      </button>
       <div style="font-size:11px;color:#64748b;margin-top:2px;">${escape(c.city)}, ${escape(c.country)}</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
         <span style="background:${TIER_BG[c.tier]};color:${TIER_TEXT[c.tier]};
@@ -81,6 +82,7 @@ function popupHtml(c: Conference): string {
         <tr><td style="color:#64748b;padding-right:8px;">Vertical</td><td>${escape(c.vertical)}</td></tr>
         <tr><td style="color:#64748b;padding-right:8px;">Audience</td><td>${audienceFmt.format(c.estimatedAudienceSize)}</td></tr>
         <tr><td style="color:#64748b;padding-right:8px;vertical-align:top;">Reps</td><td>${reps}</td></tr>
+        ${c.sourceUrl ? `<tr><td style="color:#64748b;padding-right:8px;">Website</td><td><a href="${escape(c.sourceUrl)}" target="_blank" rel="noreferrer" style="color:#2563eb;text-decoration:underline;">Open ↗</a></td></tr>` : ""}
       </table>
     </div>`;
 }
@@ -122,6 +124,7 @@ function ensureMarkerClusterScript(): Promise<void> {
 
 interface Props {
   conferences: Conference[];
+  onOpenInTable?: (id: string) => void;
 }
 
 const CITY_EXPAND_MIN_ZOOM = 5;
@@ -131,15 +134,15 @@ function locationKey(c: Conference) {
   return `${c.city.trim().toLowerCase()}|${c.country.trim().toLowerCase()}`;
 }
 
-export function MapView({ conferences }: Props) {
+export function MapView({ conferences, onOpenInTable }: Props) {
   return (
     <ClientOnly fallback={<MapFallback />}>
-      <MapViewClient conferences={conferences} />
+      <MapViewClient conferences={conferences} onOpenInTable={onOpenInTable} />
     </ClientOnly>
   );
 }
 
-function MapViewClient({ conferences }: Props) {
+function MapViewClient({ conferences, onOpenInTable }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
@@ -147,6 +150,8 @@ function MapViewClient({ conferences }: Props) {
   const expandedLocationKeysRef = useRef<Set<string>>(new Set());
   const renderMarkersRef = useRef<(fitToData?: boolean) => void>(() => {});
   const LRef = useRef<any>(null);
+  const onOpenInTableRef = useRef(onOpenInTable);
+  onOpenInTableRef.current = onOpenInTable;
 
   useEffect(() => {
     let cancelled = false;
@@ -205,6 +210,16 @@ function MapViewClient({ conferences }: Props) {
         window.setTimeout(() => renderMarkersRef.current(false), 80);
       });
       map.on("zoomend", () => renderMarkersRef.current(false));
+      map.on("popupopen", (e: any) => {
+        const root: HTMLElement | undefined = e?.popup?.getElement?.();
+        const btn = root?.querySelector?.('[data-action="open-in-table"]') as HTMLButtonElement | null;
+        if (!btn) return;
+        btn.onclick = (ev) => {
+          ev.preventDefault();
+          const id = btn.getAttribute("data-id");
+          if (id) onOpenInTableRef.current?.(id);
+        };
+      });
       map.addLayer(layerRef.current);
       mapRef.current = map;
       renderMarkersRef.current(true);
