@@ -133,27 +133,6 @@ export function buildRecommendations(args: {
     });
   }
 
-  // 4. Budget-friendly — high-fit candidates that fit comfortably in remaining budget
-  if (remaining > 0) {
-    const cheap = candidates
-      .filter((c) => c.estimatedCostUsd != null && c.estimatedCostUsd * plan.plannedRepsPerConference <= remaining)
-      .sort((a, b) => {
-        // best ratio of icp / cost
-        const ra = fitScore(a) / Math.max(1, (a.estimatedCostUsd ?? 1));
-        const rb = fitScore(b) / Math.max(1, (b.estimatedCostUsd ?? 1));
-        return rb - ra;
-      })
-      .slice(0, 3);
-    if (cheap.length > 0) {
-      recommendations.push({
-        id: `budget_friendly`,
-        kind: "budget_friendly",
-        title: `Best value for remaining budget`,
-        detail: `Strong fit per dollar — these fit comfortably in the remaining budget.`,
-        conferenceIds: cheap.map((c) => c.id),
-      });
-    }
-  }
 
   return recommendations;
 }
