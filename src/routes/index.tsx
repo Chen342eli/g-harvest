@@ -10,14 +10,16 @@ import {
   Flame,
   ImageIcon,
   MapPin,
+  Pencil,
   Radar,
   Send,
   Sparkles,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { TopNav } from "@/components/TopNav";
 import { listConferences } from "@/lib/conferences.functions";
 import { getActivePlan } from "@/lib/planning.functions";
-import { getPlanLifecycle } from "@/lib/planning";
+import { getPlanLifecycle, isCommitted } from "@/lib/planning";
 import { usePeopleData } from "@/lib/people-store";
 import { derivePerson } from "@/lib/matching";
 import { TierBadge } from "@/components/conference-radar/TierBadge";
