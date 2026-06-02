@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, CalendarPlus, Check, ExternalLink, Pencil } from "lucide-react";
 import type { Conference } from "@/lib/conferences";
-import { SALES_TEAM, isCoverageGap } from "@/lib/conferences";
+import { SALES_TEAM } from "@/lib/conferences";
 import { TierBadge } from "./TierBadge";
 import { ScoreCell } from "./ScoreCell";
 import { RepAssigner } from "./RepAssigner";
