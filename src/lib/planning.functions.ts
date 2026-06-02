@@ -188,6 +188,24 @@ export const removeFromPlan = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setPlanStatus = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        status: z.enum(["draft", "approved"]),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("plans")
+      .update({ status: data.status })
+      .eq("id", data.planId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const updatePlanConfig = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) =>
     z
