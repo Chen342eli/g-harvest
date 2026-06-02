@@ -421,7 +421,35 @@ function PersonIdentitySub({ personId }: { personId: string }) {
   return <p className="text-sm font-medium text-brand-base-foreground/60">{sub}</p>;
 }
 
-// Game Time briefing — AI signal hero, suggested follow-up, badges, relationship arc.
+// Full name display for identified person (uses canonical fullName, not search query)
+function PersonFullNameDisplay({ personId }: { personId: string }) {
+  const data = usePeopleData();
+  const person = data.people.find((p) => p.id === personId);
+  if (!person) return null;
+  return (
+    <h2 className="text-2xl font-extrabold tracking-tight text-brand-base-foreground">
+      {person.fullName}
+    </h2>
+  );
+}
+
+// Maps raw AI signal -> action-oriented label + helper line a rep can act on instantly.
+function signalAction(signal?: string): { label: string; helper: string } | null {
+  switch (signal) {
+    case "Warming":
+      return { label: "Worth investing · move now", helper: "Active buying signal — push a concrete next step." };
+    case "Steady":
+      return { label: "Keep warm · light touch", helper: "Engaged but flat — nurture, don't pressure." };
+    case "Tire-kicker":
+      return { label: "Low priority · don't over-invest", helper: "Repeated low engagement. Stay polite, save energy." };
+    case "Too early":
+      return { label: "Too early · gather more", helper: "Not enough data yet. One more touchpoint to read direction." };
+    default:
+      return null;
+  }
+}
+
+// Game Time briefing — AI signal only + relationship arc (notes).
 // Auto-generates the AI read on open if not cached. Uses cached on later opens.
 function PersonBriefing({ personId }: { personId: string }) {
   const data = usePeopleData();
@@ -429,7 +457,6 @@ function PersonBriefing({ personId }: { personId: string }) {
   const analyze = useServerFn(analyzeRelationship);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [nudgeOpen, setNudgeOpen] = useState(false);
   const ranForRef = useRef<string | null>(null);
 
   const derived = useMemo(
