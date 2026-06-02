@@ -74,7 +74,7 @@ function pctOf(ts: number) {
 }
 
 export function TimelineView({ conferences, onSetStatus }: Props) {
-  const [groupBy, setGroupBy] = useState<GroupBy>("rep");
+  const [groupBy, setGroupBy] = useState<GroupBy>("none");
 
   const inYear = useMemo(
     () =>
