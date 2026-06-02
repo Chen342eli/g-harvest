@@ -7,9 +7,13 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  CalendarRange,
   Check,
   CheckCircle2,
   CircleDot,
+  LayoutGrid,
+  List as ListIcon,
+  Map as MapIcon,
   Sparkles,
   Star,
   Users,
@@ -33,6 +37,8 @@ import { REGIONS, SALES_TEAM, type Conference, type Vertical } from "@/lib/confe
 import { buildRecommendations, findCalendarConflicts } from "@/lib/recommendations";
 import { TopNav } from "@/components/TopNav";
 import { TierBadge } from "@/components/conference-radar/TierBadge";
+import { TimelineView } from "@/components/conference-radar/TimelineView";
+import { MapView } from "@/components/conference-radar/MapView";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -119,7 +125,7 @@ function PlanBuilderPage() {
         }
       />
 
-      <main className="mx-auto max-w-5xl space-y-5 px-6 py-6">
+      <main className="mx-auto max-w-7xl space-y-5 px-6 py-6">
         {loading || !plan ? (
           <div className="rounded-lg border border-border bg-card p-12 text-center text-sm text-muted-foreground">
             {loading ? "Loading…" : "No active plan found."}
@@ -269,6 +275,36 @@ function WizardFooter({
 
 /* ---------- Step 1 · Anchors ---------- */
 
+type ViewMode = "list" | "timeline" | "map";
+
+function ViewToggle({ value, onChange }: { value: ViewMode; onChange: (v: ViewMode) => void }) {
+  const opts: { id: ViewMode; label: string; Icon: typeof ListIcon }[] = [
+    { id: "list", label: "List", Icon: ListIcon },
+    { id: "timeline", label: "Timeline", Icon: CalendarRange },
+    { id: "map", label: "Map", Icon: MapIcon },
+  ];
+  return (
+    <div className="inline-flex items-center rounded-md border border-border bg-background p-0.5">
+      {opts.map(({ id, label, Icon }) => (
+        <button
+          key={id}
+          type="button"
+          onClick={() => onChange(id)}
+          className={cn(
+            "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
+            value === id
+              ? "bg-brand-base text-brand-base-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          <Icon className="h-3 w-3" />
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Step1Anchors({
   items,
   allConferences,
@@ -297,66 +333,82 @@ function Step1Anchors({
   }, [allConferences]);
 
   const mustGoCount = items.filter((i) => i.planStatus === "must_go").length;
+  const mustGoIds = useMemo(
+    () => new Set(items.filter((i) => i.planStatus === "must_go").map((i) => i.conferenceId)),
+    [items],
+  );
+
+  const [view, setView] = useState<ViewMode>("list");
 
   return (
     <div className="space-y-4">
-      <StepHeader
-        title="Step 1 · Anchors"
-        subtitle="The events you attend every year."
-        kicker={`${mustGoCount} marked must-go`}
-      />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <StepHeader
+          title="Step 1 · Anchors"
+          subtitle="The events you attend every year."
+          kicker={`${mustGoCount} marked must-go`}
+        />
+        <ViewToggle value={view} onChange={setView} />
+      </div>
       <p className="text-sm text-muted-foreground">
         These are your Tier 1 and best-performing past events. One tap locks them as must-go.
       </p>
 
-      <ul className="grid gap-2 sm:grid-cols-2">
-        {anchors.map((c) => {
-          const item = itemByConfId.get(c.id);
-          const isMustGo = item?.planStatus === "must_go";
-          return (
-            <li
-              key={c.id}
-              className={cn(
-                "flex items-start justify-between gap-3 rounded-md border p-3 transition",
-                isMustGo ? "border-violet-300 bg-violet-50/60" : "border-border bg-background hover:bg-muted/40",
-              )}
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <TierBadge tier={c.tier} />
-                  <span className="truncate text-sm font-medium text-foreground">{c.name}</span>
-                </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
-                  {c.city}, {c.country} · {c.vertical} · ICP {c.icpScore}
-                  {(c.subScores?.pastPerformance ?? 0) >= 70 && (
-                    <> · <span className="text-amber-700">★ past {c.subScores.pastPerformance}</span></>
-                  )}
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant={isMustGo ? "secondary" : "default"}
-                onClick={() => onSet(c.id, isMustGo ? "considering" : "must_go")}
-                className="shrink-0"
-              >
-                {isMustGo ? (
-                  <><Check className="mr-1 h-3.5 w-3.5" /> Must-go</>
-                ) : (
-                  <><Star className="mr-1 h-3.5 w-3.5" /> Mark must-go</>
+      {view === "timeline" ? (
+        <TimelineView conferences={anchors} committedIds={mustGoIds} />
+      ) : view === "map" ? (
+        <MapView conferences={anchors} committedIds={mustGoIds} />
+      ) : (
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {anchors.map((c) => {
+            const item = itemByConfId.get(c.id);
+            const isMustGo = item?.planStatus === "must_go";
+            return (
+              <li
+                key={c.id}
+                className={cn(
+                  "flex items-start justify-between gap-3 rounded-md border p-3 transition",
+                  isMustGo ? "border-brand-accent bg-brand-accent/10" : "border-border bg-background hover:bg-muted/40",
                 )}
-              </Button>
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <TierBadge tier={c.tier} />
+                    <span className="truncate text-sm font-medium text-foreground">{c.name}</span>
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    {c.city}, {c.country} · {c.vertical} · ICP {c.icpScore}
+                    {(c.subScores?.pastPerformance ?? 0) >= 70 && (
+                      <> · <span className="text-amber-700">★ past {c.subScores.pastPerformance}</span></>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant={isMustGo ? "secondary" : "default"}
+                  onClick={() => onSet(c.id, isMustGo ? "considering" : "must_go")}
+                  className="shrink-0"
+                >
+                  {isMustGo ? (
+                    <><Check className="mr-1 h-3.5 w-3.5" /> Must-go</>
+                  ) : (
+                    <><Star className="mr-1 h-3.5 w-3.5" /> Mark must-go</>
+                  )}
+                </Button>
+              </li>
+            );
+          })}
+          {anchors.length === 0 && (
+            <li className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground sm:col-span-2">
+              No anchor candidates found.
             </li>
-          );
-        })}
-        {anchors.length === 0 && (
-          <li className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground sm:col-span-2">
-            No anchor candidates found.
-          </li>
-        )}
-      </ul>
+          )}
+        </ul>
+      )}
     </div>
   );
 }
+
 
 /* ---------- Step 2 · Coverage ---------- */
 
@@ -438,21 +490,33 @@ function Step2Coverage({
       .slice(0, 12);
   }, [allConferences, inPlanIds, browseQuery]);
 
+  const [view, setView] = useState<ViewMode>("list");
+  const [browseLayout, setBrowseLayout] = useState<"cards" | "table">("table");
+
+  const committedIds = useMemo(
+    () => new Set(committed.map((i) => i.conferenceId)),
+    [committed],
+  );
+
   return (
     <div className="space-y-5">
-      <StepHeader
-        title="Step 2 · Additionally"
-        subtitle="Fill region & ICP-vertical gaps — and add anything else worth attending."
-        kicker={`${recs.length} gap${recs.length === 1 ? "" : "s"} to address`}
-      />
-
-      {/* Coverage panel — ICP verticals + regions */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <CoverageBlock title="ICP verticals" buckets={icpVerticalCoverage} />
-        <CoverageBlock title="Regions" buckets={regions} />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <StepHeader
+          title="Step 2 · Additionally"
+          subtitle="Fill region & ICP-vertical gaps — and add anything else worth attending."
+          kicker={`${recs.length} gap${recs.length === 1 ? "" : "s"} to address`}
+        />
+        <ViewToggle value={view} onChange={setView} />
       </div>
 
-      {/* Calendar conflicts */}
+      {/* Compact coverage chips — verticals + regions in one strip */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-border bg-background px-3 py-2 text-xs">
+        <CoverageChipRow label="ICP" buckets={icpVerticalCoverage} />
+        <span className="hidden h-4 w-px bg-border sm:inline" />
+        <CoverageChipRow label="Region" buckets={regions} />
+      </div>
+
+      {/* Calendar conflicts — always visible */}
       {conflicts.length > 0 && (
         <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
           <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-amber-900">
@@ -470,166 +534,242 @@ function Step2Coverage({
         </div>
       )}
 
-      {/* Currently in plan — editable */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-foreground">
-          In plan · {inPlanConferences.length}
-        </h3>
-        {inPlanConferences.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border bg-background p-4 text-center text-xs text-muted-foreground">
-            Nothing in the plan yet.
-          </p>
-        ) : (
-          <ul className="grid gap-1.5 sm:grid-cols-2">
-            {inPlanConferences.map(({ item, conf }) => (
-              <li
-                key={conf.id}
-                className="flex items-center justify-between gap-2 rounded border border-border bg-background px-2 py-1.5"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <TierBadge tier={conf.tier} />
-                    <span className="truncate text-xs font-medium text-foreground">{conf.name}</span>
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">
-                    {conf.city} · {conf.vertical} · {item.planStatus === "must_go" ? "must-go" : "approved"}
-                  </div>
-                </div>
-                {item.planStatus !== "must_go" && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onRemove(conf.id)}
-                    className="h-7 px-2 text-muted-foreground hover:text-red-700"
-                    title="Remove from plan"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Recommendations */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Recommended additions</h3>
-        {rankedRecs.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border bg-background p-6 text-center text-sm text-muted-foreground">
-            Nice — no obvious region or vertical gaps.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {rankedRecs.map((r) => (
-              <div key={r.id} className="rounded-md border border-border bg-background p-3">
-                <div className="text-sm font-medium text-foreground">{r.title}</div>
-                <div className="text-xs text-muted-foreground">{r.detail}</div>
-                <ul className="mt-2 space-y-1">
-                  {r.conferenceIds.map((id) => {
-                    const c = confById.get(id);
-                    if (!c) return null;
-                    const already = inPlanIds.has(id);
-                    return (
-                      <li
-                        key={id}
-                        className="flex items-center justify-between gap-2 rounded border border-border/70 bg-card px-2 py-1.5"
-                      >
-                        <div className="min-w-0">
-                          <div className="truncate text-xs font-medium text-foreground">{c.name}</div>
-                          <div className="text-[10px] text-muted-foreground">
-                            {c.city} · {c.vertical} · ICP {c.icpScore}
-                          </div>
+      {view === "timeline" ? (
+        <TimelineView conferences={allConferences} committedIds={committedIds} />
+      ) : view === "map" ? (
+        <MapView conferences={allConferences} committedIds={committedIds} />
+      ) : (
+        <div className="grid gap-5 lg:grid-cols-3">
+          {/* LEFT: Selected + Browse */}
+          <div className="space-y-5 lg:col-span-2">
+            {/* Currently in plan */}
+            <div className="rounded-md border border-border bg-background p-3">
+              <h3 className="mb-2 text-sm font-semibold text-foreground">
+                In plan · {inPlanConferences.length}
+              </h3>
+              {inPlanConferences.length === 0 ? (
+                <p className="rounded-md border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                  Nothing in the plan yet.
+                </p>
+              ) : (
+                <ul className="grid gap-1.5 sm:grid-cols-2">
+                  {inPlanConferences.map(({ item, conf }) => (
+                    <li
+                      key={conf.id}
+                      className="flex items-center justify-between gap-2 rounded border border-border bg-card px-2 py-1.5"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <TierBadge tier={conf.tier} />
+                          <span className="truncate text-xs font-medium text-foreground">{conf.name}</span>
                         </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {conf.city} · {conf.vertical} · {item.planStatus === "must_go" ? "must-go" : "approved"}
+                        </div>
+                      </div>
+                      {item.planStatus !== "must_go" && (
                         <Button
                           size="sm"
-                          variant={already ? "secondary" : "default"}
-                          onClick={() => onAdd(id)}
-                          disabled={already}
-                          className="h-7"
+                          variant="ghost"
+                          onClick={() => onRemove(conf.id)}
+                          className="h-7 px-2 text-muted-foreground hover:text-red-700"
+                          title="Remove from plan"
                         >
-                          {already ? <><Check className="mr-1 h-3.5 w-3.5" /> Added</> : "Approve"}
+                          <X className="h-3.5 w-3.5" />
                         </Button>
-                      </li>
-                    );
-                  })}
+                      )}
+                    </li>
+                  ))}
                 </ul>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              )}
+            </div>
 
-      {/* Browse all — add any conference */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Add any conference</h3>
-          <input
-            type="search"
-            value={browseQuery}
-            onChange={(e) => setBrowseQuery(e.target.value)}
-            placeholder="Search name, city, vertical…"
-            className="h-8 w-56 rounded-md border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </div>
-        {browseable.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border bg-background p-4 text-center text-xs text-muted-foreground">
-            No matching conferences.
-          </p>
-        ) : (
-          <ul className="grid gap-1.5 sm:grid-cols-2">
-            {browseable.map((c) => (
-              <li
-                key={c.id}
-                className="flex items-center justify-between gap-2 rounded border border-border bg-background px-2 py-1.5"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <TierBadge tier={c.tier} />
-                    <span className="truncate text-xs font-medium text-foreground">{c.name}</span>
+            {/* Browse all */}
+            <div className="rounded-md border border-border bg-background p-3">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-foreground">Add any conference</h3>
+                <div className="flex items-center gap-2">
+                  <div className="inline-flex items-center rounded-md border border-border bg-background p-0.5">
+                    {(["table", "cards"] as const).map((l) => {
+                      const Icon = l === "table" ? ListIcon : LayoutGrid;
+                      return (
+                        <button
+                          key={l}
+                          type="button"
+                          onClick={() => setBrowseLayout(l)}
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
+                            browseLayout === l
+                              ? "bg-brand-base text-brand-base-foreground"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                          )}
+                        >
+                          <Icon className="h-3 w-3" />
+                          {l === "table" ? "Table" : "Cards"}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">
-                    {c.city} · {c.vertical} · ICP {c.icpScore}
-                  </div>
+                  <input
+                    type="search"
+                    value={browseQuery}
+                    onChange={(e) => setBrowseQuery(e.target.value)}
+                    placeholder="Search name, city, vertical…"
+                    className="h-8 w-56 rounded-md border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
                 </div>
-                <Button size="sm" onClick={() => onAdd(c.id)} className="h-7">
-                  Add
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+              </div>
+              {browseable.length === 0 ? (
+                <p className="rounded-md border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                  No matching conferences.
+                </p>
+              ) : browseLayout === "table" ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border text-left text-[10px] uppercase tracking-wide text-muted-foreground">
+                        <th className="px-2 py-1.5 font-semibold">Conference</th>
+                        <th className="px-2 py-1.5 font-semibold">Tier</th>
+                        <th className="px-2 py-1.5 font-semibold">Vertical</th>
+                        <th className="px-2 py-1.5 font-semibold">Region</th>
+                        <th className="px-2 py-1.5 text-right font-semibold">ICP</th>
+                        <th className="px-2 py-1.5"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {browseable.map((c) => (
+                        <tr key={c.id} className="border-b border-border/60 last:border-b-0 hover:bg-muted/40">
+                          <td className="px-2 py-1.5">
+                            <div className="font-medium text-foreground">{c.name}</div>
+                            <div className="text-[10px] text-muted-foreground">{c.city}, {c.country}</div>
+                          </td>
+                          <td className="px-2 py-1.5"><TierBadge tier={c.tier} /></td>
+                          <td className="px-2 py-1.5 text-muted-foreground">{c.vertical}</td>
+                          <td className="px-2 py-1.5 text-muted-foreground">{c.region}</td>
+                          <td className="px-2 py-1.5 text-right tabular-nums">{c.icpScore}</td>
+                          <td className="px-2 py-1.5 text-right">
+                            <Button size="sm" onClick={() => onAdd(c.id)} className="h-7">Add</Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <ul className="grid gap-1.5 sm:grid-cols-2">
+                  {browseable.map((c) => (
+                    <li
+                      key={c.id}
+                      className="flex items-center justify-between gap-2 rounded border border-border bg-card px-2 py-1.5"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <TierBadge tier={c.tier} />
+                          <span className="truncate text-xs font-medium text-foreground">{c.name}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {c.city} · {c.vertical} · ICP {c.icpScore}
+                        </div>
+                      </div>
+                      <Button size="sm" onClick={() => onAdd(c.id)} className="h-7">Add</Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: Recommendations */}
+          <aside className="lg:col-span-1">
+            <div className="sticky top-4 rounded-md border border-brand-accent/40 bg-brand-accent/5 p-3">
+              <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-brand-accent" /> Recommendations
+              </h3>
+              {rankedRecs.length === 0 ? (
+                <p className="rounded-md border border-dashed border-border bg-background p-4 text-center text-xs text-muted-foreground">
+                  Nice — no obvious region or vertical gaps.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {rankedRecs.map((r) => (
+                    <div key={r.id} className="rounded-md border border-border bg-background p-2.5">
+                      <div className="text-xs font-semibold text-foreground">{r.title}</div>
+                      <div className="text-[10px] text-muted-foreground">{r.detail}</div>
+                      <ul className="mt-2 space-y-1">
+                        {r.conferenceIds.slice(0, 4).map((id) => {
+                          const c = confById.get(id);
+                          if (!c) return null;
+                          const already = inPlanIds.has(id);
+                          return (
+                            <li
+                              key={id}
+                              className="flex items-center justify-between gap-2 rounded border border-border/70 bg-card px-2 py-1.5"
+                            >
+                              <div className="min-w-0">
+                                <div className="truncate text-xs font-medium text-foreground">{c.name}</div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  {c.city} · ICP {c.icpScore}
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant={already ? "secondary" : "default"}
+                                onClick={() => onAdd(id)}
+                                disabled={already}
+                                className="h-7"
+                              >
+                                {already ? <Check className="h-3.5 w-3.5" /> : "Add"}
+                              </Button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
 
-function CoverageBlock({
-  title,
+function CoverageChipRow({
+  label,
   buckets,
 }: {
-  title: string;
+  label: string;
   buckets: { key: string; committed: number; total: number }[];
 }) {
   return (
-    <div className="rounded-md border border-border bg-background p-3">
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{title}</div>
-      <ul className="space-y-1.5">
-        {buckets.map((b) => {
-          const gap = b.committed === 0;
-          return (
-            <li key={b.key} className="flex items-center justify-between text-xs">
-              <span className={gap ? "text-red-700" : "text-foreground"}>{b.key}</span>
-              <span className={cn("tabular-nums", gap ? "text-red-700" : "text-muted-foreground")}>
-                {b.committed} committed
-              </span>
-            </li>
-          );
-        })}
-      </ul>
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
+      {buckets.map((b) => {
+        const gap = b.committed === 0;
+        return (
+          <span
+            key={b.key}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] tabular-nums",
+              gap
+                ? "border-red-300 bg-red-50 text-red-800"
+                : "border-emerald-300 bg-emerald-50 text-emerald-800",
+            )}
+            title={`${b.committed} committed`}
+          >
+            <span className="font-medium">{b.key}</span>
+            <span className="opacity-70">·</span>
+            <span>{b.committed}</span>
+          </span>
+        );
+      })}
     </div>
   );
 }
+
+
 
 /* ---------- Step 3 · Reps ---------- */
 
