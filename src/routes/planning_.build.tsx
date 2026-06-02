@@ -934,12 +934,11 @@ function Step4Review({
 
 /* ---------- Shared ---------- */
 
-function StepHeader({ title, subtitle, kicker }: { title: string; subtitle: string; kicker?: string }) {
+function StepHeader({ title, kicker }: { title: string; subtitle?: string; kicker?: string }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-2">
       <div>
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
       </div>
       {kicker && (
         <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">{kicker}</span>
