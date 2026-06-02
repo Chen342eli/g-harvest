@@ -68,13 +68,6 @@ export function HotLeadsSidebar() {
         ) : (
           <div className="grid grid-cols-2 gap-2.5">
             {grouped.map(({ company, members }) => {
-              const initials = (name: string) =>
-                name
-                  .split(" ")
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((n) => n[0]?.toUpperCase())
-                  .join("");
               return (
                 <div
                   key={company}
@@ -101,24 +94,6 @@ export function HotLeadsSidebar() {
                     </div>
                   ) : (
                     <>
-                      <div className="mb-1.5 flex -space-x-1.5">
-                        {members.slice(0, 4).map(({ p }) => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => openPersonDrawer(p.id)}
-                            title={p.fullName}
-                            className="flex h-6 w-6 items-center justify-center rounded-full border border-card bg-muted text-[9px] font-semibold text-foreground hover:z-10 hover:ring-2 hover:ring-temp-hot/40"
-                          >
-                            {initials(p.fullName)}
-                          </button>
-                        ))}
-                        {members.length > 4 && (
-                          <span className="flex h-6 w-6 items-center justify-center rounded-full border border-card bg-muted text-[9px] font-semibold text-muted-foreground">
-                            +{members.length - 4}
-                          </span>
-                        )}
-                      </div>
                       <button
                         type="button"
                         onClick={() => openPersonDrawer(members[0].p.id)}
