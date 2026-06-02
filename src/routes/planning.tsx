@@ -18,7 +18,7 @@ import {
   toggleRep as toggleRepFn,
   updateConference as updateConferenceFn,
 } from "@/lib/conferences.functions";
-import { isCommitted } from "@/lib/planning";
+import { isCommitted, getPlanLifecycle } from "@/lib/planning";
 import { isCoverageGap, type Conference } from "@/lib/conferences";
 import { TopNav } from "@/components/TopNav";
 import { AgentStatusButton } from "@/components/conference-radar/AgentStatusButton";
