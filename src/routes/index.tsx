@@ -202,24 +202,28 @@ function Dashboard() {
               )}
               {hotLeads.map(({ person, derived, last }) => (
                 <li key={person.id} className="px-4 py-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-medium text-foreground">{person.fullName}</span>
-                    <span className="rounded-full bg-temp-hot px-2 py-0.5 text-[10px] font-medium text-temp-hot-foreground">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-base font-semibold text-foreground">
+                        {person.currentCompany ?? "—"}
+                      </div>
+                      <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {person.fullName}
+                        {person.currentRole ? ` · ${person.currentRole}` : ""}
+                      </div>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-temp-hot px-2 py-0.5 text-[10px] font-medium text-temp-hot-foreground">
                       🔥 hot
                     </span>
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {person.currentRole && person.currentCompany
-                      ? `${person.currentRole} @ ${person.currentCompany}`
-                      : person.currentCompany ?? "—"}
-                  </div>
                   {last && (
-                    <div className="mt-1 text-[11px] text-muted-foreground">
+                    <div className="mt-1.5 text-[11px] text-muted-foreground">
                       {last.conferenceName} · {derived.encounterCount} encounter
                       {derived.encounterCount === 1 ? "" : "s"}
                     </div>
                   )}
                 </li>
+
               ))}
             </ul>
           </section>
