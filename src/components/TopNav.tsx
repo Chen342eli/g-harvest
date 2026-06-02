@@ -2,52 +2,110 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   CalendarCheck,
   CalendarRange,
-  Home,
   Settings,
+  Sprout,
   Users,
   type LucideIcon,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-type Item = { to: string; label: string; icon: LucideIcon; exact?: boolean; match?: string[] };
+type Item = { to: string; label: string; icon: LucideIcon; match?: string[] };
 
-const ITEMS: Item[] = [
-  { to: "/", label: "Home", icon: Home, exact: true },
-  { to: "/planning", label: "Planning", icon: CalendarRange, match: ["/catalog", "/agent"] },
-  { to: "/today", label: "Conference", icon: CalendarCheck, match: ["/capture", "/import", "/recap"] },
-  { to: "/people", label: "Leads", icon: Users, match: ["/follow-ups"] },
-  { to: "/settings", label: "Settings", icon: Settings },
+const MODULES: Item[] = [
+  {
+    to: "/planning",
+    label: "Season Planner",
+    icon: CalendarRange,
+    match: ["/catalog", "/agent"],
+  },
+  {
+    to: "/today",
+    label: "Conference Mode",
+    icon: CalendarCheck,
+    match: ["/capture", "/import", "/recap"],
+  },
+  {
+    to: "/people",
+    label: "Leads",
+    icon: Users,
+    match: ["/follow-ups"],
+  },
 ];
 
-export function TopNav() {
+export interface TopNavProps {
+  rightSlot?: ReactNode;
+  maxWidth?: string;
+}
+
+export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
   const isActive = (it: Item) => {
-    if (it.exact) return pathname === it.to;
     if (pathname === it.to || pathname.startsWith(it.to + "/")) return true;
     return (it.match ?? []).some((m) => pathname === m || pathname.startsWith(m + "/"));
   };
 
+  const settingsActive = pathname === "/settings" || pathname.startsWith("/settings/");
+
   return (
-    <nav className="flex flex-wrap items-center gap-1">
-      {ITEMS.map((it) => {
-        const Icon = it.icon;
-        const active = isActive(it);
-        return (
+    <header className="border-b border-border bg-card">
+      <div className={cn("mx-auto flex flex-wrap items-center justify-between gap-3 px-6 py-3", maxWidth)}>
+        <div className="flex items-center gap-6">
+          {/* Brand = Home */}
           <Link
-            key={it.to}
-            to={it.to}
+            to="/"
+            className="group flex items-center gap-2.5"
+            aria-label="Grain Harvest — Home"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition group-hover:opacity-90">
+              <Sprout className="h-4 w-4" />
+            </div>
+            <span className="text-sm font-semibold tracking-tight text-foreground">
+              Grain Harvest
+            </span>
+          </Link>
+
+          <nav className="flex flex-wrap items-center gap-1">
+            {MODULES.map((it) => {
+              const Icon = it.icon;
+              const active = isActive(it);
+              return (
+                <Link
+                  key={it.to}
+                  to={it.to}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition",
+                    active
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {it.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {rightSlot}
+          <Link
+            to="/settings"
+            aria-label="Settings"
+            title="Settings"
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition",
-              active
+              "inline-flex h-8 w-8 items-center justify-center rounded-md transition",
+              settingsActive
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            <Icon className="h-3.5 w-3.5" />
-            {it.label}
+            <Settings className="h-4 w-4" />
           </Link>
-        );
-      })}
-    </nav>
+        </div>
+      </div>
+    </header>
   );
 }
