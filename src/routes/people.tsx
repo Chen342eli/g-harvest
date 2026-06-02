@@ -412,9 +412,7 @@ function PersonDetail({
 
       <BadgeList badges={badges} />
 
-      <div className="rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
-        🤖 AI relationship read — coming in Phase 2
-      </div>
+      <AiPanel person={person} encounters={encounters} />
 
       <div>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Touchpoints</h3>
