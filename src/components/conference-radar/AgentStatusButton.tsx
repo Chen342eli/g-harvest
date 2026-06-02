@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Bot, ExternalLink, Loader2, Square } from "lucide-react";
+import { ExternalLink, Loader2, Square } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { getLastRun, cancelRunningAgent } from "@/lib/agent.functions";
 import { toast } from "sonner";
