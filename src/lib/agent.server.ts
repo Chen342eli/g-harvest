@@ -316,13 +316,56 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
     );
     const { data: existing } = await supabaseAdmin
       .from("conferences")
-      .select("id, name, start_date, city, end_date, estimated_audience_size, source_url")
+      .select("id, name, start_date, city, country, end_date, estimated_audience_size, source_url")
       .is("deleted_at", null);
-    const existingByKey = new Map<string, NonNullable<typeof existing>[number]>();
+    type ExistingRow = NonNullable<typeof existing>[number];
+    const existingByKey = new Map<string, ExistingRow>();
+    const existingList: ExistingRow[] = [];
     for (const e of existing ?? []) {
       const k = `${e.name.toLowerCase()}|${new Date(e.start_date).getUTCFullYear()}|${e.city.toLowerCase()}`;
       existingByKey.set(k, e);
+      existingList.push(e);
     }
+
+    /** Fuzzy lookup: normalized name + year, with city-as-wildcard when either side is "Unknown",
+     *  plus a date+country fallback (overlap within ±2 days). */
+    function findExistingFuzzy(
+      candName: string,
+      candYear: number,
+      candCity: string,
+      candCountry: string,
+      candStart: string,
+      candEnd: string,
+    ): ExistingRow | undefined {
+      const candNorm = normalizeConfName(candName);
+      const candCityLc = candCity.toLowerCase();
+      for (const e of existingList) {
+        const eYear = new Date(e.start_date).getUTCFullYear();
+        if (eYear !== candYear) continue;
+        const eNorm = normalizeConfName(e.name);
+        const eCityLc = e.city.toLowerCase();
+        const nameMatch =
+          eNorm === candNorm ||
+          (eNorm.length >= 6 && candNorm.length >= 6 &&
+            (eNorm.includes(candNorm) || candNorm.includes(eNorm)));
+        const cityMatch =
+          eCityLc === candCityLc || eCityLc === "unknown" || candCityLc === "unknown";
+        if (nameMatch && cityMatch) return e;
+        // Date+country fallback: same country & overlapping dates (within ±2 days)
+        if (
+          e.country?.toLowerCase() === candCountry.toLowerCase() &&
+          dateOverlapDays(e.start_date, e.end_date, candStart, candEnd) >= -2
+        ) {
+          // Require at least one shared significant token to avoid false positives
+          const eTokens = new Set(eNorm.split(" ").filter((t) => t.length >= 4));
+          const cTokens = candNorm.split(" ").filter((t) => t.length >= 4);
+          if (cTokens.some((t) => eTokens.has(t))) return e;
+        }
+      }
+      return undefined;
+    }
+
+
 
     const yrs = yearsAllowed();
 
