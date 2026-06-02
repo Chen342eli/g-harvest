@@ -201,12 +201,6 @@ function Dashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Link
-                    to="/agent"
-                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground hover:border-brand-accent/60 hover:text-brand-accent"
-                  >
-                    <Radar className="h-3.5 w-3.5" /> Discovery agent
-                  </Link>
-                  <Link
                     to="/planning"
                     className="text-xs text-muted-foreground hover:text-foreground"
                   >
