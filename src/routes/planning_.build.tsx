@@ -125,7 +125,7 @@ function PlanBuilderPage() {
         }
       />
 
-      <main className="mx-auto max-w-5xl space-y-5 px-6 py-6">
+      <main className="mx-auto max-w-7xl space-y-5 px-6 py-6">
         {loading || !plan ? (
           <div className="rounded-lg border border-border bg-card p-12 text-center text-sm text-muted-foreground">
             {loading ? "Loading…" : "No active plan found."}
