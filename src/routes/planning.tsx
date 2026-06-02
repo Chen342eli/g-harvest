@@ -169,7 +169,7 @@ function PlanningPage() {
         )}
 
         {!isLoading && lifecycle === "draft" && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-400/60 bg-amber-50 px-5 py-3 dark:bg-amber-950/30">
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3 rounded-lg border border-amber-400/60 bg-amber-50 px-5 py-3 dark:bg-amber-950/30">
             <div className="flex items-start gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300">
                 <Sparkles className="h-4 w-4" />
@@ -179,7 +179,7 @@ function PlanningPage() {
                   {planQuery.data?.plan.name} is in draft
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Complete the wizard and approve the plan — the "In plan" view and upcoming events stay hidden until then.
+                  Complete the wizard and approve the plan.
                 </p>
               </div>
             </div>
@@ -190,6 +190,7 @@ function PlanningPage() {
             </Button>
           </div>
         )}
+
 
         {!isLoading && lifecycle === "none" && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-400/60 bg-amber-50 px-5 py-3 dark:bg-amber-950/30">
