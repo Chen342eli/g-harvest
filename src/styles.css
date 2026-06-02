@@ -109,7 +109,7 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 
   /* Grain brand + traffic-light semantic tokens (Unit 2) */
-  --brand-base: oklch(0.32 0.04 250);          /* softer navy/ink */
+  --brand-base: oklch(0.30 0.09 255);          /* dark blue */
   --brand-base-foreground: oklch(0.98 0.003 247);
   --brand-accent: oklch(0.78 0.14 80);         /* grain gold */
   --brand-accent-foreground: oklch(0.22 0.04 250);
