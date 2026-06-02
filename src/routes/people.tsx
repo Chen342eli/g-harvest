@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronUp, ChevronsUpDown, Copy, Mail, Search, Sparkles, X } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronUp, ChevronsUpDown, Copy, Download, Mail, Search, Sparkles, X } from "lucide-react";
+import { downloadHubSpotCsv, buildHubSpotQueue } from "@/lib/hubspot-export";
 import { TopNav } from "@/components/TopNav";
 import { usePeopleData, updatePerson } from "@/lib/people-store";
 import { computeBadges, derivePerson } from "@/lib/matching";
@@ -204,6 +205,7 @@ function RelationshipsPage() {
             <span>
               <span className="font-semibold tabular-nums text-foreground">{sorted.length}</span> of {enriched.length} people
             </span>
+            <HubSpotExportButton people={data.people} encounters={data.encounters} />
           </div>
         }
       />
@@ -603,5 +605,42 @@ function AiPanel({ person, encounters }: { person: Person; encounters: Encounter
         </>
       )}
     </div>
+  );
+}
+
+function HubSpotExportButton({
+  people,
+  encounters,
+}: {
+  people: Person[];
+  encounters: Encounter[];
+}) {
+  const queueCount = buildHubSpotQueue(people).length;
+  const disabled = queueCount === 0;
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => {
+        const n = downloadHubSpotCsv(people, encounters);
+        toast.success(`Exported ${n} lead${n === 1 ? "" : "s"} to CSV`, {
+          description: "Import via HubSpot → Contacts → Import, and map columns to properties.",
+        });
+      }}
+      title={
+        disabled
+          ? "No prioritized leads to export yet"
+          : `Export ${queueCount} prioritized lead${queueCount === 1 ? "" : "s"} (Tire-kickers excluded)`
+      }
+      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40"
+    >
+      <Download className="h-3.5 w-3.5" />
+      Export to HubSpot (CSV)
+      {queueCount > 0 && (
+        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
+          {queueCount}
+        </span>
+      )}
+    </button>
   );
 }
