@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Search } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronUp, ChevronsUpDown, Search, X } from "lucide-react";
 import { TopNav } from "@/components/TopNav";
 import { usePeopleData } from "@/lib/people-store";
-import { computeBadges, derivePerson, type PersonDerived } from "@/lib/matching";
+import { computeBadges, derivePerson } from "@/lib/matching";
 import type { Temperature, EncounterVertical, Encounter, Person } from "@/lib/people-types";
 import { ENCOUNTER_VERTICALS } from "@/lib/people-types";
 import { TempDot } from "@/components/people/TempControls";
@@ -26,6 +26,7 @@ const TEMP_COLOR: Record<Temperature, string> = {
 };
 
 type Trend = "up" | "flat" | "down" | "single" | "none";
+const TREND_RANK: Record<Trend, number> = { up: 4, flat: 3, single: 2, down: 1, none: 0 };
 
 function computeTrend(encs: Encounter[]): Trend {
   if (encs.length === 0) return "none";
@@ -73,18 +74,12 @@ function fmtDate(iso?: string): string {
 
 // ---------- Sort ----------
 //
-// Phase 1: prioritize by most recent activity (lastSeenAt desc).
-// Phase 3 will replace this with an AI-signal-driven sort.
-//   → PLUG IN: sort by row.person.aiSignal (then aiConfidence) before falling
-//     back to lastSeenAt. Keep this function name so the AI sort is a single
-//     swap point.
-function prioritize(
-  rows: { derived: PersonDerived }[],
-): number {
-  return 0; // placeholder typing helper — actual sort uses .sort() below
-}
-// silence unused warning while keeping the doc-anchor visible
-void prioritize;
+// Phase 1: prioritize by most recent activity (lastSeenAt desc) by default.
+// Phase 3 will replace the default with an AI-signal-driven sort.
+//   → PLUG IN: when sortKey === "ai", sort by row.person.aiSignal then aiConfidence.
+
+type SortKey = "person" | "role" | "vertical" | "met" | "lastSeen" | "trend";
+type SortDir = "asc" | "desc";
 
 function RelationshipsPage() {
   const data = usePeopleData();
@@ -92,19 +87,26 @@ function RelationshipsPage() {
   const [verticalFilter, setVerticalFilter] = useState<EncounterVertical | "all">("all");
   const [repFilter, setRepFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("lastSeen");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "person" || key === "role" || key === "vertical" ? "asc" : "desc");
+    }
+  };
 
   const enriched = useMemo(() => {
-    return data.people
-      .map((p) => {
-        const derived = derivePerson(p, data.encounters);
-        const badges = computeBadges(p, data.encounters);
-        const latestTemp = derived.encounters[derived.encounters.length - 1]?.temperature;
-        const trend = computeTrend(derived.encounters);
-        return { person: p, derived, badges, latestTemp, trend };
-      })
-      // Phase 1 prioritization: most recent activity first.
-      // Phase 3 AI sort plugs in HERE — see prioritize() note above.
-      .sort((a, b) => (b.derived.lastSeenAt ?? "").localeCompare(a.derived.lastSeenAt ?? ""));
+    return data.people.map((p) => {
+      const derived = derivePerson(p, data.encounters);
+      const badges = computeBadges(p, data.encounters);
+      const latestTemp = derived.encounters[derived.encounters.length - 1]?.temperature;
+      const trend = computeTrend(derived.encounters);
+      return { person: p, derived, badges, latestTemp, trend };
+    });
   }, [data]);
 
   const allReps = useMemo(() => {
@@ -127,6 +129,30 @@ function RelationshipsPage() {
     return true;
   });
 
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    const dir = sortDir === "asc" ? 1 : -1;
+    arr.sort((a, b) => {
+      switch (sortKey) {
+        case "person":
+          return dir * a.person.fullName.localeCompare(b.person.fullName);
+        case "role":
+          return dir * (a.person.currentRole ?? "").localeCompare(b.person.currentRole ?? "");
+        case "vertical":
+          return dir * (a.person.currentVertical ?? "").localeCompare(b.person.currentVertical ?? "");
+        case "met":
+          return dir * (a.derived.encounterCount - b.derived.encounterCount);
+        case "lastSeen":
+          return dir * (a.derived.lastSeenAt ?? "").localeCompare(b.derived.lastSeenAt ?? "");
+        case "trend":
+          return dir * (TREND_RANK[a.trend] - TREND_RANK[b.trend]);
+        default:
+          return 0;
+      }
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir]);
+
   const selected = selectedId ? enriched.find((e) => e.person.id === selectedId) ?? null : null;
 
   return (
@@ -135,13 +161,13 @@ function RelationshipsPage() {
         rightSlot={
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span>
-              <span className="font-semibold tabular-nums text-foreground">{filtered.length}</span> of {enriched.length} people
+              <span className="font-semibold tabular-nums text-foreground">{sorted.length}</span> of {enriched.length} people
             </span>
           </div>
         }
       />
 
-      <main className="mx-auto grid max-w-[1600px] gap-4 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_440px]">
+      <main className="mx-auto max-w-[1600px] px-6 py-6 relative">
         <section className="rounded-lg border border-border bg-card overflow-hidden">
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
@@ -185,20 +211,20 @@ function RelationshipsPage() {
 
           {/* Table header */}
           <div className="hidden grid-cols-[minmax(0,2fr)_minmax(0,2fr)_110px_70px_90px_90px_minmax(0,1.6fr)] gap-3 border-b border-border bg-muted/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
-            <span>Person</span>
-            <span>Role @ Company</span>
-            <span>Vertical</span>
-            <span className="text-right">Met</span>
-            <span>Last seen</span>
-            <span>Trend</span>
+            <SortHeader label="Person" k="person" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+            <SortHeader label="Role @ Company" k="role" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+            <SortHeader label="Vertical" k="vertical" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+            <SortHeader label="Met" k="met" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
+            <SortHeader label="Last seen" k="lastSeen" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+            <SortHeader label="Trend" k="trend" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
             <span>Signals</span>
           </div>
 
           <ul className="max-h-[72vh] divide-y divide-border overflow-auto">
-            {filtered.length === 0 && (
+            {sorted.length === 0 && (
               <li className="p-6 text-sm text-muted-foreground">No matches.</li>
             )}
-            {filtered.map(({ person, badges, latestTemp, derived, trend }) => (
+            {sorted.map(({ person, badges, latestTemp, derived, trend }) => (
               <li key={person.id}>
                 <button
                   type="button"
@@ -208,19 +234,16 @@ function RelationshipsPage() {
                     selectedId === person.id && "bg-muted/60",
                   )}
                 >
-                  {/* Person */}
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-foreground">{person.fullName}</div>
                     <div className="truncate text-[11px] text-muted-foreground lg:hidden">
                       {person.currentRole ?? "—"}{person.currentCompany ? ` @ ${person.currentCompany}` : ""}
                     </div>
                   </div>
-                  {/* Role @ Company (desktop only) */}
                   <div className="hidden min-w-0 lg:block">
                     <div className="truncate text-xs text-foreground">{person.currentRole ?? "—"}</div>
                     <div className="truncate text-[11px] text-muted-foreground">{person.currentCompany ?? "—"}</div>
                   </div>
-                  {/* Vertical */}
                   <div className="hidden lg:block">
                     {person.currentVertical ? (
                       <span className="inline-flex rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
@@ -230,20 +253,16 @@ function RelationshipsPage() {
                       <span className="text-[10px] text-muted-foreground">—</span>
                     )}
                   </div>
-                  {/* Encounters count */}
                   <div className="hidden text-right text-xs tabular-nums text-foreground lg:block">
                     ×{derived.encounterCount}
                   </div>
-                  {/* Last seen */}
                   <div className="hidden text-xs tabular-nums text-muted-foreground lg:block">
                     {fmtDate(derived.lastSeenAt)}
                   </div>
-                  {/* Trend (arrow + sparkline) */}
                   <div className="hidden items-center gap-1.5 lg:flex">
                     <TrendArrow trend={trend} />
                     <TempSparkline encs={derived.encounters} />
                   </div>
-                  {/* Badges (+ latest temp pill) */}
                   <div className="flex flex-wrap items-center gap-1">
                     {latestTemp && <TempDot t={latestTemp} />}
                     <BadgeList badges={badges} />
@@ -254,21 +273,63 @@ function RelationshipsPage() {
           </ul>
         </section>
 
-        <section className="rounded-lg border border-border bg-card">
-          {!selected ? (
-            <div className="p-6 text-sm text-muted-foreground">
-              Select a person to see their cross-conference arc.
-            </div>
-          ) : (
+        {/* Floating detail panel */}
+        {selected && (
+          <aside
+            className="absolute right-6 top-6 z-20 w-[420px] max-w-[calc(100%-3rem)] max-h-[calc(100vh-8rem)] overflow-auto rounded-lg border border-border bg-card shadow-xl"
+            role="dialog"
+            aria-label={`${selected.person.fullName} details`}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedId(null)}
+              className="absolute right-3 top-3 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
             <PersonDetail
               person={selected.person}
               encounters={selected.derived.encounters}
               badges={selected.badges}
             />
-          )}
-        </section>
+          </aside>
+        )}
       </main>
     </div>
+  );
+}
+
+function SortHeader({
+  label,
+  k,
+  sortKey,
+  sortDir,
+  onClick,
+  align = "left",
+}: {
+  label: string;
+  k: SortKey;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onClick: (k: SortKey) => void;
+  align?: "left" | "right";
+}) {
+  const active = sortKey === k;
+  const Icon = !active ? ChevronsUpDown : sortDir === "asc" ? ChevronUp : ChevronDown;
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(k)}
+      className={cn(
+        "inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide hover:text-foreground transition",
+        active ? "text-foreground" : "text-muted-foreground",
+        align === "right" && "justify-end",
+      )}
+    >
+      <span>{label}</span>
+      <Icon className="h-3 w-3" />
+    </button>
   );
 }
 
@@ -282,7 +343,7 @@ function PersonDetail({
   badges: ReturnType<typeof computeBadges>;
 }) {
   return (
-    <div className="space-y-4 p-5">
+    <div className="space-y-4 p-5 pr-12">
       <div>
         <h2 className="text-lg font-semibold text-foreground">{person.fullName}</h2>
         {person.nameVariations.length > 0 && (
