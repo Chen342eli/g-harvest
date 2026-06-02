@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Check, ChevronDown, ChevronRight, X, ExternalLink } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, X, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { listAgentRuns, listChangeFlags, listRunCandidates, resolveFlag } from "@/lib/agent.functions";
+import { TopNav } from "@/components/TopNav";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
