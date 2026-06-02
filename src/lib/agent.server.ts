@@ -119,6 +119,58 @@ function normalizeUrl(u: string): string {
   }
 }
 
+const DateVerificationSchema = z.object({
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  year: z.number().int().nullable(),
+  notes: z.string().optional(),
+});
+
+/**
+ * Targeted retry: if the first extraction returned no date or a year that's
+ * outside the allowed window, ask the model a focused second question about
+ * just the dates/year. Returns updated startDate/endDate or null if still unknown.
+ */
+async function verifyConferenceDates(args: {
+  model: Parameters<typeof generateText>[0]["model"];
+  name: string;
+  hit: SearchHit;
+  markdown: string | null;
+  allowedYears: number[];
+}): Promise<{ startDate: string | null; endDate: string | null }> {
+  const { model, name, hit, markdown, allowedYears } = args;
+  if (!markdown) return { startDate: null, endDate: null };
+
+  try {
+    const res = await generateText({
+      model,
+      prompt:
+        `You previously extracted a conference but the dates were missing or had an unreasonable year.\n` +
+        `Re-read the page below and find ONLY the dates of the next edition of "${name}".\n` +
+        `Look for explicit phrases like "March 4-6, 2026", date headers near the title/hero, footer "© 2026", or registration pages.\n` +
+        `Allowed years: ${allowedYears.join(", ")}. If the page describes a past edition, reply with nulls.\n` +
+        `Return ONLY one JSON object: { "startDate": "YYYY-MM-DD" | null, "endDate": "YYYY-MM-DD" | null, "year": integer | null, "notes": string }.\n` +
+        `Use null for any field you cannot determine with high confidence. Do NOT invent a year.\n\n` +
+        `URL: ${hit.url}\nTitle: ${hit.title ?? ""}\n\n` +
+        `--- PAGE CONTENT (markdown, possibly truncated) ---\n${markdown}`,
+    });
+    const raw = res.text ?? "";
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (!m) return { startDate: null, endDate: null };
+    const parsed = DateVerificationSchema.parse(JSON.parse(m[0]));
+    const start = parsed.startDate;
+    const end = parsed.endDate ?? start;
+    if (!start) return { startDate: null, endDate: null };
+    const y = new Date(start).getUTCFullYear();
+    if (!Number.isFinite(y) || !allowedYears.includes(y)) {
+      return { startDate: null, endDate: null };
+    }
+    return { startDate: start, endDate: end ?? start };
+  } catch {
+    return { startDate: null, endDate: null };
+  }
+}
+
 function normalizeHits(raw: unknown): SearchHit[] {
   const out: SearchHit[] = [];
   if (!raw) return out;
@@ -406,15 +458,54 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             continue;
           }
 
-          const year = parsed.startDate ? new Date(parsed.startDate).getUTCFullYear() : null;
-          if (year !== null && !yrs.has(year)) {
+          let year = parsed.startDate ? new Date(parsed.startDate).getUTCFullYear() : null;
+          const allowedYears = [...yrs];
+          const dateMissing = !parsed.startDate;
+          const yearInvalid = year !== null && !yrs.has(year);
+
+          // If the first extraction lost the date or returned a nonsense year,
+          // do one focused retry asking the AI to re-verify the dates.
+          if (dateMissing || yearInvalid) {
+            const verified = await verifyConferenceDates({
+              model,
+              name: parsed.name,
+              hit,
+              markdown,
+              allowedYears,
+            });
+            if (verified.startDate) {
+              parsed.startDate = verified.startDate;
+              parsed.endDate = verified.endDate ?? verified.startDate;
+              year = new Date(parsed.startDate).getUTCFullYear();
+            }
+          }
+
+          // After retry: if we still don't have a usable year, skip instead of
+          // inserting a 9999 placeholder. This is what produced the bad rows.
+          if (!parsed.startDate) {
             skipped++;
-            await logCandidate({ runId, hit, decision: "skipped", reason: `Year ${year} outside allowed window (${[...yrs].join(", ")})`, extracted: parsed });
+            await logCandidate({
+              runId,
+              hit,
+              decision: "skipped",
+              reason: "No date found after verification retry — refusing to insert placeholder year",
+              extracted: parsed,
+            });
+            continue;
+          }
+          if (year === null || !yrs.has(year)) {
+            skipped++;
+            await logCandidate({
+              runId,
+              hit,
+              decision: "skipped",
+              reason: `Year ${year} outside allowed window (${allowedYears.join(", ")}) after verification retry`,
+              extracted: parsed,
+            });
             continue;
           }
 
           const missing: string[] = [];
-          if (!parsed.startDate) missing.push("start_date");
           if (!parsed.endDate) missing.push("end_date");
           if (!parsed.city) missing.push("city");
           if (!parsed.country) missing.push("country");
@@ -422,14 +513,14 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           if (!parsed.vertical) missing.push("vertical");
           if (parsed.estimatedAudienceSize == null) missing.push("estimated_audience_size");
 
-          const startDate = parsed.startDate ?? "9999-12-31";
+          const startDate = parsed.startDate;
           const endDate = parsed.endDate ?? startDate;
           const city = parsed.city ?? "Unknown";
           const country = parsed.country ?? "Unknown";
           const region = (parsed.region ?? "North America") as Region;
           const vertical = (parsed.vertical ?? "Fintech") as Vertical;
           const audience = parsed.estimatedAudienceSize ?? 0;
-          const dedupYear = year ?? 0;
+          const dedupYear = year;
 
           const dedupKey = `${parsed.name.toLowerCase()}|${dedupYear}|${city.toLowerCase()}`;
 
