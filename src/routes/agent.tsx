@@ -1,12 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronDown, ChevronRight, X, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, ChevronDown, ChevronRight, Play, X, ExternalLink, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { listAgentRuns, listChangeFlags, listRunCandidates, resolveFlag } from "@/lib/agent.functions";
+import { listAgentRuns, listChangeFlags, listRunCandidates, resolveFlag, runAgentNow } from "@/lib/agent.functions";
 import { TopNav } from "@/components/TopNav";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/agent")({
   head: () => ({ meta: [{ title: "Discovery Agent · Conference Radar" }] }),
