@@ -355,7 +355,7 @@ function Step2Coverage({
         allConferences,
         items,
         // plan budget no longer used; pass a stub
-        plan: { id: "", name: "", year: planYear, annualBudgetUsd: 0, plannedRepsPerConference: 1, isActive: true, createdAt: "", updatedAt: "", archivedAt: null },
+        plan: { id: "", name: "", year: planYear, annualBudgetUsd: 0, plannedRepsPerConference: 1, isActive: true, status: "draft", createdAt: "", updatedAt: "", archivedAt: null },
         planYear,
       }).filter((r) => r.kind === "region_gap" || r.kind === "vertical_gap"),
     [allConferences, items, planYear],
