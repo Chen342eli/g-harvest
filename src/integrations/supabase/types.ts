@@ -275,7 +275,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      conf_decision_status: "Considering" | "Going" | "Passed"
+      conf_decision_status: "Considering" | "Going" | "Passed" | "Needs Review"
       conf_provenance: "verified" | "ai_added"
     }
     CompositeTypes: {
@@ -404,7 +404,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      conf_decision_status: ["Considering", "Going", "Passed"],
+      conf_decision_status: ["Considering", "Going", "Passed", "Needs Review"],
       conf_provenance: ["verified", "ai_added"],
     },
   },
