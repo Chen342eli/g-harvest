@@ -241,17 +241,20 @@ export function TimelineView({ conferences, onSetStatus }: Props) {
                       )}
                     >
                       {/* Sticky left gutter */}
-                      <div
-                        className="flex w-[180px] shrink-0 items-center border-r border-border px-3 text-xs font-medium text-foreground"
-                        style={{ minHeight: lane.height }}
-                      >
-                        <span className="truncate" title={lane.label}>
-                          {lane.label}
-                          <span className="ml-1.5 text-[10px] font-normal tabular-nums text-muted-foreground">
-                            {lane.bars.length}
+                      {groupBy !== "none" && (
+                        <div
+                          className="flex w-[180px] shrink-0 items-center border-r border-border px-3 text-xs font-medium text-foreground"
+                          style={{ minHeight: lane.height }}
+                        >
+                          <span className="truncate" title={lane.label}>
+                            {lane.label}
+                            <span className="ml-1.5 text-[10px] font-normal tabular-nums text-muted-foreground">
+                              {lane.bars.length}
+                            </span>
                           </span>
-                        </span>
-                      </div>
+                        </div>
+                      )}
+
 
                       {/* Track */}
                       <div className="relative flex-1" style={{ height: lane.height }}>
