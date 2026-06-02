@@ -33,7 +33,20 @@ const KIND_COLOR: Record<ScheduleKind, string> = {
 
 export function SchedulePanel({ conferenceId, conferenceStartDate, conferenceEndDate }: Props) {
   const items = useSchedule();
+  const peopleData = usePeopleData();
   const [adding, setAdding] = useState(false);
+
+  const findPersonId = (name: string | undefined): string | null => {
+    if (!name) return null;
+    const target = name.trim().toLowerCase();
+    if (!target) return null;
+    const match = peopleData.people.find((p) => {
+      if (p.fullName.toLowerCase() === target) return true;
+      return p.nameVariations.some((v) => v.toLowerCase() === target);
+    });
+    return match?.id ?? null;
+  };
+
 
   const days = useMemo(() => {
     const out: string[] = [];
