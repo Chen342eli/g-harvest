@@ -17,6 +17,7 @@ interface PlanRow {
   annual_budget_usd: number | string;
   planned_reps_per_conference: number;
   is_active: boolean;
+  status: "draft" | "approved";
   created_at: string;
   updated_at: string;
   archived_at: string | null;
@@ -41,6 +42,7 @@ function rowToPlan(r: PlanRow): Plan {
     annualBudgetUsd: Number(r.annual_budget_usd),
     plannedRepsPerConference: r.planned_reps_per_conference,
     isActive: r.is_active,
+    status: r.status ?? "draft",
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     archivedAt: r.archived_at,
