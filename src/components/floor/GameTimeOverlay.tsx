@@ -587,11 +587,6 @@ function PersonBriefing({ personId }: { personId: string }) {
                 : "No signal yet"}
             </span>
           </div>
-          {action && (
-            <p className="mb-2 text-[11px] font-medium text-brand-base-foreground/60">
-              {action.helper}
-            </p>
-          )}
           {person.aiReasoning ? (
             <p className="text-[15px] font-semibold leading-snug text-brand-base-foreground">
               {person.aiReasoning}
