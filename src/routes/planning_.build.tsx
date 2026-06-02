@@ -39,6 +39,7 @@ import { TopNav } from "@/components/TopNav";
 import { TierBadge } from "@/components/conference-radar/TierBadge";
 import { TimelineView } from "@/components/conference-radar/TimelineView";
 import { MapView } from "@/components/conference-radar/MapView";
+import { RepAssigner } from "@/components/conference-radar/RepAssigner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -840,26 +841,12 @@ function Step3Reps({
                     {reps.length} / target
                   </div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {SALES_TEAM.map((rep) => {
-                    const selected = reps.includes(rep);
-                    return (
-                      <button
-                        key={rep}
-                        type="button"
-                        onClick={() => onToggleRep(c.id, rep)}
-                        className={cn(
-                          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition",
-                          selected
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-card text-muted-foreground hover:bg-muted",
-                        )}
-                      >
-                        {selected ? <Check className="h-3 w-3" /> : <CircleDot className="h-3 w-3" />}
-                        {rep}
-                      </button>
-                    );
-                  })}
+                <div className="mt-3">
+                  <RepAssigner
+                    assigned={reps}
+                    allReps={SALES_TEAM}
+                    onToggle={(rep) => onToggleRep(c.id, rep)}
+                  />
                 </div>
               </li>
             );
