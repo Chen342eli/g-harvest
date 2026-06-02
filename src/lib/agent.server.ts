@@ -382,6 +382,10 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           tags: parsed.tags,
         });
 
+        // Low confidence → keep off the main board, route to review queue.
+        const lowConfidence = (parsed.confidence ?? 0) < 60;
+        const initialStatus = lowConfidence ? "Needs Review" : "Considering";
+
         const { data: inserted, error: insErr } = await supabaseAdmin
           .from("conferences")
           .insert({
@@ -398,6 +402,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             ...scoring,
             provenance: "ai_added",
             confidence: parsed.confidence,
+            status: initialStatus,
           })
           .select("id")
           .single();
