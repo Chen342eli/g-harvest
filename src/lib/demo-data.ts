@@ -747,7 +747,7 @@ function buildSnapshot(state: DemoState, amsConfId: string, amsConfName: string)
     return {
       people: { people: [], encounters: [] },
       schedule: [],
-      hotAccounts: [...HOT_ACCOUNTS],
+      hotAccounts: [],
       activeConferenceId: undefined,
       activeConferenceName: undefined,
       activeRepId: REPS.maya,
