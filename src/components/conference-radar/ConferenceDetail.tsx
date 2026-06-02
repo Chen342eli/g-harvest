@@ -73,6 +73,21 @@ export function ConferenceDetail({
         <dd className="text-foreground">
           {c.assignedReps.length ? c.assignedReps.join(", ") : <span className="text-muted-foreground">Unassigned</span>}
         </dd>
+        {c.sourceUrl && (
+          <>
+            <dt className="text-muted-foreground">Website</dt>
+            <dd className="truncate">
+              <a
+                href={c.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                Open <ExternalLink className="h-3 w-3" />
+              </a>
+            </dd>
+          </>
+        )}
       </dl>
     </div>
   );
