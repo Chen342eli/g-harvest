@@ -39,7 +39,7 @@ export function AgentStatusButton() {
     onError: (err: unknown) => toast.error(err instanceof Error ? err.message : "Cancel failed"),
   });
 
-  const running = mutation.isPending || lastRun?.status === "running";
+  const running = lastRun?.status === "running";
   const cancelRequested = !!(lastRun as { cancel_requested?: boolean } | null)?.cancel_requested;
   const statusColor =
     lastRun?.status === "error" ? "bg-red-500"
