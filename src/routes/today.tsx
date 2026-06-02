@@ -255,5 +255,3 @@ function countBy<T>(arr: T[], key: (x: T) => string): Record<string, number> {
   }
   return out;
 }
-
-export type _Encounter = Encounter;
