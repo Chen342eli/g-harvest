@@ -605,7 +605,9 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             continue;
           }
 
-          const dupe = existingByKey.get(dedupKey);
+          const dupe =
+            existingByKey.get(dedupKey) ??
+            findExistingFuzzy(parsed.name, dedupYear, city, country, startDate, endDate);
           if (dupe) {
             const changes: { field: string; old: unknown; next: unknown }[] = [];
             if (parsed.startDate && dupe.start_date !== parsed.startDate)
