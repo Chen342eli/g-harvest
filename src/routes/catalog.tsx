@@ -20,8 +20,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/catalog")({
   head: () => ({
     meta: [
-      { title: "Grain Conference Radar" },
-      { name: "description", content: "Internal tool to prioritize industry conferences and coverage for the sales team." },
+      { title: "Catalog · Grain Conference Radar" },
+      { name: "description", content: "Browse and manage every conference the agent has discovered." },
     ],
   }),
   component: Index,
