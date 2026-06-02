@@ -113,6 +113,7 @@ function SignalBadge({ signal, confidence }: { signal?: AiSignal; confidence?: A
 }
 
 function RelationshipsPage() {
+  useBulkAiReads();
   const data = usePeopleData();
   const [search, setSearch] = useState("");
   const [verticalFilter, setVerticalFilter] = useState<EncounterVertical | "all">("all");
