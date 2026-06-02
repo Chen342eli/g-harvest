@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { ContextSubNav } from "@/components/ContextSubNav";
 
 type Item = { to: string; label: string; icon: LucideIcon; match?: string[] };
 
@@ -49,7 +50,8 @@ export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) 
   const settingsActive = pathname === "/settings" || pathname.startsWith("/settings/");
 
   return (
-    <header className="border-b border-border bg-card">
+    <>
+    <header className="sticky top-0 z-30 border-b border-border bg-card">
       <div className={cn("mx-auto flex flex-wrap items-center justify-between gap-3 px-6 py-3", maxWidth)}>
         <div className="flex items-center gap-6">
           {/* Brand = Home */}
@@ -107,5 +109,7 @@ export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) 
         </div>
       </div>
     </header>
+    <ContextSubNav />
+    </>
   );
 }

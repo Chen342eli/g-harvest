@@ -6,25 +6,27 @@ export type SubNavItem = { to: string; label: string };
 export function SubNav({ items }: { items: SubNavItem[] }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <div className="inline-flex items-center rounded-md border border-border bg-card p-0.5">
+    <nav className="flex items-center gap-1" role="tablist">
       {items.map((it) => {
         const active = pathname === it.to;
         return (
           <Link
             key={it.to}
             to={it.to}
+            role="tab"
+            aria-selected={active}
             className={cn(
-              "rounded px-3 py-1.5 text-xs font-medium transition",
+              "relative px-3 py-2 text-xs font-medium transition border-b-2 -mb-px",
               active
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
             {it.label}
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }
 
