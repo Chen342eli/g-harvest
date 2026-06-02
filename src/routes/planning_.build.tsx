@@ -7,9 +7,13 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  CalendarRange,
   Check,
   CheckCircle2,
   CircleDot,
+  LayoutGrid,
+  List as ListIcon,
+  Map as MapIcon,
   Sparkles,
   Star,
   Users,
@@ -33,6 +37,8 @@ import { REGIONS, SALES_TEAM, type Conference, type Vertical } from "@/lib/confe
 import { buildRecommendations, findCalendarConflicts } from "@/lib/recommendations";
 import { TopNav } from "@/components/TopNav";
 import { TierBadge } from "@/components/conference-radar/TierBadge";
+import { TimelineView } from "@/components/conference-radar/TimelineView";
+import { MapView } from "@/components/conference-radar/MapView";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
