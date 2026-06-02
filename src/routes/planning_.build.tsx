@@ -303,7 +303,7 @@ function Step1Anchors({
                 </div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
                   {c.city}, {c.country} · {c.vertical} · ICP {c.icpScore}
-                  {c.subScores?.pastPerformance >= 70 && (
+                  {(c.subScores?.pastPerformance ?? 0) >= 70 && (
                     <> · <span className="text-amber-700">★ past {c.subScores.pastPerformance}</span></>
                   )}
                 </div>
