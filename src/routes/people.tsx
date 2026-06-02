@@ -12,6 +12,7 @@ import { BadgeList } from "@/components/people/Badges";
 import { cn } from "@/lib/utils";
 import { SALES_TEAM } from "@/lib/conferences";
 import { analyzeRelationship } from "@/lib/relationship-ai.functions";
+import { useBulkAiReads } from "@/lib/use-bulk-ai";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/people")({
