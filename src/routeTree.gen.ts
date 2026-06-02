@@ -14,6 +14,7 @@ import { Route as RecapRouteImport } from './routes/recap'
 import { Route as PlanningRouteImport } from './routes/planning'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
@@ -44,6 +45,11 @@ const ImportRoute = ImportRouteImport.update({
   path: '/import',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CatalogRoute = CatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CaptureRoute = CaptureRouteImport.update({
   id: '/capture',
   path: '/capture',
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
+  '/catalog': typeof CatalogRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
+  '/catalog': typeof CatalogRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
+  '/catalog': typeof CatalogRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agent'
     | '/capture'
+    | '/catalog'
     | '/import'
     | '/people'
     | '/planning'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agent'
     | '/capture'
+    | '/catalog'
     | '/import'
     | '/people'
     | '/planning'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agent'
     | '/capture'
+    | '/catalog'
     | '/import'
     | '/people'
     | '/planning'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentRoute: typeof AgentRoute
   CaptureRoute: typeof CaptureRoute
+  CatalogRoute: typeof CatalogRoute
   ImportRoute: typeof ImportRoute
   PeopleRoute: typeof PeopleRoute
   PlanningRoute: typeof PlanningRoute
@@ -184,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ImportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/catalog': {
+      id: '/catalog'
+      path: '/catalog'
+      fullPath: '/catalog'
+      preLoaderRoute: typeof CatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/capture': {
       id: '/capture'
       path: '/capture'
@@ -219,6 +239,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentRoute: AgentRoute,
   CaptureRoute: CaptureRoute,
+  CatalogRoute: CatalogRoute,
   ImportRoute: ImportRoute,
   PeopleRoute: PeopleRoute,
   PlanningRoute: PlanningRoute,
