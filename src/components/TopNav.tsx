@@ -78,7 +78,7 @@ export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) 
                         className={cn(
                           "ml-0.5 inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
                           active
-                            ? "bg-primary-foreground text-primary"
+                            ? "bg-brand-base-foreground text-brand-base"
                             : "bg-temp-hot text-temp-hot-foreground",
                         )}
                         aria-label={`${chaseNowCount} urgent follow-ups`}
