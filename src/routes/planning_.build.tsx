@@ -900,17 +900,33 @@ function Step4Review({
         <Metric label="Regions covered" value={`${REGIONS.length - regionGaps.length}/${REGIONS.length}`} />
       </div>
 
-      <ReviewSection title="Open gaps">
-        {verticalGaps.length === 0 && regionGaps.length === 0 ? (
-          <p className="text-xs text-emerald-700">No coverage gaps remain.</p>
+      <ReviewSection title="Open gaps & issues">
+        {verticalGaps.length === 0 && regionGaps.length === 0 && repsMissing.length === 0 ? (
+          <p className="text-xs text-emerald-700">All set — no coverage gaps and every conference has a rep.</p>
         ) : (
-          <ul className="space-y-1 text-xs text-muted-foreground">
-            {verticalGaps.map((v) => (
-              <li key={`v-${v}`} className="text-red-700">• Vertical: {v}</li>
-            ))}
+          <ul className="space-y-1.5 text-xs">
             {regionGaps.map((r) => (
-              <li key={`r-${r}`} className="text-red-700">• Region: {r}</li>
+              <li key={`r-${r}`} className="text-red-700">
+                <span className="font-medium">• Region: {r}</span>
+                <span className="text-red-700/80"> — no conference in this region. Buyers in {r} won't be reached this year; add at least one event or accept the gap.</span>
+              </li>
             ))}
+            {verticalGaps.map((v) => (
+              <li key={`v-${v}`} className="text-red-700">
+                <span className="font-medium">• Vertical: {v}</span>
+                <span className="text-red-700/80"> — no event covering {v}. Pipeline in this ICP vertical will have no field touchpoint; consider adding a {v}-focused conference.</span>
+              </li>
+            ))}
+            {repsMissing.length > 0 && (
+              <li className="text-amber-800">
+                <span className="font-medium">
+                  ⚠ Reps: {repsMissing.length} conference{repsMissing.length === 1 ? "" : "s"} without an assigned rep
+                </span>
+                <span className="text-amber-800/80">
+                  {" "}— {repsMissing.map((i) => i.conference.name).join(", ")}. You can approve now and assign reps later in step 3.
+                </span>
+              </li>
+            )}
           </ul>
         )}
       </ReviewSection>
@@ -945,11 +961,6 @@ function Step4Review({
         )}
       </ReviewSection>
 
-      {repsMissing.length > 0 && (
-        <p className="text-xs text-amber-800">
-          ⚠ {repsMissing.length} committed conference{repsMissing.length === 1 ? "" : "s"} still ha{repsMissing.length === 1 ? "s" : "ve"} no assigned rep. You can approve now and fix later.
-        </p>
-      )}
 
       <div className="flex justify-end">
         <Button onClick={onApprove}>
