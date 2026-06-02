@@ -140,9 +140,12 @@ function PlanningPage() {
   const committedConferences: Conference[] = useMemo(() => {
     const cat = catalogQuery.data ?? [];
     const map = new Map(cat.map((c) => [c.id, c]));
-    return committedItems
-      .map((i) => map.get(i.conferenceId))
-      .filter((c): c is Conference => !!c);
+    const out: Conference[] = [];
+    for (const i of committedItems) {
+      const c = map.get(i.conferenceId);
+      if (c) out.push(c);
+    }
+    return out;
   }, [committedItems, catalogQuery.data]);
 
   return (
