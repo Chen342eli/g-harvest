@@ -11,6 +11,8 @@ import { TimelineView } from "@/components/conference-radar/TimelineView";
 import { FilterBar, DEFAULT_FILTERS, type Filters } from "@/components/conference-radar/FilterBar";
 import { DecisionPanel } from "@/components/conference-radar/DecisionPanel";
 import { AgentStatusButton } from "@/components/conference-radar/AgentStatusButton";
+import { TopNav } from "@/components/TopNav";
+import { getActivePlan, setPlanItemStatus } from "@/lib/planning.functions";
 import type { Insight } from "@/lib/insights";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
