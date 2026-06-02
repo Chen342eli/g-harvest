@@ -4,12 +4,11 @@
 import type { Conference, Region, Vertical } from "./conferences";
 import { REGIONS, VERTICALS } from "./conferences";
 import {
-  effectiveItemCost,
   isCommitted,
-  isInPipeline,
   type Plan,
   type PlanItemWithConference,
 } from "./planning";
+
 
 export interface GapRecommendation {
   id: string;
@@ -76,10 +75,7 @@ export function buildRecommendations(args: {
   );
 
   const committed = items.filter((i) => isCommitted(i.planStatus));
-  const remaining = plan.annualBudgetUsd
-    - items
-      .filter((i) => isCommitted(i.planStatus))
-      .reduce((s, i) => s + effectiveItemCost(i, plan), 0);
+
 
   const recommendations: GapRecommendation[] = [];
 
