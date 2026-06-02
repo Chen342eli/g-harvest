@@ -259,21 +259,31 @@ export function GameTimeOverlay({ onExit }: Props) {
             <div className="flex items-start justify-between gap-3 px-6 pt-6">
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-[10px] font-bold tracking-[0.2em] text-brand-base-foreground/40 uppercase">
-                  {draft.mode === "existing" ? "Person identified" : "New lead"}
+                  {draft.mode === "existing" ? "Person identified" : "New lead · name required"}
                 </p>
-                <input
-                  value={draft.name}
-                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  className="w-full bg-transparent text-2xl font-extrabold tracking-tight text-brand-base-foreground focus:outline-none"
-                />
-                {draft.mode === "existing" && draft.personId && (
-                  <PersonIdentitySub personId={draft.personId} />
+                {draft.mode === "existing" && draft.personId ? (
+                  <>
+                    <PersonFullNameDisplay personId={draft.personId} />
+                    {query.trim() && query.trim().toLowerCase() !== draft.name.toLowerCase() && (
+                      <p className="text-[11px] text-brand-base-foreground/50">
+                        You searched: <span className="font-mono">"{query.trim()}"</span>
+                      </p>
+                    )}
+                    <PersonIdentitySub personId={draft.personId} />
+                  </>
+                ) : (
+                  <input
+                    value={draft.name}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                    placeholder="Full name *"
+                    className="w-full bg-transparent text-2xl font-extrabold tracking-tight text-brand-base-foreground placeholder:text-brand-base-foreground/30 focus:outline-none"
+                  />
                 )}
               </div>
               <button
                 type="button"
                 onClick={closeSheet}
-                aria-label="Close"
+                aria-label="Close without saving"
                 className="rounded-full bg-white/5 p-2 text-brand-base-foreground/60 hover:bg-white/10 hover:text-brand-base-foreground"
               >
                 <X className="h-5 w-5" />
