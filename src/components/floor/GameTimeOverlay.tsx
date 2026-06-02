@@ -236,35 +236,15 @@ export function GameTimeOverlay({ onExit }: Props) {
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Exit (small, deliberate) */}
+      {/* Exit (single tap) */}
       <div className="flex items-center justify-center px-4 pb-6">
-        {!exitConfirm ? (
-          <button
-            type="button"
-            onClick={() => setExitConfirm(true)}
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] text-brand-base-foreground/50 hover:text-brand-base-foreground/80"
-          >
-            <X className="h-3 w-3" /> Exit Game Time
-          </button>
-        ) : (
-          <div className="flex items-center gap-2 text-[11px]">
-            <span className="text-brand-base-foreground/70">Exit?</span>
-            <button
-              type="button"
-              onClick={onExit}
-              className="rounded-md bg-temp-hot px-2.5 py-1 font-medium text-temp-hot-foreground"
-            >
-              Yes, exit
-            </button>
-            <button
-              type="button"
-              onClick={() => setExitConfirm(false)}
-              className="rounded-md border border-white/20 px-2.5 py-1 text-brand-base-foreground/70"
-            >
-              Stay
-            </button>
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={onExit}
+          className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] text-brand-base-foreground/50 hover:text-brand-base-foreground/80"
+        >
+          <X className="h-3 w-3" /> Exit Game Time
+        </button>
       </div>
 
       {/* Capture sheet */}
