@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { CalendarCheck, ChevronDown, ChevronRight } from "lucide-react";
 import { TopNav } from "@/components/TopNav";
 import { listConferences } from "@/lib/conferences.functions";
+import { getActivePlan } from "@/lib/planning.functions";
 import { useSettings, updateSettings } from "@/lib/settings-store";
 import { SALES_TEAM } from "@/lib/conferences";
 import { GameTimeOverlay } from "@/components/floor/GameTimeOverlay";
@@ -23,15 +24,30 @@ type Phase = "before" | "during" | "after";
 
 function FloorPage() {
   const fetchConfs = useServerFn(listConferences);
-  const { data: conferences = [] } = useQuery({
+  const fetchActivePlan = useServerFn(getActivePlan);
+  const { data: allConferences = [] } = useQuery({
     queryKey: ["conferences"],
     queryFn: () => fetchConfs(),
+  });
+  const { data: activePlan } = useQuery({
+    queryKey: ["activePlan"],
+    queryFn: () => fetchActivePlan(),
   });
   const settings = useSettings();
   const [gameTime, setGameTime] = useState(false);
   const [phaseOverride, setPhaseOverride] = useState<Phase | null>(
     (settings.floorPhaseOverride ?? null) as Phase | null,
   );
+
+  // Restrict to committed plan items when a plan exists
+  const conferences = useMemo(() => {
+    const committed = (activePlan?.items ?? []).filter(
+      (i) => i.planStatus === "must_go" || i.planStatus === "approved",
+    );
+    if (committed.length === 0) return allConferences;
+    const ids = new Set(committed.map((i) => i.conferenceId));
+    return allConferences.filter((c) => ids.has(c.id));
+  }, [allConferences, activePlan]);
 
   const upcoming = useMemo(() => {
     const now = Date.now();
@@ -40,21 +56,28 @@ function FloorPage() {
       .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
   }, [conferences]);
 
-  const effectiveActiveId =
-    settings.activeConferenceId || upcoming[0]?.id || conferences[0]?.id;
+  // Prefer Money 20/20 Europe as the default conference when present.
+  const defaultConf = useMemo(() => {
+    const moneyEurope = conferences.find((c) =>
+      /money\s*20\s*\/?\s*20\s*europe/i.test(c.name),
+    );
+    return moneyEurope ?? upcoming[0] ?? conferences[0];
+  }, [conferences, upcoming]);
+
+  const effectiveActiveId = settings.activeConferenceId || defaultConf?.id;
   const activeConf = conferences.find((c) => c.id === effectiveActiveId);
 
   useEffect(() => {
-    if (!settings.activeConferenceId && activeConf) {
+    if (!settings.activeConferenceId && defaultConf) {
       updateSettings({
-        activeConferenceId: activeConf.id,
-        activeConferenceName: activeConf.name,
+        activeConferenceId: defaultConf.id,
+        activeConferenceName: defaultConf.name,
       });
     }
     if (!settings.activeRepId && SALES_TEAM.length) {
       updateSettings({ activeRepId: SALES_TEAM[0] });
     }
-  }, [settings.activeConferenceId, settings.activeRepId, activeConf]);
+  }, [settings.activeConferenceId, settings.activeRepId, defaultConf]);
 
   // Reset override when conference changes
   useEffect(() => {

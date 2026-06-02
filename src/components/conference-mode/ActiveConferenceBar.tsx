@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { CalendarCheck, ChevronDown } from "lucide-react";
 import { listConferences } from "@/lib/conferences.functions";
 import { getActivePlan } from "@/lib/planning.functions";
@@ -54,6 +54,21 @@ export function ActiveConferenceBar() {
 
 
   const activeId = settings.activeConferenceId ?? "";
+
+  // Auto-default to Money 20/20 Europe (or first available) when nothing is selected.
+  useEffect(() => {
+    if (settings.activeConferenceId) return;
+    const moneyEurope = ordered.find((c) =>
+      /money\s*20\s*\/?\s*20\s*europe/i.test(c.name),
+    );
+    const fallback = moneyEurope ?? ordered[0];
+    if (fallback) {
+      updateSettings({
+        activeConferenceId: fallback.id,
+        activeConferenceName: fallback.name,
+      });
+    }
+  }, [settings.activeConferenceId, ordered]);
 
   return (
     <div className="border-b border-border bg-muted/30">
