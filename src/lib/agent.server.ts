@@ -413,13 +413,17 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           continue;
         }
 
-        // If anything was missing, raise a needs_review flag so a human can fill it in.
-        if (missing.length && inserted?.id) {
+        // Raise a needs_review flag for missing fields OR low confidence.
+        const reviewReasons: string[] = [];
+        if (missing.length) reviewReasons.push(`missing: ${missing.join(", ")}`);
+        if (lowConfidence) reviewReasons.push(`low confidence (${parsed.confidence})`);
+
+        if (reviewReasons.length && inserted?.id) {
           await supabaseAdmin.from("conference_change_flags").insert({
             conference_id: inserted.id,
             field: "needs_review",
             old_value: null as never,
-            new_value: { missing } as never,
+            new_value: { missing, confidence: parsed.confidence, lowConfidence } as never,
             source_url: hit.url,
           });
           flagged += 1;
@@ -428,7 +432,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             runId,
             hit,
             decision: "added",
-            reason: `Added with needs_review flag — missing: ${missing.join(", ")}`,
+            reason: `Added with needs_review flag — ${reviewReasons.join("; ")}`,
             extracted: parsed,
             conferenceId: inserted.id,
           });
