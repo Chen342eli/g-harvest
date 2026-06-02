@@ -129,6 +129,13 @@ function PlanBuilderPage() {
 
             <Stepper current={step} onJump={setStep} />
 
+            <WizardFooter
+              step={step}
+              onBack={() => setStep((s) => (s > 1 ? ((s - 1) as StepId) : s))}
+              onNext={() => setStep((s) => (s < 4 ? ((s + 1) as StepId) : s))}
+              onApprove={onApprove}
+            />
+
             <div className="rounded-lg border border-border bg-card p-5">
               {step === 1 && (
                 <Step1Anchors
@@ -143,6 +150,7 @@ function PlanBuilderPage() {
                   allConferences={allConferences}
                   planYear={plan.year}
                   onAdd={(conferenceId) => statusMutation.mutate({ conferenceId, planStatus: "approved" })}
+                  onRemove={(conferenceId) => statusMutation.mutate({ conferenceId, planStatus: "passed" })}
                 />
               )}
               {step === 3 && (
@@ -155,13 +163,6 @@ function PlanBuilderPage() {
                 <Step4Review items={items} onApprove={onApprove} />
               )}
             </div>
-
-            <WizardFooter
-              step={step}
-              onBack={() => setStep((s) => (s > 1 ? ((s - 1) as StepId) : s))}
-              onNext={() => setStep((s) => (s < 4 ? ((s + 1) as StepId) : s))}
-              onApprove={onApprove}
-            />
           </>
         )}
       </main>
