@@ -440,7 +440,7 @@ function BarChip({
         </TooltipContent>
       </Tooltip>
       <PopoverContent align="start" className="w-auto p-3">
-        <ConferenceDetail conference={c} onSetStatus={onSetStatus} />
+        <ConferenceDetail conference={c} onSetStatus={onSetStatus} onOpenInTable={onOpenInTable} />
       </PopoverContent>
     </Popover>
   );
