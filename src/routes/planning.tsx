@@ -346,11 +346,3 @@ function ExportButton({ conferences }: { conferences: Conference[] }) {
 
 }
 
-function Stat({ label, value, accent }: { label: string; value: number; accent?: string }) {
-  return (
-    <div className="flex flex-col items-end">
-      <span className={`text-lg font-semibold tabular-nums ${accent ?? "text-foreground"}`}>{value}</span>
-      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
-    </div>
-  );
-}
