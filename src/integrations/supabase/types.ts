@@ -161,11 +161,14 @@ export type Database = {
           assigned_reps: string[]
           city: string
           confidence: number | null
+          cost_confidence: Database["public"]["Enums"]["cost_confidence"] | null
+          cost_notes: string | null
           country: string
           created_at: string
           deleted_at: string | null
           end_date: string
           estimated_audience_size: number
+          estimated_cost_usd: number | null
           icp_score: number
           id: string
           name: string
@@ -188,11 +191,16 @@ export type Database = {
           assigned_reps?: string[]
           city: string
           confidence?: number | null
+          cost_confidence?:
+            | Database["public"]["Enums"]["cost_confidence"]
+            | null
+          cost_notes?: string | null
           country: string
           created_at?: string
           deleted_at?: string | null
           end_date: string
           estimated_audience_size?: number
+          estimated_cost_usd?: number | null
           icp_score?: number
           id?: string
           name: string
@@ -215,11 +223,16 @@ export type Database = {
           assigned_reps?: string[]
           city?: string
           confidence?: number | null
+          cost_confidence?:
+            | Database["public"]["Enums"]["cost_confidence"]
+            | null
+          cost_notes?: string | null
           country?: string
           created_at?: string
           deleted_at?: string | null
           end_date?: string
           estimated_audience_size?: number
+          estimated_cost_usd?: number | null
           icp_score?: number
           id?: string
           name?: string
@@ -267,6 +280,96 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_items: {
+        Row: {
+          conference_id: string
+          created_at: string
+          estimated_cost_override: number | null
+          id: string
+          must_go_locked_at: string | null
+          notes: string | null
+          plan_id: string
+          plan_status: Database["public"]["Enums"]["plan_item_status"]
+          planned_reps_override: number | null
+          updated_at: string
+        }
+        Insert: {
+          conference_id: string
+          created_at?: string
+          estimated_cost_override?: number | null
+          id?: string
+          must_go_locked_at?: string | null
+          notes?: string | null
+          plan_id: string
+          plan_status?: Database["public"]["Enums"]["plan_item_status"]
+          planned_reps_override?: number | null
+          updated_at?: string
+        }
+        Update: {
+          conference_id?: string
+          created_at?: string
+          estimated_cost_override?: number | null
+          id?: string
+          must_go_locked_at?: string | null
+          notes?: string | null
+          plan_id?: string
+          plan_status?: Database["public"]["Enums"]["plan_item_status"]
+          planned_reps_override?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_items_conference_id_fkey"
+            columns: ["conference_id"]
+            isOneToOne: false
+            referencedRelation: "conferences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          annual_budget_usd: number
+          archived_at: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          planned_reps_per_conference: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          annual_budget_usd?: number
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          planned_reps_per_conference?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          annual_budget_usd?: number
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          planned_reps_per_conference?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -277,6 +380,13 @@ export type Database = {
     Enums: {
       conf_decision_status: "Considering" | "Going" | "Passed" | "Needs Review"
       conf_provenance: "verified" | "ai_added"
+      cost_confidence: "estimated" | "quoted" | "actual"
+      plan_item_status:
+        | "must_go"
+        | "shortlist"
+        | "considering"
+        | "approved"
+        | "dropped"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -406,6 +516,14 @@ export const Constants = {
     Enums: {
       conf_decision_status: ["Considering", "Going", "Passed", "Needs Review"],
       conf_provenance: ["verified", "ai_added"],
+      cost_confidence: ["estimated", "quoted", "actual"],
+      plan_item_status: [
+        "must_go",
+        "shortlist",
+        "considering",
+        "approved",
+        "dropped",
+      ],
     },
   },
 } as const
