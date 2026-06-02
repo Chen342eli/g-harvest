@@ -333,7 +333,7 @@ function MapViewClient({ conferences, committedIds, onOpenInTable }: Props) {
             className="inline-block h-3 w-3 rounded-full bg-slate-400"
             style={{ boxShadow: "0 0 0 1.5px #fff, 0 0 0 3px #16a34a" }}
           />
-          Going (confirmed)
+          In plan
         </div>
         <div className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-white" />
