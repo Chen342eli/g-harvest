@@ -67,7 +67,7 @@ export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) 
                     className={cn(
                       "relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition",
                       active
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-brand-base text-brand-base-foreground"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
