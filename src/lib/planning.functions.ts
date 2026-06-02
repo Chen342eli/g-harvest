@@ -228,7 +228,11 @@ export const updatePlanItemDetails = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data }) => {
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      planned_reps_override?: number | null;
+      estimated_cost_override?: number | null;
+      notes?: string | null;
+    } = {};
     if (data.plannedRepsOverride !== undefined) patch.planned_reps_override = data.plannedRepsOverride;
     if (data.estimatedCostOverride !== undefined) patch.estimated_cost_override = data.estimatedCostOverride;
     if (data.notes !== undefined) patch.notes = data.notes;
