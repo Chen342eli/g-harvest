@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlanningRouteImport } from './routes/planning'
+import { Route as PeopleRouteImport } from './routes/people'
+import { Route as ImportRouteImport } from './routes/import'
 import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
@@ -18,6 +20,16 @@ import { Route as ApiPublicAgentRunRouteImport } from './routes/api/public/agent
 const PlanningRoute = PlanningRouteImport.update({
   id: '/planning',
   path: '/planning',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PeopleRoute = PeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportRoute = ImportRouteImport.update({
+  id: '/import',
+  path: '/import',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CaptureRoute = CaptureRouteImport.update({
@@ -45,6 +57,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
+  '/import': typeof ImportRoute
+  '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
@@ -52,6 +66,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
+  '/import': typeof ImportRoute
+  '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
@@ -60,19 +76,37 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
+  '/import': typeof ImportRoute
+  '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/agent' | '/capture' | '/planning' | '/api/public/agent/run'
+  fullPaths:
+    | '/'
+    | '/agent'
+    | '/capture'
+    | '/import'
+    | '/people'
+    | '/planning'
+    | '/api/public/agent/run'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agent' | '/capture' | '/planning' | '/api/public/agent/run'
+  to:
+    | '/'
+    | '/agent'
+    | '/capture'
+    | '/import'
+    | '/people'
+    | '/planning'
+    | '/api/public/agent/run'
   id:
     | '__root__'
     | '/'
     | '/agent'
     | '/capture'
+    | '/import'
+    | '/people'
     | '/planning'
     | '/api/public/agent/run'
   fileRoutesById: FileRoutesById
@@ -81,6 +115,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentRoute: typeof AgentRoute
   CaptureRoute: typeof CaptureRoute
+  ImportRoute: typeof ImportRoute
+  PeopleRoute: typeof PeopleRoute
   PlanningRoute: typeof PlanningRoute
   ApiPublicAgentRunRoute: typeof ApiPublicAgentRunRoute
 }
@@ -92,6 +128,20 @@ declare module '@tanstack/react-router' {
       path: '/planning'
       fullPath: '/planning'
       preLoaderRoute: typeof PlanningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/people': {
+      id: '/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof PeopleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/import': {
+      id: '/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof ImportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/capture': {
@@ -129,6 +179,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentRoute: AgentRoute,
   CaptureRoute: CaptureRoute,
+  ImportRoute: ImportRoute,
+  PeopleRoute: PeopleRoute,
   PlanningRoute: PlanningRoute,
   ApiPublicAgentRunRoute: ApiPublicAgentRunRoute,
 }
