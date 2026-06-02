@@ -60,62 +60,91 @@ export function HotLeadsSidebar() {
         </form>
       </div>
 
-      <div className="max-h-[480px] overflow-auto">
-        <ul className="divide-y divide-border">
-          {grouped.length === 0 && (
-            <li className="px-4 py-6 text-center text-xs text-muted-foreground">
-              No companies yet.
-            </li>
-          )}
-          {grouped.map(({ company, members }) => (
-            <li key={company} className="px-4 py-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-temp-hot/40 bg-temp-hot/10 px-2.5 py-1 text-sm font-semibold text-foreground">
-                  <Flame className="h-3.5 w-3.5 text-temp-hot" />
-                  {company}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removeHotAccount(company)}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label={`Remove ${company}`}
+      <div className="max-h-[520px] overflow-auto p-3">
+        {grouped.length === 0 ? (
+          <div className="px-4 py-6 text-center text-xs text-muted-foreground">
+            No companies yet.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2.5">
+            {grouped.map(({ company, members }) => {
+              const initials = (name: string) =>
+                name
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((n) => n[0]?.toUpperCase())
+                  .join("");
+              return (
+                <div
+                  key={company}
+                  className="group relative flex flex-col rounded-lg border border-temp-hot/30 bg-temp-hot/[0.04] p-2.5 transition hover:border-temp-hot/60 hover:bg-temp-hot/10"
                 >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              {members.length > 0 && (
-                <ul className="space-y-1.5 pl-1">
-                  {members.map(({ p, d }) => {
-                    const last = d.encounters[d.encounters.length - 1];
-                    return (
-                      <li key={p.id}>
-                        <button
-                          type="button"
-                          onClick={() => openPersonDrawer(p.id)}
-                          className="block w-full text-left hover:opacity-80"
-                        >
-                          <div className="truncate text-xs text-foreground">
-                            {p.fullName}
-                            {p.currentRole ? (
-                              <span className="text-muted-foreground"> · {p.currentRole}</span>
-                            ) : null}
-                          </div>
-                          {last && (
-                            <div className="truncate text-[11px] text-muted-foreground">
-                              {last.conferenceName}
-                              {d.encounterCount > 1 ? ` · ${d.encounterCount}×` : ""}
-                            </div>
-                          )}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
+                  <div className="mb-2 flex items-start justify-between gap-1">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-temp-hot/40 bg-temp-hot/10 px-2 py-0.5 text-xs font-semibold text-foreground">
+                      <Flame className="h-3 w-3 text-temp-hot" />
+                      {company}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeHotAccount(company)}
+                      className="opacity-0 transition group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+                      aria-label={`Remove ${company}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+
+                  {members.length === 0 ? (
+                    <div className="text-[11px] italic text-muted-foreground">
+                      No contacts yet
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mb-1.5 flex -space-x-1.5">
+                        {members.slice(0, 4).map(({ p }) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => openPersonDrawer(p.id)}
+                            title={p.fullName}
+                            className="flex h-6 w-6 items-center justify-center rounded-full border border-card bg-muted text-[9px] font-semibold text-foreground hover:z-10 hover:ring-2 hover:ring-temp-hot/40"
+                          >
+                            {initials(p.fullName)}
+                          </button>
+                        ))}
+                        {members.length > 4 && (
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full border border-card bg-muted text-[9px] font-semibold text-muted-foreground">
+                            +{members.length - 4}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openPersonDrawer(members[0].p.id)}
+                        className="text-left text-[11px] leading-tight hover:opacity-80"
+                      >
+                        <div className="truncate font-medium text-foreground">
+                          {members[0].p.fullName}
+                        </div>
+                        <div className="truncate text-muted-foreground">
+                          {members[0].p.currentRole ?? "—"}
+                        </div>
+                      </button>
+                      {members.length > 1 && (
+                        <div className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                          {members.length} contacts
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
+
     </aside>
   );
 }
