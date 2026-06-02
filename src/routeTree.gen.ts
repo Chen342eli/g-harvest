@@ -14,9 +14,9 @@ import { Route as RecapRouteImport } from './routes/recap'
 import { Route as PlanningRouteImport } from './routes/planning'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as AgentRouteImport } from './routes/agent'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicAgentRunRouteImport } from './routes/api/public/agent/run'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -44,6 +44,11 @@ const ImportRoute = ImportRouteImport.update({
   path: '/import',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CatalogRoute = CatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CaptureRoute = CaptureRouteImport.update({
   id: '/capture',
   path: '/capture',
@@ -54,11 +59,6 @@ const AgentRoute = AgentRouteImport.update({
   path: '/agent',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicAgentRunRoute = ApiPublicAgentRunRouteImport.update({
   id: '/api/public/agent/run',
   path: '/api/public/agent/run',
@@ -66,9 +66,9 @@ const ApiPublicAgentRunRoute = ApiPublicAgentRunRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
+  '/catalog': typeof CatalogRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
@@ -77,9 +77,9 @@ export interface FileRoutesByFullPath {
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
+  '/catalog': typeof CatalogRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
@@ -89,9 +89,9 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
+  '/catalog': typeof CatalogRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
@@ -102,9 +102,9 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/agent'
     | '/capture'
+    | '/catalog'
     | '/import'
     | '/people'
     | '/planning'
@@ -113,9 +113,9 @@ export interface FileRouteTypes {
     | '/api/public/agent/run'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/agent'
     | '/capture'
+    | '/catalog'
     | '/import'
     | '/people'
     | '/planning'
@@ -124,9 +124,9 @@ export interface FileRouteTypes {
     | '/api/public/agent/run'
   id:
     | '__root__'
-    | '/'
     | '/agent'
     | '/capture'
+    | '/catalog'
     | '/import'
     | '/people'
     | '/planning'
@@ -136,9 +136,9 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   AgentRoute: typeof AgentRoute
   CaptureRoute: typeof CaptureRoute
+  CatalogRoute: typeof CatalogRoute
   ImportRoute: typeof ImportRoute
   PeopleRoute: typeof PeopleRoute
   PlanningRoute: typeof PlanningRoute
@@ -184,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ImportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/catalog': {
+      id: '/catalog'
+      path: '/catalog'
+      fullPath: '/catalog'
+      preLoaderRoute: typeof CatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/capture': {
       id: '/capture'
       path: '/capture'
@@ -198,13 +205,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/agent/run': {
       id: '/api/public/agent/run'
       path: '/api/public/agent/run'
@@ -216,9 +216,9 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   AgentRoute: AgentRoute,
   CaptureRoute: CaptureRoute,
+  CatalogRoute: CatalogRoute,
   ImportRoute: ImportRoute,
   PeopleRoute: PeopleRoute,
   PlanningRoute: PlanningRoute,
@@ -229,3 +229,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

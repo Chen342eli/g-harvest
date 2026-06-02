@@ -17,7 +17,7 @@ import type { Insight } from "@/lib/insights";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/catalog")({
   head: () => ({
     meta: [
       { title: "Grain Conference Radar" },
