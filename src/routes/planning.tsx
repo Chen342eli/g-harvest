@@ -143,6 +143,10 @@ function PlanningPage() {
 
 
       <main className="mx-auto max-w-[1600px] space-y-4 px-6 py-6">
+        <div className="flex justify-end">
+          <AgentStatusButton />
+        </div>
+
         {!isLoading && lifecycle === "approved" && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3">
             <div>
