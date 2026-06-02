@@ -574,7 +574,7 @@ function HotDealsCard({ hotLeads }: { hotLeads: HotLead[] }) {
 /* ─────────── Follow-ups ─────────── */
 
 function FollowUpsCard({ chaseNow }: { chaseNow: HotLead[] }) {
-  const top = chaseNow.slice(0, 3);
+  const top = chaseNow.slice(0, 6);
   return (
     <section className="flex flex-col rounded-2xl border border-border bg-card">
       <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
