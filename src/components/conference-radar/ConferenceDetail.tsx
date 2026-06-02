@@ -1,8 +1,7 @@
 import { ExternalLink, Table as TableIcon } from "lucide-react";
-import type { Conference, DecisionStatus } from "@/lib/conferences";
+import type { Conference } from "@/lib/conferences";
 import { isCoverageGap } from "@/lib/conferences";
 import { TierBadge, CoverageGapBadge } from "./TierBadge";
-import { StatusChip } from "./StatusChip";
 
 const dateRange = (start: string, end: string) => {
   const s = new Date(start);
@@ -18,15 +17,16 @@ const audienceFmt = new Intl.NumberFormat("en-US");
 
 export function ConferenceDetail({
   conference,
-  onSetStatus,
   onOpenInTable,
+  committedIds,
 }: {
   conference: Conference;
-  onSetStatus?: (id: string, status: DecisionStatus) => void;
   onOpenInTable?: (id: string) => void;
+  committedIds?: Set<string>;
 }) {
   const c = conference;
-  const gap = isCoverageGap(c);
+  const gap = isCoverageGap(c, committedIds);
+  const inPlan = committedIds?.has(c.id) ?? false;
   return (
     <div className="w-[280px] space-y-2 text-sm text-foreground">
       <div>
@@ -52,15 +52,13 @@ export function ConferenceDetail({
         <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-semibold tabular-nums text-secondary-foreground">
           Score {c.icpScore}
         </span>
+        {inPlan && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 ring-1 ring-inset ring-emerald-200">
+            In plan
+          </span>
+        )}
         {gap && <CoverageGapBadge />}
       </div>
-
-      {onSetStatus && (
-        <div className="flex items-center gap-2 pt-0.5">
-          <span className="text-xs text-muted-foreground">Decision</span>
-          <StatusChip status={c.status} onChange={(s) => onSetStatus(c.id, s)} />
-        </div>
-      )}
 
       <dl className="grid grid-cols-[90px_1fr] gap-y-1 text-xs">
         <dt className="text-muted-foreground">Dates</dt>
