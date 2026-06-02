@@ -19,6 +19,7 @@ import {
   getActivePlan,
   listAllConferencesWithCost,
   setPlanItemStatus as setPlanItemStatusFn,
+  setPlanStatus as setPlanStatusFn,
 } from "@/lib/planning.functions";
 import { toggleRep as toggleRepFn } from "@/lib/conferences.functions";
 import {
