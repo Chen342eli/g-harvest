@@ -6,7 +6,7 @@ import { usePeopleData } from "@/lib/people-store";
 import { useBulkAiReads } from "@/lib/use-bulk-ai";
 import type { AiConfidence, Person } from "@/lib/people-types";
 import { cn } from "@/lib/utils";
-import { FollowUpRow } from "@/components/follow-ups/FollowUpRow";
+import { FollowUpRow as Row } from "@/components/follow-ups/FollowUpRow";
 
 export const Route = createFileRoute("/follow-ups")({
   head: () => ({ meta: [{ title: "Follow-ups · Grain Harvest" }] }),
