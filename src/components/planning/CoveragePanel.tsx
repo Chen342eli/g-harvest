@@ -201,9 +201,6 @@ function RecommendationItem({
   );
 }
 
-function _unused_old() {
-  return null;
-}
 
 function Section({
   title,
