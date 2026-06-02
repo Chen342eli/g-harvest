@@ -71,16 +71,16 @@ export function isCoverageGap(c: Conference): boolean {
 
 export const SALES_TEAM: string[] = [
   "Maya Levi",
-  "Daniel Cohen",
-  "Noa Bar",
+  "Yossi Adler",
+  "Dana Bar-On",
+  "Carlos Vega",
+  "Jordan Mitchell",
+  "Olivia Hart",
   "Tom Friedman",
-  "Sarah Klein",
-  "Avi Mizrahi",
+  "Noa Regev",
   "Rachel Stern",
-  "Jonathan Pak",
-  "Lior Adler",
-  "Emma Ross",
   "Omar Haddad",
+  "Emma Ross",
 ];
 
 export function computeScore(s: SubScores): number {
