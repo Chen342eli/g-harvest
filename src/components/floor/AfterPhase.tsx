@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowRight, Send, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { usePeopleData, updatePerson } from "@/lib/people-store";
+import { useSettings } from "@/lib/settings-store";
 import { useBulkAiReads } from "@/lib/use-bulk-ai";
 import type { AiSignal } from "@/lib/people-types";
 import { cn } from "@/lib/utils";
@@ -29,10 +30,18 @@ export function AfterPhase({ conferenceId }: Props) {
   // Make sure AI reads are generated for this event's people
   useBulkAiReads();
   const data = usePeopleData();
+  const settings = useSettings();
+  const activeRepId = settings.activeRepId;
 
   const eventLeads = useMemo(() => {
     const personIds = new Set(
-      data.encounters.filter((e) => e.conferenceId === conferenceId).map((e) => e.personId),
+      data.encounters
+        .filter((e) => {
+          if (e.conferenceId !== conferenceId) return false;
+          if (activeRepId && e.repId !== activeRepId) return false;
+          return true;
+        })
+        .map((e) => e.personId),
     );
     return data.people
       .filter((p) => personIds.has(p.id))
@@ -48,7 +57,7 @@ export function AfterPhase({ conferenceId }: Props) {
         }
         return { person: p, missing };
       });
-  }, [data, conferenceId]);
+  }, [data, conferenceId, activeRepId]);
 
   const needsInfo = eventLeads.filter((l) => l.missing.length > 0);
   const ready = eventLeads.filter((l) => l.missing.length === 0);
