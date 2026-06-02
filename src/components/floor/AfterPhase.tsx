@@ -57,7 +57,7 @@ export function AfterPhase({ conferenceId }: Props) {
         }
         return { person: p, missing };
       });
-  }, [data, conferenceId]);
+  }, [data, conferenceId, activeRepId]);
 
   const needsInfo = eventLeads.filter((l) => l.missing.length > 0);
   const ready = eventLeads.filter((l) => l.missing.length === 0);
