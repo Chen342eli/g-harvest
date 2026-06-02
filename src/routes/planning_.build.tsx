@@ -158,14 +158,23 @@ function PlanBuilderPage() {
               )}
             </header>
 
-            <Stepper current={step} onJump={setStep} />
-
-            <WizardFooter
-              step={step}
-              onBack={() => setStep((s) => (s > 1 ? ((s - 1) as StepId) : s))}
-              onNext={() => setStep((s) => (s < 4 ? ((s + 1) as StepId) : s))}
-              onApprove={onApprove}
-            />
+            <div className="flex items-center justify-between gap-3">
+              <Button variant="ghost" size="xs" onClick={() => setStep((s) => (s > 1 ? ((s - 1) as StepId) : s))} disabled={step === 1}>
+                <ArrowLeft className="mr-1 h-3 w-3" /> Back
+              </Button>
+              <div className="flex-1 flex justify-center">
+                <Stepper current={step} onJump={setStep} />
+              </div>
+              {step < 4 ? (
+                <Button size="xs" onClick={() => setStep((s) => (s < 4 ? ((s + 1) as StepId) : s))}>
+                  Next <ArrowRight className="ml-1 h-3 w-3" />
+                </Button>
+              ) : (
+                <Button size="xs" onClick={onApprove}>
+                  <CheckCircle2 className="mr-1 h-3 w-3" /> Approve
+                </Button>
+              )}
+            </div>
 
             <div className="rounded-lg border border-border bg-card p-5">
               {step === 1 && (
