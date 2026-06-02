@@ -30,10 +30,18 @@ export function AfterPhase({ conferenceId }: Props) {
   // Make sure AI reads are generated for this event's people
   useBulkAiReads();
   const data = usePeopleData();
+  const settings = useSettings();
+  const activeRepId = settings.activeRepId;
 
   const eventLeads = useMemo(() => {
     const personIds = new Set(
-      data.encounters.filter((e) => e.conferenceId === conferenceId).map((e) => e.personId),
+      data.encounters
+        .filter((e) => {
+          if (e.conferenceId !== conferenceId) return false;
+          if (activeRepId && e.repId !== activeRepId) return false;
+          return true;
+        })
+        .map((e) => e.personId),
     );
     return data.people
       .filter((p) => personIds.has(p.id))
