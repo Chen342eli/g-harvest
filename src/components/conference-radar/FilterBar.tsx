@@ -30,7 +30,7 @@ export const DEFAULT_FILTERS: Filters = {
   ids: [],
 };
 
-const VERTICALS: Vertical[] = ["Payments", "Fintech", "Treasury", "Travel", "SaaS", "General Tech"];
+const VERTICALS: Vertical[] = ["Payments", "Fintech", "Treasury", "Embedded Finance", "Neobanking", "Cross-Border Payments", "Travel Tech"];
 const REGIONS: Region[] = ["North America", "Europe", "APAC", "Middle East", "LATAM"];
 const TIERS: Tier[] = ["Tier 1", "Tier 2", "Tier 3"];
 

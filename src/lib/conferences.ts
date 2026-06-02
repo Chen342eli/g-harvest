@@ -1,11 +1,26 @@
 export type Region = "North America" | "Europe" | "APAC" | "Middle East" | "LATAM";
-export type Vertical = "Payments" | "Fintech" | "Treasury" | "Travel" | "SaaS" | "General Tech";
+export type Vertical =
+  | "Payments"
+  | "Fintech"
+  | "Treasury"
+  | "Embedded Finance"
+  | "Neobanking"
+  | "Cross-Border Payments"
+  | "Travel Tech";
 export type Tier = "Tier 1" | "Tier 2" | "Tier 3";
 export type DecisionStatus = "Considering" | "Going" | "Passed";
 
 export const DECISION_STATUSES: DecisionStatus[] = ["Considering", "Going", "Passed"];
 export const REGIONS: Region[] = ["North America", "Europe", "APAC", "Middle East", "LATAM"];
-export const VERTICALS: Vertical[] = ["Payments", "Fintech", "Treasury", "Travel", "SaaS", "General Tech"];
+export const VERTICALS: Vertical[] = [
+  "Payments",
+  "Fintech",
+  "Treasury",
+  "Embedded Finance",
+  "Neobanking",
+  "Cross-Border Payments",
+  "Travel Tech",
+];
 
 export const SCORE_WEIGHTS = {
   verticalFit: 0.4,

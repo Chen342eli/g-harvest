@@ -31,11 +31,12 @@ const WEIGHTS = {
 function verticalFit(v: Vertical): number {
   switch (v) {
     case "Payments": return 90;
-    case "Fintech": return 85;
+    case "Cross-Border Payments": return 95;
     case "Treasury": return 90;
-    case "SaaS": return 60;
-    case "Travel": return 55;
-    case "General Tech": return 30;
+    case "Fintech": return 85;
+    case "Embedded Finance": return 88;
+    case "Neobanking": return 80;
+    case "Travel Tech": return 65;
   }
 }
 
