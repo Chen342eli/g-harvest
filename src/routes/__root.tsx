@@ -126,10 +126,16 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <DemoBootstrapper />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <PersonDrawer />
       <Toaster />
     </QueryClientProvider>
   );
+}
+
+function DemoBootstrapper() {
+  useDemoBootstrap();
+  return null;
 }
