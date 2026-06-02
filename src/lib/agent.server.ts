@@ -119,6 +119,38 @@ function normalizeUrl(u: string): string {
   }
 }
 
+/**
+ * Normalize a conference name for fuzzy dedup. Strips:
+ *  - subtitles after `|`, `:`, ` - `, ` – `, ` — ` (so "AFP 2026 | The Treasury..." == "AFP 2026")
+ *  - 4-digit year tokens (so "Nordic Fintech Summit 2026" == "Nordic Fintech Summit")
+ *  - generic suffixes like "festival/conference/summit/expo/forum/week/fest/show/meetup"
+ *    when they appear AFTER the core brand — kept only when they're part of the brand
+ *  - all punctuation; collapses whitespace; lowercases.
+ */
+function normalizeConfName(raw: string): string {
+  let s = raw.toLowerCase();
+  // strip subtitle separators
+  s = s.split(/[|:]| - | – | — /)[0];
+  // strip 4-digit years
+  s = s.replace(/\b(19|20)\d{2}\b/g, " ");
+  // remove punctuation
+  s = s.replace(/[^a-z0-9\s]/g, " ");
+  // collapse whitespace
+  s = s.replace(/\s+/g, " ").trim();
+  return s;
+}
+
+function dateOverlapDays(aStart: string, aEnd: string, bStart: string, bEnd: string): number {
+  const as = new Date(aStart).getTime();
+  const ae = new Date(aEnd).getTime();
+  const bs = new Date(bStart).getTime();
+  const be = new Date(bEnd).getTime();
+  const start = Math.max(as, bs);
+  const end = Math.min(ae, be);
+  if (end < start) return -Math.round((start - end) / 86_400_000);
+  return Math.round((end - start) / 86_400_000) + 1;
+}
+
 const DateVerificationSchema = z.object({
   startDate: z.string().nullable(),
   endDate: z.string().nullable(),
