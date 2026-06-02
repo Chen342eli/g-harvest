@@ -111,7 +111,7 @@ function Dashboard() {
 
       <main className="mx-auto max-w-[1400px] space-y-8 px-6 py-6">
         {/* Planning CTA / active-plan banner */}
-        {planningNeeded ? (
+        {lifecycle === "none" && (
           <section className="rounded-xl border border-brand-accent/40 bg-brand-accent/5 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-start gap-3">
@@ -119,9 +119,9 @@ function Dashboard() {
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-foreground">Planning not started yet</h2>
+                  <h2 className="text-sm font-semibold text-foreground">No annual plan yet</h2>
                   <p className="text-xs text-muted-foreground">
-                    Pick must-go conferences, set a budget, and let the system suggest coverage.
+                    Start by picking anchors and let the system suggest coverage.
                   </p>
                 </div>
               </div>
@@ -133,12 +133,40 @@ function Dashboard() {
               </Link>
             </div>
           </section>
-        ) : (
+        )}
+
+        {lifecycle === "draft" && (
+          <section className="rounded-xl border border-amber-400/60 bg-amber-50 p-5 dark:bg-amber-950/30">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-amber-400/30 text-amber-800 dark:text-amber-200">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-foreground">
+                    {activePlan!.plan.name} is still in draft
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Finish the wizard and approve the plan to unlock upcoming events here.
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/planning/build"
+                className="inline-flex items-center gap-1.5 rounded-md bg-brand-base px-4 py-2 text-sm font-medium text-brand-base-foreground hover:opacity-90"
+              >
+                Resume planning <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {lifecycle === "approved" && (
           <section className="rounded-xl border border-border bg-card px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Active plan
+                  Active plan · approved
                 </div>
                 <div className="text-sm font-semibold text-foreground">
                   {activePlan!.plan.name} · {activePlan!.items.length} conferences
@@ -154,43 +182,62 @@ function Dashboard() {
           </section>
         )}
 
-        {/* Hero — Next up */}
-        <NextUpHero conference={next} inPlan={next ? planItemConfIds.has(next.id) : false} />
+        {/* Hero — Next up: only when plan is approved */}
+        {planApproved ? (
+          <>
+            <NextUpHero conference={next} inPlan={next ? planItemConfIds.has(next.id) : false} />
 
-        {/* Upcoming timeline */}
-        <section className="space-y-4">
-          <header className="flex flex-wrap items-end justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">
-                What's coming
-              </h2>
-              <span className="text-xs text-muted-foreground">
-                {upcoming.length} upcoming
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                to="/agent"
-                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground hover:border-brand-accent/60 hover:text-brand-accent"
-              >
-                <Radar className="h-3.5 w-3.5" /> Discovery agent
-              </Link>
-              <Link
-                to="/planning"
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                Full catalog →
-              </Link>
-            </div>
-          </header>
-          <Timeline conferences={upcoming} inPlanIds={planItemConfIds} />
-          {rest.length === 0 && upcoming.length <= 1 && (
-            <p className="text-center text-xs text-muted-foreground">
-              No additional conferences scheduled.
+            <section className="space-y-4">
+              <header className="flex flex-wrap items-end justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">
+                    What's coming
+                  </h2>
+                  <span className="text-xs text-muted-foreground">
+                    {upcoming.length} upcoming
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Link
+                    to="/agent"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground hover:border-brand-accent/60 hover:text-brand-accent"
+                  >
+                    <Radar className="h-3.5 w-3.5" /> Discovery agent
+                  </Link>
+                  <Link
+                    to="/planning"
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Full catalog →
+                  </Link>
+                </div>
+              </header>
+              <Timeline conferences={upcoming} inPlanIds={planItemConfIds} />
+              {rest.length === 0 && upcoming.length <= 1 && (
+                <p className="text-center text-xs text-muted-foreground">
+                  No additional conferences scheduled.
+                </p>
+              )}
+            </section>
+          </>
+        ) : (
+          <section className="rounded-2xl border border-dashed border-border bg-card/40 p-10 text-center">
+            <Calendar className="mx-auto h-8 w-8 text-muted-foreground" />
+            <h2 className="mt-3 text-lg font-semibold text-foreground">
+              {lifecycle === "draft" ? "Approve the plan to see your next event" : "No approved plan yet"}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Upcoming events and the "In plan" view appear here once a plan is approved.
             </p>
-          )}
-        </section>
+            <Link
+              to="/planning/build"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-brand-base px-4 py-2 text-sm font-medium text-brand-base-foreground hover:opacity-90"
+            >
+              {lifecycle === "draft" ? "Resume planning" : "Start planning"} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </section>
+        )}
 
         {/* Hot deals + Follow-ups */}
         <div className="grid gap-6 lg:grid-cols-2">
