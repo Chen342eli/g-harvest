@@ -859,14 +859,7 @@ function Step4Review({
 
   return (
     <div className="space-y-5">
-      <StepHeader title="Step 4 · Review & Approve" subtitle="Lock the plan." />
-
-      <div className="grid gap-3 sm:grid-cols-4">
-        <Metric label="Must-go" value={mustGo.length} />
-        <Metric label="Approved" value={approved.length} />
-        <Metric label="ICP verticals covered" value={`${ICP_VERTICALS.length - verticalGaps.length}/${ICP_VERTICALS.length}`} />
-        <Metric label="Regions covered" value={`${REGIONS.length - regionGaps.length}/${REGIONS.length}`} />
-      </div>
+      <StepHeader title="Step 4 · Review & Approve" />
 
       <ReviewSection title="Open gaps & issues">
         {verticalGaps.length === 0 && regionGaps.length === 0 && repsMissing.length === 0 ? (
