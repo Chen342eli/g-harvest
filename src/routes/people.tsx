@@ -205,6 +205,7 @@ function RelationshipsPage() {
             <span>
               <span className="font-semibold tabular-nums text-foreground">{sorted.length}</span> of {enriched.length} people
             </span>
+            <HubSpotExportButton people={data.people} encounters={data.encounters} />
           </div>
         }
       />
