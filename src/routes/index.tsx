@@ -124,7 +124,7 @@ function Dashboard() {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <h2 className="text-sm font-semibold text-foreground">Upcoming conferences</h2>
               </div>
-              <Link to="/catalog" className="text-xs text-muted-foreground hover:text-foreground">
+              <Link to="/planning" className="text-xs text-muted-foreground hover:text-foreground">
                 Full catalog →
               </Link>
             </header>
@@ -155,7 +155,7 @@ function Dashboard() {
                       </div>
                     </div>
                     <Link
-                      to="/catalog"
+                      to="/planning"
                       className="shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground"
                     >
                       View
