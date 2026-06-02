@@ -101,7 +101,11 @@ function Dashboard() {
   const hotLeads = useMemo(
     () =>
       derivedPeople
-        .filter((x) => x.last?.temperature === "hot")
+        .filter(
+          (x) =>
+            x.last?.temperature === "hot" &&
+            x.person.aiSignal !== "Too early",
+        )
         .sort((a, b) => (b.last?.timestamp ?? "").localeCompare(a.last?.timestamp ?? ""))
         .slice(0, 6),
     [derivedPeople],
