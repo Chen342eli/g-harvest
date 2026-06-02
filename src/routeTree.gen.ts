@@ -17,6 +17,7 @@ import { Route as ImportRouteImport } from './routes/import'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as AgentRouteImport } from './routes/agent'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicAgentRunRouteImport } from './routes/api/public/agent/run'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -59,6 +60,11 @@ const AgentRoute = AgentRouteImport.update({
   path: '/agent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAgentRunRoute = ApiPublicAgentRunRouteImport.update({
   id: '/api/public/agent/run',
   path: '/api/public/agent/run',
@@ -66,6 +72,7 @@ const ApiPublicAgentRunRoute = ApiPublicAgentRunRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
   '/catalog': typeof CatalogRoute
@@ -77,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
   '/catalog': typeof CatalogRoute
@@ -89,6 +97,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
   '/catalog': typeof CatalogRoute
@@ -102,6 +111,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/agent'
     | '/capture'
     | '/catalog'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/api/public/agent/run'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/agent'
     | '/capture'
     | '/catalog'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/api/public/agent/run'
   id:
     | '__root__'
+    | '/'
     | '/agent'
     | '/capture'
     | '/catalog'
@@ -136,6 +148,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AgentRoute: typeof AgentRoute
   CaptureRoute: typeof CaptureRoute
   CatalogRoute: typeof CatalogRoute
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/agent/run': {
       id: '/api/public/agent/run'
       path: '/api/public/agent/run'
@@ -216,6 +236,7 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AgentRoute: AgentRoute,
   CaptureRoute: CaptureRoute,
   CatalogRoute: CatalogRoute,
