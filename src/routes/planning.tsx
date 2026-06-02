@@ -74,17 +74,22 @@ function PlanningPage() {
   const isLoading = planQuery.isLoading || catalogQuery.isLoading;
   const conferences = catalogQuery.data ?? [];
 
+  const lifecycle = getPlanLifecycle(planQuery.data);
+  const isApproved = lifecycle === "approved";
+
   const committedIds = useMemo(
     () =>
-      new Set(
-        (planQuery.data?.items ?? [])
-          .filter((i) => isCommitted(i.planStatus))
-          .map((i) => i.conferenceId),
-      ),
-    [planQuery.data],
+      isApproved
+        ? new Set(
+            (planQuery.data?.items ?? [])
+              .filter((i) => isCommitted(i.planStatus))
+              .map((i) => i.conferenceId),
+          )
+        : new Set<string>(),
+    [planQuery.data, isApproved],
   );
 
-  const hasPlan = committedIds.size > 0;
+  const hasPlan = isApproved && committedIds.size > 0;
 
   const planItemConfIds = useMemo(
     () => new Set((planQuery.data?.items ?? []).map((i) => i.conferenceId)),
