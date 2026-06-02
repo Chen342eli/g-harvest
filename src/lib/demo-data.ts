@@ -829,11 +829,14 @@ export function loadDemoState(state: DemoState, conferences: Conference[]) {
   } catch {
     prevSettings = {};
   }
+  const phaseOverride =
+    state === "A" ? null : state === "B" ? "before" : "after";
   const nextSettings = {
     ...prevSettings,
     activeConferenceId: snap.activeConferenceId,
     activeConferenceName: snap.activeConferenceName,
     activeRepId: snap.activeRepId,
+    floorPhaseOverride: phaseOverride,
   };
   window.localStorage.setItem(K_SETTINGS, JSON.stringify(nextSettings));
 }
