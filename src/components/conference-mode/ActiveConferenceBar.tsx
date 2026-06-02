@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { CalendarCheck, ChevronDown } from "lucide-react";
 import { listConferences } from "@/lib/conferences.functions";
+import { getActivePlan } from "@/lib/planning.functions";
 import { useSettings, updateSettings } from "@/lib/settings-store";
 import { SALES_TEAM } from "@/lib/conferences";
 
@@ -13,11 +14,26 @@ import { SALES_TEAM } from "@/lib/conferences";
  */
 export function ActiveConferenceBar() {
   const fetchConfs = useServerFn(listConferences);
+  const fetchActivePlan = useServerFn(getActivePlan);
   const { data: conferences = [] } = useQuery({
     queryKey: ["conferences"],
     queryFn: () => fetchConfs(),
   });
+  const { data: activePlan } = useQuery({
+    queryKey: ["activePlan"],
+    queryFn: () => fetchActivePlan(),
+  });
   const settings = useSettings();
+
+  // Restrict to committed plan items (must_go / approved) when a plan exists.
+  const planFiltered = useMemo(() => {
+    const committed = (activePlan?.items ?? []).filter(
+      (i) => i.planStatus === "must_go" || i.planStatus === "approved",
+    );
+    if (committed.length === 0) return conferences;
+    const ids = new Set(committed.map((i) => i.conferenceId));
+    return conferences.filter((c) => ids.has(c.id));
+  }, [conferences, activePlan]);
 
   // Order: ongoing first, then upcoming, then past
   const ordered = useMemo(() => {
@@ -29,12 +45,13 @@ export function ActiveConferenceBar() {
       if (s > now) return 1; // upcoming
       return 2; // past
     };
-    return [...conferences].sort((a, b) => {
+    return [...planFiltered].sort((a, b) => {
       const d = score(a) - score(b);
       if (d !== 0) return d;
       return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
     });
-  }, [conferences]);
+  }, [planFiltered]);
+
 
   const activeId = settings.activeConferenceId ?? "";
 
