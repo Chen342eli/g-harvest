@@ -164,6 +164,15 @@ function RelationshipsPage() {
     const dir = sortDir === "asc" ? 1 : -1;
     arr.sort((a, b) => {
       switch (sortKey) {
+        case "signal": {
+          const sa = a.person.aiSignal ? SIGNAL_RANK[a.person.aiSignal] : 0;
+          const sb = b.person.aiSignal ? SIGNAL_RANK[b.person.aiSignal] : 0;
+          if (sa !== sb) return dir * (sa - sb);
+          const ca = a.person.aiConfidence ? CONFIDENCE_RANK[a.person.aiConfidence] : 0;
+          const cb = b.person.aiConfidence ? CONFIDENCE_RANK[b.person.aiConfidence] : 0;
+          if (ca !== cb) return dir * (ca - cb);
+          return dir * (a.derived.lastSeenAt ?? "").localeCompare(b.derived.lastSeenAt ?? "");
+        }
         case "person":
           return dir * a.person.fullName.localeCompare(b.person.fullName);
         case "role":
