@@ -462,10 +462,6 @@ function PersonBriefing({ personId }: { personId: string }) {
     () => (person ? derivePerson(person, data.encounters) : null),
     [person, data.encounters],
   );
-  const badges = useMemo(
-    () => (person ? computeBadges(person, data.encounters) : []),
-    [person, data.encounters],
-  );
   const encounters = derived?.encounters ?? [];
 
   useEffect(() => {
