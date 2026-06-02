@@ -9,7 +9,7 @@ import { listConferences } from "@/lib/conferences.functions";
 import { useSettings } from "@/lib/settings-store";
 import { usePeopleData } from "@/lib/people-store";
 import { cn } from "@/lib/utils";
-import type { Encounter, Temperature } from "@/lib/people-types";
+import type { Temperature } from "@/lib/people-types";
 
 export const Route = createFileRoute("/today")({
   head: () => ({ meta: [{ title: "Today · Conference Mode" }] }),
