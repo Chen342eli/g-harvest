@@ -64,6 +64,7 @@ function PlanBuilderPage() {
   const fetchAll = useServerFn(listAllConferencesWithCost);
   const callSetStatus = useServerFn(setPlanItemStatusFn);
   const callToggleRep = useServerFn(toggleRepFn);
+  const callSetPlanStatus = useServerFn(setPlanStatusFn);
 
   const planQuery = useQuery({ queryKey: ["active-plan"], queryFn: () => fetchPlan() });
   const allQuery = useQuery({ queryKey: ["all-conferences-cost"], queryFn: () => fetchAll() });
@@ -87,6 +88,16 @@ function PlanBuilderPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update reps"),
   });
 
+  const approveMutation = useMutation({
+    mutationFn: () => callSetPlanStatus({ data: { planId: planQuery.data!.plan.id, status: "approved" } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Plan approved");
+      navigate({ to: "/planning" });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to approve"),
+  });
+
   const [step, setStep] = useState<StepId>(1);
 
   const loading = planQuery.isLoading || allQuery.isLoading;
@@ -94,10 +105,7 @@ function PlanBuilderPage() {
   const items = planQuery.data?.items ?? [];
   const allConferences = allQuery.data ?? [];
 
-  const onApprove = () => {
-    toast.success("Plan approved");
-    navigate({ to: "/planning" });
-  };
+  const onApprove = () => approveMutation.mutate();
 
   return (
     <div className="min-h-screen bg-background">
