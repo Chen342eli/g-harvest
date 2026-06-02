@@ -250,128 +250,148 @@ export function GameTimeOverlay({ onExit }: Props) {
         </button>
       </div>
 
-      {/* Capture sheet — full screen */}
+      {/* Capture sheet — full-screen Game Time tactical display */}
       {draft && (
-        <div className="fixed inset-0 z-10 flex flex-col bg-card text-foreground">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                {draft.mode === "existing" ? "Add encounter to" : "New lead"}
-              </div>
-              <input
-                value={draft.name}
-                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                className="w-full bg-transparent text-xl font-semibold focus:outline-none"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={closeSheet}
-              aria-label="Close"
-              className="rounded-md p-2 text-muted-foreground hover:bg-muted"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+        <div className="fixed inset-0 z-10 flex flex-col bg-brand-base text-brand-base-foreground overflow-y-auto">
+          <div className="mx-auto w-full max-w-2xl flex flex-1 flex-col">
 
-          <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            {/* Identity strip */}
+            <div className="flex items-start justify-between gap-3 px-6 pt-6">
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-[10px] font-bold tracking-[0.2em] text-brand-base-foreground/40 uppercase">
+                  {draft.mode === "existing" ? "Person identified" : "New lead"}
+                </p>
+                <input
+                  value={draft.name}
+                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                  className="w-full bg-transparent text-2xl font-extrabold tracking-tight text-brand-base-foreground focus:outline-none"
+                />
+                {draft.mode === "existing" && draft.personId && (
+                  <PersonIdentitySub personId={draft.personId} />
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={closeSheet}
+                aria-label="Close"
+                className="rounded-full bg-white/5 p-2 text-brand-base-foreground/60 hover:bg-white/10 hover:text-brand-base-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Briefing — only for existing persons */}
             {draft.mode === "existing" && draft.personId && (
-              <ExistingPersonSummary personId={draft.personId} />
+              <PersonBriefing personId={draft.personId} />
             )}
 
+            {/* Capture controls */}
+            <div className="mt-auto border-t border-white/10 bg-white/[0.02] p-6 space-y-5">
 
-            {/* Temperature - primary */}
-            <div className="grid grid-cols-3 gap-2">
-              {(["hot", "warm", "cold"] as Temperature[]).map((t) => {
-                const active = temperature === t;
-                const cls =
-                  t === "hot"
-                    ? active
-                      ? "bg-temp-hot text-temp-hot-foreground"
-                      : "border-temp-hot/40 text-foreground"
-                    : t === "warm"
-                    ? active
-                      ? "bg-temp-warm text-temp-warm-foreground"
-                      : "border-temp-warm/50 text-foreground"
-                    : active
-                    ? "bg-temp-cold text-temp-cold-foreground"
-                    : "border-temp-cold/50 text-foreground";
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTemperature(t)}
-                    className={cn(
-                      "h-20 rounded-xl border-2 text-base font-semibold transition",
-                      active ? "border-transparent" : "bg-background",
-                      cls,
-                    )}
-                  >
-                    {t === "hot" ? "🔥 Hot" : t === "warm" ? "🟡 Warm" : "⚪ Cold"}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Company quick edit */}
-            <input
-              value={draft.company}
-              onChange={(e) => setDraft({ ...draft, company: e.target.value })}
-              placeholder="Company (optional)"
-              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
-            />
-
-            {/* Vertical chips */}
-            <div className="flex flex-wrap gap-1.5">
-              {ENCOUNTER_VERTICALS.map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setVertical(vertical === v ? "" : v)}
-                  className={cn(
-                    "rounded-full border px-3 py-1.5 text-xs transition",
-                    vertical === v
-                      ? "border-brand-accent bg-brand-accent text-brand-accent-foreground"
-                      : "border-border bg-background text-muted-foreground",
-                  )}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-
-            <input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="One-line note (the gold)"
-              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
-            />
-
-            {isHotAccountCompany(draft.company, accounts) && (
-              <div className="rounded-md border border-temp-hot/40 bg-temp-hot/10 px-3 py-2 text-xs font-medium text-foreground">
-                <Flame className="mr-1 inline h-3 w-3 text-temp-hot" />
-                Hot Account — auto-flagged
+              {/* Temperature */}
+              <div>
+                <p className="mb-2 text-[10px] font-bold tracking-[0.2em] text-brand-base-foreground/40 uppercase">
+                  Today's read
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  {(["hot", "warm", "cold"] as Temperature[]).map((t) => {
+                    const active = temperature === t;
+                    const tone =
+                      t === "hot"
+                        ? "border-temp-hot bg-temp-hot/15 text-temp-hot"
+                        : t === "warm"
+                        ? "border-temp-warm bg-temp-warm/15 text-temp-warm"
+                        : "border-temp-cold bg-temp-cold/15 text-temp-cold";
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setTemperature(t)}
+                        className={cn(
+                          "flex flex-col items-center justify-center gap-1 rounded-xl border p-4 transition active:scale-95",
+                          active
+                            ? tone
+                            : "border-white/10 bg-white/5 text-brand-base-foreground/50 hover:bg-white/10",
+                        )}
+                      >
+                        <span className="text-xl">
+                          {t === "hot" ? "🔥" : t === "warm" ? "☀️" : "❄️"}
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">
+                          {t}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Sticky save bar */}
-          <div className="sticky bottom-0 border-t border-border bg-card/95 p-4 backdrop-blur">
-            <button
-              type="button"
-              disabled={!canSave}
-              onClick={save}
-              className={cn(
-                "group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-5 text-lg font-bold uppercase tracking-wide transition-all",
-                canSave
-                  ? "bg-gradient-to-r from-temp-hot via-temp-hot to-temp-warm text-temp-hot-foreground shadow-lg shadow-temp-hot/40 hover:scale-[1.02] hover:shadow-temp-hot/60 active:scale-[0.98]"
-                  : "bg-muted text-muted-foreground",
+              {/* Company */}
+              <div className="relative">
+                <label className="absolute -top-2 left-3 bg-brand-base px-1 text-[9px] font-black uppercase tracking-widest text-brand-base-foreground/40">
+                  Company
+                </label>
+                <input
+                  value={draft.company}
+                  onChange={(e) => setDraft({ ...draft, company: e.target.value })}
+                  placeholder="—"
+                  className="w-full rounded-lg border border-white/10 bg-transparent p-3 text-sm font-medium text-brand-base-foreground outline-none focus:border-brand-accent/60"
+                />
+              </div>
+
+              {/* Vertical chips */}
+              <div className="flex flex-wrap gap-2">
+                {ENCOUNTER_VERTICALS.map((v) => {
+                  const on = vertical === v;
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setVertical(on ? "" : v)}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-xs font-bold transition",
+                        on
+                          ? "border-brand-accent bg-brand-accent text-brand-accent-foreground"
+                          : "border-white/10 bg-white/5 text-brand-base-foreground/60 hover:bg-white/10",
+                      )}
+                    >
+                      {v}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Note */}
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Tap to add note (the gold)…"
+                rows={2}
+                className="w-full resize-none rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-brand-base-foreground outline-none focus:border-brand-accent/60"
+              />
+
+              {isHotAccountCompany(draft.company, accounts) && (
+                <div className="rounded-md border border-temp-hot/40 bg-temp-hot/10 px-3 py-2 text-xs font-medium text-brand-base-foreground">
+                  <Flame className="mr-1 inline h-3 w-3 text-temp-hot" />
+                  Hot Account — auto-flagged
+                </div>
               )}
-            >
-              {canSave && <Flame className="h-5 w-5" />}
-              <span>Save & next</span>
-              {canSave && <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />}
-            </button>
+
+              {/* CTA */}
+              <button
+                type="button"
+                disabled={!canSave}
+                onClick={save}
+                className={cn(
+                  "w-full rounded-xl py-4 text-sm font-extrabold uppercase tracking-[0.2em] transition active:scale-[0.98]",
+                  canSave
+                    ? "bg-brand-base-foreground text-brand-base shadow-xl shadow-black/40 hover:opacity-90"
+                    : "bg-white/10 text-brand-base-foreground/40",
+                )}
+              >
+                Save & Next
+              </button>
+            </div>
           </div>
         </div>
       )}
