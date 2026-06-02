@@ -439,3 +439,149 @@ function PersonDetail({
     </div>
   );
 }
+
+function AiPanel({ person, encounters }: { person: Person; encounters: Encounter[] }) {
+  const analyze = useServerFn(analyzeRelationship);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const run = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const payload = {
+        person: {
+          fullName: person.fullName,
+          nameVariations: person.nameVariations,
+          linkedInUrl: person.linkedInUrl ?? null,
+          currentRole: person.currentRole ?? null,
+          currentCompany: person.currentCompany ?? null,
+          currentVertical: person.currentVertical ?? null,
+        },
+        encounters: encounters.map((e) => ({
+          date: e.timestamp.slice(0, 10),
+          conferenceName: e.conferenceName,
+          repName: e.repId,
+          temperature: e.temperature,
+          roleAtTime: e.roleAtTime ?? null,
+          companyAtTime: e.companyAtTime ?? null,
+          note: e.note ?? null,
+        })),
+      };
+      const out = await analyze({ data: payload });
+      updatePerson(person.id, {
+        aiSignal: out.signal,
+        aiConfidence: out.confidence,
+        aiReasoning: out.reasoning,
+        aiNudge: out.nudge,
+        aiArcSummary: out.arcSummary,
+        aiGeneratedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to analyze relationship";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyNudge = async () => {
+    if (!person.aiNudge) return;
+    const text = `Subject: ${person.aiNudge.subject}\n\n${person.aiNudge.body}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Nudge copied");
+    } catch {
+      toast.error("Could not copy");
+    }
+  };
+
+  const hasRead = !!person.aiSignal;
+
+  return (
+    <div className="rounded-lg border border-border bg-background p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">AI Signal</span>
+        </div>
+        {hasRead && (
+          <button
+            type="button"
+            onClick={run}
+            disabled={loading}
+            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50"
+          >
+            <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+            Regenerate
+          </button>
+        )}
+      </div>
+
+      {!hasRead && !loading && !error && (
+        <button
+          type="button"
+          onClick={run}
+          className="w-full rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90"
+        >
+          Generate AI read
+        </button>
+      )}
+
+      {loading && (
+        <div className="text-xs text-muted-foreground">Analyzing relationship…</div>
+      )}
+
+      {error && (
+        <div className="space-y-2">
+          <div className="text-xs text-destructive">{error}</div>
+          <button
+            type="button"
+            onClick={run}
+            className="rounded-md border border-border px-2 py-1 text-[10px] hover:bg-muted"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {hasRead && (
+        <>
+          <SignalBadge signal={person.aiSignal} confidence={person.aiConfidence} />
+          {person.aiReasoning && (
+            <p className="text-xs text-foreground leading-relaxed">{person.aiReasoning}</p>
+          )}
+          {person.aiArcSummary && (
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Arc summary</div>
+              <p className="text-xs text-muted-foreground leading-relaxed">{person.aiArcSummary}</p>
+            </div>
+          )}
+          {person.aiNudge && (
+            <div className="rounded-md border border-border bg-muted/30 p-2.5 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Nudge · email</div>
+                <button
+                  type="button"
+                  onClick={copyNudge}
+                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-background"
+                >
+                  <Copy className="h-3 w-3" />
+                  Copy
+                </button>
+              </div>
+              <div className="text-xs font-medium text-foreground">{person.aiNudge.subject}</div>
+              <div className="whitespace-pre-wrap text-xs text-foreground leading-relaxed">{person.aiNudge.body}</div>
+            </div>
+          )}
+          {person.aiGeneratedAt && (
+            <div className="text-[10px] text-muted-foreground">
+              Generated {new Date(person.aiGeneratedAt).toLocaleString()}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
