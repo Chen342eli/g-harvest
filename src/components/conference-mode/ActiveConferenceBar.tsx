@@ -55,6 +55,21 @@ export function ActiveConferenceBar() {
 
   const activeId = settings.activeConferenceId ?? "";
 
+  // Auto-default to Money 20/20 Europe (or first available) when nothing is selected.
+  useEffect(() => {
+    if (settings.activeConferenceId) return;
+    const moneyEurope = ordered.find((c) =>
+      /money\s*20\s*\/?\s*20\s*europe/i.test(c.name),
+    );
+    const fallback = moneyEurope ?? ordered[0];
+    if (fallback) {
+      updateSettings({
+        activeConferenceId: fallback.id,
+        activeConferenceName: fallback.name,
+      });
+    }
+  }, [settings.activeConferenceId, ordered]);
+
   return (
     <div className="border-b border-border bg-muted/30">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-3 px-6 py-2 text-xs">
