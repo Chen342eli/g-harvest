@@ -1,15 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronUp, ChevronsUpDown, Search, X } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronUp, ChevronsUpDown, Copy, RefreshCw, Search, Sparkles, X } from "lucide-react";
 import { TopNav } from "@/components/TopNav";
-import { usePeopleData } from "@/lib/people-store";
+import { usePeopleData, updatePerson } from "@/lib/people-store";
 import { computeBadges, derivePerson } from "@/lib/matching";
-import type { Temperature, EncounterVertical, Encounter, Person } from "@/lib/people-types";
+import type { Temperature, EncounterVertical, Encounter, Person, AiSignal, AiConfidence } from "@/lib/people-types";
 import { ENCOUNTER_VERTICALS } from "@/lib/people-types";
 import { TempDot } from "@/components/people/TempControls";
 import { BadgeList } from "@/components/people/Badges";
 import { cn } from "@/lib/utils";
 import { SALES_TEAM } from "@/lib/conferences";
+import { analyzeRelationship } from "@/lib/relationship-ai.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/people")({
   head: () => ({ meta: [{ title: "Relationships · Grain Harvest" }] }),
