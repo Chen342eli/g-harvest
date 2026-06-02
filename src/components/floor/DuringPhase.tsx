@@ -43,9 +43,12 @@ export function DuringPhase({ conferenceId, onEnterGameTime, canEnterGameTime }:
   }, [schedule, conferenceId, data.people]);
 
   const myLeads = useMemo(() => {
-    if (!repId) return [];
     const encs = data.encounters
-      .filter((e) => e.conferenceId === conferenceId && e.repId === repId)
+      .filter((e) => {
+        if (e.conferenceId !== conferenceId) return false;
+        if (mineOnly && repId && e.repId !== repId) return false;
+        return true;
+      })
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
     // dedupe by personId — keep latest
     const seen = new Set<string>();
@@ -70,7 +73,7 @@ export function DuringPhase({ conferenceId, onEnterGameTime, canEnterGameTime }:
       return TEMP_RANK[a.encounter.temperature] - TEMP_RANK[b.encounter.temperature];
     });
     return rows;
-  }, [data, conferenceId, repId, accounts]);
+  }, [data, conferenceId, repId, mineOnly, accounts]);
 
   return (
     <div className="space-y-4">
