@@ -209,6 +209,7 @@ function AgentPage() {
             })}
           </div>
         </section>
+        </div>
       </main>
     </div>
   );
