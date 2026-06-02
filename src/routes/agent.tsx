@@ -153,10 +153,27 @@ function AgentPage() {
         </section>
 
         <section className="rounded-lg border border-border bg-card self-start">
-          <div className="border-b border-border px-4 py-3">
-            <h2 className="text-sm font-semibold text-foreground">Pending change flags</h2>
-            <p className="text-xs text-muted-foreground">Source has changed — review and accept or dismiss.</p>
+          <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Pending change flags</h2>
+              <p className="text-xs text-muted-foreground">Source has changed — review and accept or dismiss.</p>
+            </div>
+            {flags.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => acceptAllMutation.mutate()}
+                disabled={acceptAllMutation.isPending}
+              >
+                {acceptAllMutation.isPending ? (
+                  <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> Accepting…</>
+                ) : (
+                  <><CheckCheck className="mr-1 h-3.5 w-3.5" /> Accept all ({flags.length})</>
+                )}
+              </Button>
+            )}
           </div>
+
           <div className="divide-y divide-border">
             {flags.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">No pending flags.</p>}
             {flags.map((f) => {
