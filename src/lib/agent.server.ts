@@ -241,9 +241,11 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             `  "confidence": integer 0-100\n` +
             `}\n\n` +
             `Rules:\n` +
-            `- Set isRelevant=false ONLY if this is clearly NOT a real conference (e.g. blog post, list article, news, past edition with no future date).\n` +
-            `- If the page IS a real upcoming fintech/payments/treasury/B2B-SaaS/travel-tech conference, set isRelevant=true even if some details are missing.\n` +
-            `- Use null for any field you cannot determine with confidence. Do NOT invent dates, cities, or audience sizes.\n\n` +
+            `- Set isRelevant=true if the conference audience includes CFOs, Heads of Payments, Treasury managers, or Product leaders at companies that move money internationally (PSPs, neobanks, marketplaces, travel platforms, embedded finance providers, cross-border payments, fintech infrastructure).\n` +
+            `- Set isRelevant=false if the primary audience is developers/engineers, academics/researchers, or general enterprise IT — even if "fintech" or "payments" appears on the page.\n` +
+            `- Also set isRelevant=false if this is clearly NOT a real upcoming conference (blog post, list article, news, past edition with no future date).\n` +
+            `- Use null for any field you cannot determine with confidence. Do NOT invent dates, cities, or audience sizes. Audience size is optional — leave null if unknown.\n` +
+            `- confidence is 0-100 reflecting how sure you are about isRelevant + the extracted details together.\n\n` +
             `URL: ${hit.url}\n` +
             `Title: ${hit.title ?? ""}\n` +
             `Snippet: ${hit.description ?? ""}\n\n` +
