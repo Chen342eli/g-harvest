@@ -10,21 +10,50 @@ import { computeScoring } from "./scoring";
 import type { Region, Vertical } from "./conferences";
 
 const ALLOWED_REGIONS: Region[] = ["North America", "Europe", "APAC", "Middle East"];
-const ALLOWED_VERTICALS: Vertical[] = ["Payments", "Fintech", "Treasury", "Travel", "SaaS", "General Tech"];
+const ALLOWED_VERTICALS: Vertical[] = [
+  "Payments",
+  "Fintech",
+  "Treasury",
+  "Embedded Finance",
+  "Neobanking",
+  "Cross-Border Payments",
+  "Travel Tech",
+];
 
-const MAX_CANDIDATES = 50;
+const MAX_CANDIDATES = 80;
+const LIMIT_PER_QUERY = 10;
 const SCRAPE_TIMEOUT_MS = 20_000;
+const MAX_AGGREGATOR_ITEMS = 40;
 
 const SEARCH_QUERIES = [
   "fintech conferences 2026 2027",
   "payments industry conference 2026 2027",
   "treasury CFO conference 2026 2027",
-  "B2B SaaS fintech conference 2026 2027",
-  "travel tech payments conference 2026 2027",
-  "neobank embedded finance conference 2026 2027",
+  "embedded finance conference 2026 2027",
+  "fintech conference Dubai Middle East 2026 2027",
+  "payments conference Singapore Asia 2026 2027",
+  "neobank fintech summit Europe 2026 2027",
   "cross-border payments conference 2026 2027",
-  "PSP marketplace payments summit 2026 2027",
 ];
+
+const AGGREGATOR_TITLE_HINTS = [
+  "calendar",
+  "top conferences",
+  "list of",
+  "best conferences",
+  "upcoming conferences",
+  "conferences to attend",
+  "events calendar",
+  "must attend",
+  "guide to",
+  "round-up",
+  "roundup",
+];
+
+function isAggregatorPage(hit: SearchHit): boolean {
+  const haystack = `${hit.title ?? ""} ${hit.description ?? ""}`.toLowerCase();
+  return AGGREGATOR_TITLE_HINTS.some((h) => haystack.includes(h));
+}
 
 // Relaxed schema: anything that isn't certain from the page can be null.
 // We will keep the conference anyway and flag it for human review.
