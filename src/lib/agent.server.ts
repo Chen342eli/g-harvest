@@ -209,7 +209,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
     for (const q of SEARCH_QUERIES) {
       if (candidates.length >= MAX_CANDIDATES) break;
       try {
-        const res = await firecrawl.search(q, { limit: 10 });
+        const res = await firecrawl.search(q, { limit: LIMIT_PER_QUERY });
         for (const hit of normalizeHits(res)) {
           const key = normalizeUrl(hit.url);
           if (seenUrls.has(key)) continue;
@@ -263,223 +263,292 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           ? `--- PAGE CONTENT (markdown, possibly truncated) ---\n${markdown}`
           : `(Page could not be scraped — rely on snippet only.)`;
 
-        const result = await generateText({
-          model,
-          prompt:
-            `Extract structured data about a single industry conference from the page below.\n` +
-            `Respond with ONLY a single JSON object (no markdown, no code fences, no commentary) matching this exact shape:\n` +
-            `{\n` +
-            `  "name": string,\n` +
-            `  "startDate": "YYYY-MM-DD" | null,\n` +
-            `  "endDate": "YYYY-MM-DD" | null,\n` +
-            `  "city": string | null,\n` +
-            `  "country": string | null,\n` +
-            `  "region": "North America" | "Europe" | "APAC" | "Middle East" | "LATAM" | null,\n` +
-            `  "vertical": "Payments" | "Fintech" | "Treasury" | "Travel" | "SaaS" | "General Tech" | null,\n` +
-            `  "estimatedAudienceSize": integer | null,\n` +
-            `  "tags": string[] (max 8),\n` +
-            `  "isRelevant": boolean,\n` +
-            `  "confidence": integer 0-100\n` +
-            `}\n\n` +
-            `Rules:\n` +
-            `- Set isRelevant=true if the conference audience includes CFOs, Heads of Payments, Treasury managers, or Product leaders at companies that move money internationally (PSPs, neobanks, marketplaces, travel platforms, embedded finance providers, cross-border payments, fintech infrastructure).\n` +
-            `- Set isRelevant=false if the primary audience is developers/engineers, academics/researchers, or general enterprise IT — even if "fintech" or "payments" appears on the page.\n` +
-            `- Also set isRelevant=false if this is clearly NOT a real upcoming conference (blog post, list article, news, past edition with no future date).\n` +
-            `- Use null for any field you cannot determine with confidence. Do NOT invent dates, cities, or audience sizes. Audience size is optional — leave null if unknown.\n` +
-            `- confidence is 0-100 reflecting how sure you are about isRelevant + the extracted details together.\n\n` +
-            `URL: ${hit.url}\n` +
-            `Title: ${hit.title ?? ""}\n` +
-            `Snippet: ${hit.description ?? ""}\n\n` +
-            pageContext,
-        });
+        const verticalEnumStr = VERTICAL_ENUM.map((v) => `"${v}"`).join(" | ");
+        const sharedRules =
+          `Rules:\n` +
+          `- Set isRelevant=true ONLY if the conference audience includes CFOs, Heads of Payments, Treasury managers, or Product leaders at PSPs, neobanks, marketplaces, embedded-finance providers, cross-border payments, or travel-tech platforms.\n` +
+          `- Set isRelevant=false if the primary audience is developers/engineers, academics/researchers, or general enterprise IT — even if "fintech" or "payments" appears on the page.\n` +
+          `- Also set isRelevant=false if this is NOT a real upcoming conference (blog post, news, past edition with no future date).\n` +
+          `- Use null for any field you cannot determine with confidence. Do NOT invent dates, cities, or audience sizes.\n` +
+          `- confidence is 0-100 reflecting how sure you are about isRelevant + the extracted details together.\n`;
 
-        const usage = result.usage;
-        if (usage) {
-          promptTokens += usage.inputTokens ?? 0;
-          completionTokens += usage.outputTokens ?? 0;
-          totalTokens += usage.totalTokens ?? 0;
-        }
+        const aggregator = isAggregatorPage(hit);
+        let parsedList: z.infer<typeof ExtractionSchema>[] = [];
 
-        const rawText = result.text ?? "";
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-          skipped++;
-          await logCandidate({ runId, hit, decision: "error", reason: `Model returned no JSON object. Raw: ${rawText.slice(0, 200)}` });
-          continue;
-        }
-        let parsed: z.infer<typeof ExtractionSchema>;
-        try {
-          const obj = JSON.parse(jsonMatch[0]);
-          parsed = ExtractionSchema.parse(obj);
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          skipped++;
-          await logCandidate({ runId, hit, decision: "error", reason: `JSON parse/validation failed: ${msg}. Raw: ${jsonMatch[0].slice(0, 200)}` });
-          continue;
-        }
+        if (aggregator && markdown) {
+          // Aggregator/list page — ask for an ARRAY of conferences.
+          const aggResult = await generateText({
+            model,
+            prompt:
+              `The page below appears to be a LIST/CALENDAR of multiple conferences. Extract every distinct conference you can identify.\n` +
+              `Respond with ONLY a single JSON object (no markdown, no code fences) of the shape:\n` +
+              `{ "conferences": [ { ...conference fields... }, ... ] }\n` +
+              `Each conference object must match:\n` +
+              `{\n` +
+              `  "name": string,\n` +
+              `  "startDate": "YYYY-MM-DD" | null,\n` +
+              `  "endDate": "YYYY-MM-DD" | null,\n` +
+              `  "city": string | null,\n` +
+              `  "country": string | null,\n` +
+              `  "region": "North America" | "Europe" | "APAC" | "Middle East" | "LATAM" | null,\n` +
+              `  "vertical": ${verticalEnumStr} | null,\n` +
+              `  "estimatedAudienceSize": integer | null,\n` +
+              `  "tags": string[] (max 8),\n` +
+              `  "isRelevant": boolean,\n` +
+              `  "confidence": integer 0-100\n` +
+              `}\n` +
+              `Return up to ${MAX_AGGREGATOR_ITEMS} entries. If the page is not actually a list, return { "conferences": [] }.\n\n` +
+              sharedRules +
+              `\nURL: ${hit.url}\nTitle: ${hit.title ?? ""}\nSnippet: ${hit.description ?? ""}\n\n` +
+              pageContext,
+          });
 
-        // Hard filter: not relevant
-        if (!parsed.isRelevant) {
-          skipped++;
-          await logCandidate({ runId, hit, decision: "skipped", reason: "AI marked as not relevant (blog/list/past/news)", extracted: parsed });
-          continue;
-        }
-
-        // LATAM excluded for now (per product decision)
-        if (parsed.region === "LATAM") {
-          skipped++;
-          await logCandidate({ runId, hit, decision: "skipped", reason: "LATAM excluded (not in active regions)", extracted: parsed });
-          continue;
-        }
-
-        // If region is known but outside allowed set
-        if (parsed.region && !ALLOWED_REGIONS.includes(parsed.region as Region)) {
-          skipped++;
-          await logCandidate({ runId, hit, decision: "skipped", reason: `Region "${parsed.region}" not in allowed regions`, extracted: parsed });
-          continue;
-        }
-
-        // If vertical is known but outside allowed set
-        if (parsed.vertical && !ALLOWED_VERTICALS.includes(parsed.vertical as Vertical)) {
-          skipped++;
-          await logCandidate({ runId, hit, decision: "skipped", reason: `Vertical "${parsed.vertical}" not in allowed verticals`, extracted: parsed });
-          continue;
-        }
-
-        // Year window check (only when we have a date)
-        const year = parsed.startDate ? new Date(parsed.startDate).getUTCFullYear() : null;
-        if (year !== null && !yrs.has(year)) {
-          skipped++;
-          await logCandidate({ runId, hit, decision: "skipped", reason: `Year ${year} outside allowed window (${[...yrs].join(", ")})`, extracted: parsed });
-          continue;
-        }
-
-        // Track missing-but-keep fields so we can flag for human review
-        const missing: string[] = [];
-        if (!parsed.startDate) missing.push("start_date");
-        if (!parsed.endDate) missing.push("end_date");
-        if (!parsed.city) missing.push("city");
-        if (!parsed.country) missing.push("country");
-        if (!parsed.region) missing.push("region");
-        if (!parsed.vertical) missing.push("vertical");
-        if (parsed.estimatedAudienceSize == null) missing.push("estimated_audience_size");
-
-        // Sentinels (DB columns are NOT NULL). UI can spot these + the needs_review flag.
-        const startDate = parsed.startDate ?? "9999-12-31";
-        const endDate = parsed.endDate ?? startDate;
-        const city = parsed.city ?? "Unknown";
-        const country = parsed.country ?? "Unknown";
-        const region = (parsed.region ?? "North America") as Region;
-        const vertical = (parsed.vertical ?? "Fintech") as Vertical;
-        const audience = parsed.estimatedAudienceSize ?? 0;
-        const dedupYear = year ?? 0;
-
-        const dedupKey = `${parsed.name.toLowerCase()}|${dedupYear}|${city.toLowerCase()}`;
-
-        if (blockedKeys.has(dedupKey)) {
-          skipped++;
-          await logCandidate({ runId, hit, decision: "skipped", reason: "On do-not-resurrect blocklist", extracted: parsed });
-          continue;
-        }
-
-        const dupe = existingByKey.get(dedupKey);
-        if (dupe) {
-          const changes: { field: string; old: unknown; next: unknown }[] = [];
-          if (parsed.startDate && dupe.start_date !== parsed.startDate)
-            changes.push({ field: "start_date", old: dupe.start_date, next: parsed.startDate });
-          if (parsed.endDate && dupe.end_date !== parsed.endDate)
-            changes.push({ field: "end_date", old: dupe.end_date, next: parsed.endDate });
-          if (
-            parsed.estimatedAudienceSize != null &&
-            Math.abs((dupe.estimated_audience_size ?? 0) - parsed.estimatedAudienceSize) >
-              Math.max(500, (dupe.estimated_audience_size ?? 0) * 0.2)
-          ) {
-            changes.push({ field: "estimated_audience_size", old: dupe.estimated_audience_size, next: parsed.estimatedAudienceSize });
+          const usage = aggResult.usage;
+          if (usage) {
+            promptTokens += usage.inputTokens ?? 0;
+            completionTokens += usage.outputTokens ?? 0;
+            totalTokens += usage.totalTokens ?? 0;
           }
-          if (changes.length) {
-            for (const f of changes) {
-              await supabaseAdmin.from("conference_change_flags").insert({
-                conference_id: dupe.id,
-                field: f.field,
-                old_value: f.old as never,
-                new_value: f.next as never,
-                source_url: hit.url,
-              });
-            }
-            flagged += changes.length;
-            await logCandidate({ runId, hit, decision: "flagged", reason: `Already exists — flagged ${changes.length} field change(s): ${changes.map((c) => c.field).join(", ")}`, extracted: parsed, conferenceId: dupe.id });
-          } else {
+
+          const rawText = aggResult.text ?? "";
+          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) {
             skipped++;
-            await logCandidate({ runId, hit, decision: "skipped", reason: "Duplicate of existing conference, no changes", extracted: parsed, conferenceId: dupe.id });
+            await logCandidate({ runId, hit, decision: "error", reason: `Aggregator: no JSON object. Raw: ${rawText.slice(0, 200)}` });
+            continue;
           }
-          continue;
-        }
-
-        // Insert (using sentinels for any missing required fields)
-        const scoring = computeScoring({
-          vertical,
-          region,
-          audienceSize: audience,
-          tags: parsed.tags,
-        });
-
-        // Low confidence → keep off the main board, route to review queue.
-        const lowConfidence = (parsed.confidence ?? 0) < 60;
-        const initialStatus = lowConfidence ? "Needs Review" : "Considering";
-
-        const { data: inserted, error: insErr } = await supabaseAdmin
-          .from("conferences")
-          .insert({
-            name: parsed.name,
-            start_date: startDate,
-            end_date: endDate,
-            city,
-            country,
-            region,
-            vertical,
-            estimated_audience_size: audience,
-            tags: parsed.tags,
-            source_url: hit.url,
-            ...scoring,
-            provenance: "ai_added",
-            confidence: parsed.confidence,
-            status: initialStatus,
-          })
-          .select("id")
-          .single();
-
-        if (insErr) {
-          skipped++;
-          await logCandidate({ runId, hit, decision: "skipped", reason: `Insert failed: ${insErr.message}`, extracted: parsed });
-          continue;
-        }
-
-        // Raise a needs_review flag for missing fields OR low confidence.
-        const reviewReasons: string[] = [];
-        if (missing.length) reviewReasons.push(`missing: ${missing.join(", ")}`);
-        if (lowConfidence) reviewReasons.push(`low confidence (${parsed.confidence})`);
-
-        if (reviewReasons.length && inserted?.id) {
-          await supabaseAdmin.from("conference_change_flags").insert({
-            conference_id: inserted.id,
-            field: "needs_review",
-            old_value: null as never,
-            new_value: { missing, confidence: parsed.confidence, lowConfidence } as never,
-            source_url: hit.url,
-          });
-          flagged += 1;
-          added++;
-          await logCandidate({
-            runId,
-            hit,
-            decision: "added",
-            reason: `Added with needs_review flag — ${reviewReasons.join("; ")}`,
-            extracted: parsed,
-            conferenceId: inserted.id,
-          });
+          try {
+            const obj = JSON.parse(jsonMatch[0]);
+            parsedList = AggregatorSchema.parse(obj).conferences;
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            skipped++;
+            await logCandidate({ runId, hit, decision: "error", reason: `Aggregator parse failed: ${msg}. Raw: ${jsonMatch[0].slice(0, 200)}` });
+            continue;
+          }
+          if (parsedList.length === 0) {
+            skipped++;
+            await logCandidate({ runId, hit, decision: "skipped", reason: "Aggregator page returned 0 conferences" });
+            continue;
+          }
         } else {
-          added++;
-          await logCandidate({ runId, hit, decision: "added", reason: `Added — ${vertical} / ${region}`, extracted: parsed, conferenceId: inserted?.id });
+          const result = await generateText({
+            model,
+            prompt:
+              `Extract structured data about a single industry conference from the page below.\n` +
+              `Respond with ONLY a single JSON object (no markdown, no code fences, no commentary) matching this exact shape:\n` +
+              `{\n` +
+              `  "name": string,\n` +
+              `  "startDate": "YYYY-MM-DD" | null,\n` +
+              `  "endDate": "YYYY-MM-DD" | null,\n` +
+              `  "city": string | null,\n` +
+              `  "country": string | null,\n` +
+              `  "region": "North America" | "Europe" | "APAC" | "Middle East" | "LATAM" | null,\n` +
+              `  "vertical": ${verticalEnumStr} | null,\n` +
+              `  "estimatedAudienceSize": integer | null,\n` +
+              `  "tags": string[] (max 8),\n` +
+              `  "isRelevant": boolean,\n` +
+              `  "confidence": integer 0-100\n` +
+              `}\n\n` +
+              sharedRules +
+              `\nURL: ${hit.url}\nTitle: ${hit.title ?? ""}\nSnippet: ${hit.description ?? ""}\n\n` +
+              pageContext,
+          });
+
+          const usage = result.usage;
+          if (usage) {
+            promptTokens += usage.inputTokens ?? 0;
+            completionTokens += usage.outputTokens ?? 0;
+            totalTokens += usage.totalTokens ?? 0;
+          }
+
+          const rawText = result.text ?? "";
+          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) {
+            skipped++;
+            await logCandidate({ runId, hit, decision: "error", reason: `Model returned no JSON object. Raw: ${rawText.slice(0, 200)}` });
+            continue;
+          }
+          try {
+            const obj = JSON.parse(jsonMatch[0]);
+            parsedList = [ExtractionSchema.parse(obj)];
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            skipped++;
+            await logCandidate({ runId, hit, decision: "error", reason: `JSON parse/validation failed: ${msg}. Raw: ${jsonMatch[0].slice(0, 200)}` });
+            continue;
+          }
+        }
+
+        for (const parsed of parsedList) {
+          // Hard filter: not relevant
+          if (!parsed.isRelevant) {
+            skipped++;
+            await logCandidate({ runId, hit, decision: "skipped", reason: "AI marked as not relevant (blog/list/past/news)", extracted: parsed });
+            continue;
+          }
+
+          if (parsed.region === "LATAM") {
+            skipped++;
+            await logCandidate({ runId, hit, decision: "skipped", reason: "LATAM excluded (not in active regions)", extracted: parsed });
+            continue;
+          }
+
+          if (parsed.region && !ALLOWED_REGIONS.includes(parsed.region as Region)) {
+            skipped++;
+            await logCandidate({ runId, hit, decision: "skipped", reason: `Region "${parsed.region}" not in allowed regions`, extracted: parsed });
+            continue;
+          }
+
+          if (parsed.vertical && !ALLOWED_VERTICALS.includes(parsed.vertical as Vertical)) {
+            skipped++;
+            await logCandidate({ runId, hit, decision: "skipped", reason: `Vertical "${parsed.vertical}" not in allowed verticals`, extracted: parsed });
+            continue;
+          }
+
+          const year = parsed.startDate ? new Date(parsed.startDate).getUTCFullYear() : null;
+          if (year !== null && !yrs.has(year)) {
+            skipped++;
+            await logCandidate({ runId, hit, decision: "skipped", reason: `Year ${year} outside allowed window (${[...yrs].join(", ")})`, extracted: parsed });
+            continue;
+          }
+
+          const missing: string[] = [];
+          if (!parsed.startDate) missing.push("start_date");
+          if (!parsed.endDate) missing.push("end_date");
+          if (!parsed.city) missing.push("city");
+          if (!parsed.country) missing.push("country");
+          if (!parsed.region) missing.push("region");
+          if (!parsed.vertical) missing.push("vertical");
+          if (parsed.estimatedAudienceSize == null) missing.push("estimated_audience_size");
+
+          const startDate = parsed.startDate ?? "9999-12-31";
+          const endDate = parsed.endDate ?? startDate;
+          const city = parsed.city ?? "Unknown";
+          const country = parsed.country ?? "Unknown";
+          const region = (parsed.region ?? "North America") as Region;
+          const vertical = (parsed.vertical ?? "Fintech") as Vertical;
+          const audience = parsed.estimatedAudienceSize ?? 0;
+          const dedupYear = year ?? 0;
+
+          const dedupKey = `${parsed.name.toLowerCase()}|${dedupYear}|${city.toLowerCase()}`;
+
+          if (blockedKeys.has(dedupKey)) {
+            skipped++;
+            await logCandidate({ runId, hit, decision: "skipped", reason: "On do-not-resurrect blocklist", extracted: parsed });
+            continue;
+          }
+
+          const dupe = existingByKey.get(dedupKey);
+          if (dupe) {
+            const changes: { field: string; old: unknown; next: unknown }[] = [];
+            if (parsed.startDate && dupe.start_date !== parsed.startDate)
+              changes.push({ field: "start_date", old: dupe.start_date, next: parsed.startDate });
+            if (parsed.endDate && dupe.end_date !== parsed.endDate)
+              changes.push({ field: "end_date", old: dupe.end_date, next: parsed.endDate });
+            if (
+              parsed.estimatedAudienceSize != null &&
+              Math.abs((dupe.estimated_audience_size ?? 0) - parsed.estimatedAudienceSize) >
+                Math.max(500, (dupe.estimated_audience_size ?? 0) * 0.2)
+            ) {
+              changes.push({ field: "estimated_audience_size", old: dupe.estimated_audience_size, next: parsed.estimatedAudienceSize });
+            }
+            if (changes.length) {
+              for (const f of changes) {
+                await supabaseAdmin.from("conference_change_flags").insert({
+                  conference_id: dupe.id,
+                  field: f.field,
+                  old_value: f.old as never,
+                  new_value: f.next as never,
+                  source_url: hit.url,
+                });
+              }
+              flagged += changes.length;
+              await logCandidate({ runId, hit, decision: "flagged", reason: `Already exists — flagged ${changes.length} field change(s): ${changes.map((c) => c.field).join(", ")}`, extracted: parsed, conferenceId: dupe.id });
+            } else {
+              skipped++;
+              await logCandidate({ runId, hit, decision: "skipped", reason: "Duplicate of existing conference, no changes", extracted: parsed, conferenceId: dupe.id });
+            }
+            continue;
+          }
+
+          const scoring = computeScoring({
+            vertical,
+            region,
+            audienceSize: audience,
+            tags: parsed.tags,
+          });
+
+          const lowConfidence = (parsed.confidence ?? 0) < 60;
+          const initialStatus = lowConfidence ? "Needs Review" : "Considering";
+
+          const { data: inserted, error: insErr } = await supabaseAdmin
+            .from("conferences")
+            .insert({
+              name: parsed.name,
+              start_date: startDate,
+              end_date: endDate,
+              city,
+              country,
+              region,
+              vertical,
+              estimated_audience_size: audience,
+              tags: parsed.tags,
+              source_url: hit.url,
+              ...scoring,
+              provenance: "ai_added",
+              confidence: parsed.confidence,
+              status: initialStatus,
+            })
+            .select("id")
+            .single();
+
+          if (insErr) {
+            skipped++;
+            await logCandidate({ runId, hit, decision: "skipped", reason: `Insert failed: ${insErr.message}`, extracted: parsed });
+            continue;
+          }
+
+          // Track the newly-inserted conference so later items in this aggregator
+          // (or later candidates this run) deduplicate against it.
+          if (inserted?.id) {
+            existingByKey.set(dedupKey, {
+              id: inserted.id,
+              name: parsed.name,
+              start_date: startDate,
+              end_date: endDate,
+              city,
+              estimated_audience_size: audience,
+              source_url: hit.url,
+            });
+          }
+
+          const reviewReasons: string[] = [];
+          if (missing.length) reviewReasons.push(`missing: ${missing.join(", ")}`);
+          if (lowConfidence) reviewReasons.push(`low confidence (${parsed.confidence})`);
+
+          if (reviewReasons.length && inserted?.id) {
+            await supabaseAdmin.from("conference_change_flags").insert({
+              conference_id: inserted.id,
+              field: "needs_review",
+              old_value: null as never,
+              new_value: { missing, confidence: parsed.confidence, lowConfidence } as never,
+              source_url: hit.url,
+            });
+            flagged += 1;
+            added++;
+            await logCandidate({
+              runId,
+              hit,
+              decision: "added",
+              reason: `Added with needs_review flag — ${reviewReasons.join("; ")}`,
+              extracted: parsed,
+              conferenceId: inserted.id,
+            });
+          } else {
+            added++;
+            await logCandidate({ runId, hit, decision: "added", reason: `Added — ${vertical} / ${region}${aggregator ? " (from list page)" : ""}`, extracted: parsed, conferenceId: inserted?.id });
+          }
         }
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
