@@ -37,7 +37,3 @@ export const CONFERENCE_SUBNAV: SubNavItem[] = [
   { to: "/recap", label: "Recap" },
 ];
 
-export const LEADS_SUBNAV: SubNavItem[] = [
-  { to: "/people", label: "People" },
-  { to: "/follow-ups", label: "Follow-ups" },
-];
