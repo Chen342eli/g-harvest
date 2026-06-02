@@ -210,6 +210,16 @@ function MapViewClient({ conferences, onOpenInTable }: Props) {
         window.setTimeout(() => renderMarkersRef.current(false), 80);
       });
       map.on("zoomend", () => renderMarkersRef.current(false));
+      map.on("popupopen", (e: any) => {
+        const root: HTMLElement | undefined = e?.popup?.getElement?.();
+        const btn = root?.querySelector?.('[data-action="open-in-table"]') as HTMLButtonElement | null;
+        if (!btn) return;
+        btn.onclick = (ev) => {
+          ev.preventDefault();
+          const id = btn.getAttribute("data-id");
+          if (id) onOpenInTableRef.current?.(id);
+        };
+      });
       map.addLayer(layerRef.current);
       mapRef.current = map;
       renderMarkersRef.current(true);
