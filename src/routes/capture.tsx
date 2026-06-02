@@ -153,17 +153,7 @@ function CapturePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <div>
-            <h1 className="text-base font-semibold tracking-tight text-foreground">Capture lead</h1>
-            {settings.activeConferenceName && (
-              <p className="text-xs text-muted-foreground">{settings.activeConferenceName}</p>
-            )}
-          </div>
-          <TopNav />
-        </div>
-      </header>
+      <TopNav />
       <ActiveConferenceBar />
 
 

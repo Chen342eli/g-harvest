@@ -71,20 +71,7 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Radar className="h-4 w-4" />
-            </div>
-            <div>
-              <h1 className="text-base font-semibold tracking-tight text-foreground">Grain Conference Radar</h1>
-              <p className="text-xs text-muted-foreground">Your week, your plan, your hottest leads.</p>
-            </div>
-          </div>
-          <TopNav />
-        </div>
-      </header>
+      <TopNav />
 
       <main className="mx-auto max-w-[1400px] space-y-6 px-6 py-6">
         {/* Planning CTA */}

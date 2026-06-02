@@ -14,15 +14,7 @@ function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-6 py-4">
-          <div>
-            <h1 className="text-base font-semibold tracking-tight text-foreground">Settings</h1>
-            <p className="text-xs text-muted-foreground">API keys are stored locally only (localStorage).</p>
-          </div>
-          <TopNav />
-        </div>
-      </header>
+      <TopNav />
 
       <main className="mx-auto max-w-[680px] space-y-6 px-6 py-6">
         <section className="rounded-lg border border-border bg-card p-4 space-y-3">

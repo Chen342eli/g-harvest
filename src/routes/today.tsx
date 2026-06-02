@@ -48,15 +48,7 @@ function TodayPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-6 py-4">
-          <div>
-            <h1 className="text-base font-semibold tracking-tight text-foreground">Today</h1>
-            <p className="text-xs text-muted-foreground">Live snapshot of the active conference</p>
-          </div>
-          <TopNav />
-        </div>
-      </header>
+      <TopNav />
       <ActiveConferenceBar />
 
       <main className="mx-auto max-w-[1400px] space-y-6 px-6 py-6">
