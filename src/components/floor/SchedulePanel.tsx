@@ -9,6 +9,8 @@ import {
   type ScheduleKind,
 } from "@/lib/schedule-store";
 import { SALES_TEAM } from "@/lib/conferences";
+import { usePeopleData } from "@/lib/people-store";
+import { openPersonDrawer } from "@/lib/person-drawer-store";
 import { cn } from "@/lib/utils";
 
 interface Props {
