@@ -43,19 +43,7 @@ function dateRange(start: string, end: string) {
   return `${monthFmt.format(s)} – ${monthFmt.format(e)}, ${yearFmt.format(e)}`;
 }
 
-const STATUS_BG: Record<string, string> = {
-  Going: "#dcfce7",
-  Considering: "#e0f2fe",
-  Passed: "#f4f4f5",
-};
-const STATUS_TEXT: Record<string, string> = {
-  Going: "#166534",
-  Considering: "#075985",
-  Passed: "#52525b",
-};
-
-function popupHtml(c: Conference): string {
-  const gap = isCoverageGap(c);
+function popupHtml(c: Conference, inPlan: boolean, gap: boolean): string {
   const reps = c.assignedReps.length
     ? escape(c.assignedReps.join(", "))
     : `<span style="color:#64748b">Unassigned</span>`;
@@ -71,8 +59,7 @@ function popupHtml(c: Conference): string {
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
         <span style="background:${TIER_BG[c.tier]};color:${TIER_TEXT[c.tier]};
           padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">${c.tier}</span>
-        <span style="background:${STATUS_BG[c.status]};color:${STATUS_TEXT[c.status]};
-          padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">${escape(c.status)}</span>
+        ${inPlan ? `<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">In plan</span>` : ""}
         <span style="background:#f1f5f9;color:#0f172a;
           padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;">Score ${c.icpScore}</span>
         ${gap ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">Coverage gap</span>` : ""}
@@ -124,6 +111,7 @@ function ensureMarkerClusterScript(): Promise<void> {
 
 interface Props {
   conferences: Conference[];
+  committedIds?: Set<string>;
   onOpenInTable?: (id: string) => void;
 }
 
@@ -134,15 +122,15 @@ function locationKey(c: Conference) {
   return `${c.city.trim().toLowerCase()}|${c.country.trim().toLowerCase()}`;
 }
 
-export function MapView({ conferences, onOpenInTable }: Props) {
+export function MapView({ conferences, committedIds, onOpenInTable }: Props) {
   return (
     <ClientOnly fallback={<MapFallback />}>
-      <MapViewClient conferences={conferences} onOpenInTable={onOpenInTable} />
+      <MapViewClient conferences={conferences} committedIds={committedIds} onOpenInTable={onOpenInTable} />
     </ClientOnly>
   );
 }
 
-function MapViewClient({ conferences, onOpenInTable }: Props) {
+function MapViewClient({ conferences, committedIds, onOpenInTable }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
@@ -256,13 +244,13 @@ function MapViewClient({ conferences, onOpenInTable }: Props) {
     });
 
     const addConferenceMarker = (c: Conference, lat: number, lng: number, targetLayer: any) => {
-      const gap = isCoverageGap(c);
-      const going = c.status === "Going";
+      const inPlan = committedIds?.has(c.id) ?? false;
+      const gap = isCoverageGap(c, committedIds);
       const color = TIER_COLOR[c.tier];
-      const ringShadow = going
+      const ringShadow = inPlan
         ? "box-shadow:0 0 0 2px #fff, 0 0 0 4px #16a34a, 0 1px 4px rgba(0,0,0,.35);"
         : "box-shadow:0 0 0 2px #fff, 0 1px 3px rgba(0,0,0,.35);";
-      const size = going ? 26 : 22;
+      const size = inPlan ? 26 : 22;
       const html = `
         <div style="position:relative;width:${size}px;height:${size}px;">
           <div style="width:${size}px;height:${size}px;border-radius:9999px;background:${color};
@@ -274,7 +262,7 @@ function MapViewClient({ conferences, onOpenInTable }: Props) {
       const icon = L.divIcon({ html, className: "", iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
       const marker = L.marker([lat, lng], { icon });
       marker.__locationKey = locationKey(c);
-      marker.bindPopup(popupHtml(c), { maxWidth: 320 });
+      marker.bindPopup(popupHtml(c, inPlan, gap), { maxWidth: 320 });
       targetLayer.addLayer(marker);
     };
 
@@ -327,7 +315,7 @@ function MapViewClient({ conferences, onOpenInTable }: Props) {
     );
     renderMarkers(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conferences]);
+  }, [conferences, committedIds]);
 
   const missing = conferences.filter((c) => !coordsFor(c.city, c.country));
 
@@ -345,7 +333,7 @@ function MapViewClient({ conferences, onOpenInTable }: Props) {
             className="inline-block h-3 w-3 rounded-full bg-slate-400"
             style={{ boxShadow: "0 0 0 1.5px #fff, 0 0 0 3px #16a34a" }}
           />
-          Going (confirmed)
+          In plan
         </div>
         <div className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-white" />

@@ -74,9 +74,6 @@ export function CoveragePanel({ plan, items, allConferences, onAdd }: Props) {
                           <div className="truncate text-xs font-medium text-foreground">{c.name}</div>
                           <div className="text-[10px] text-muted-foreground">
                             {c.city} · ICP {c.icpScore}
-                            {c.estimatedCostUsd != null && (
-                              <> · ${(c.estimatedCostUsd / 1000).toFixed(1)}k</>
-                            )}
                           </div>
                         </div>
                         <Button
