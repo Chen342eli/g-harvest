@@ -117,7 +117,7 @@ function CapturePage() {
         id: personId,
         fullName: name.trim(),
         nameVariations: [],
-        linkedInUrl: linkedIn || undefined,
+        
         currentCompany: company || undefined,
         currentRole: role || undefined,
         currentVertical: (vertical || undefined) as EncounterVertical | undefined,
