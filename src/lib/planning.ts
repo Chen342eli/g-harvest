@@ -64,7 +64,11 @@ export interface PlanItem {
 }
 
 export interface PlanItemWithConference extends PlanItem {
-  conference: Conference & { estimatedCostUsd: number | null; costConfidence: CostConfidence | null };
+  conference: Conference & {
+    estimatedCostUsd: number | null;
+    costConfidence: CostConfidence | null;
+    costNotes: string | null;
+  };
 }
 
 /** Effective per-conference cost = override or base × reps. */
