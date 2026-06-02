@@ -90,7 +90,7 @@ export function DuringPhase({ conferenceId, onEnterGameTime, canEnterGameTime }:
         </button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <section className="space-y-4">
           {/* Today's meetings */}
           <div className="rounded-xl border border-border bg-card">
