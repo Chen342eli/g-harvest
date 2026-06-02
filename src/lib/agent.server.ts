@@ -458,15 +458,54 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             continue;
           }
 
-          const year = parsed.startDate ? new Date(parsed.startDate).getUTCFullYear() : null;
-          if (year !== null && !yrs.has(year)) {
+          let year = parsed.startDate ? new Date(parsed.startDate).getUTCFullYear() : null;
+          const allowedYears = [...yrs];
+          const dateMissing = !parsed.startDate;
+          const yearInvalid = year !== null && !yrs.has(year);
+
+          // If the first extraction lost the date or returned a nonsense year,
+          // do one focused retry asking the AI to re-verify the dates.
+          if (dateMissing || yearInvalid) {
+            const verified = await verifyConferenceDates({
+              model,
+              name: parsed.name,
+              hit,
+              markdown,
+              allowedYears,
+            });
+            if (verified.startDate) {
+              parsed.startDate = verified.startDate;
+              parsed.endDate = verified.endDate ?? verified.startDate;
+              year = new Date(parsed.startDate).getUTCFullYear();
+            }
+          }
+
+          // After retry: if we still don't have a usable year, skip instead of
+          // inserting a 9999 placeholder. This is what produced the bad rows.
+          if (!parsed.startDate) {
             skipped++;
-            await logCandidate({ runId, hit, decision: "skipped", reason: `Year ${year} outside allowed window (${[...yrs].join(", ")})`, extracted: parsed });
+            await logCandidate({
+              runId,
+              hit,
+              decision: "skipped",
+              reason: "No date found after verification retry — refusing to insert placeholder year",
+              extracted: parsed,
+            });
+            continue;
+          }
+          if (year === null || !yrs.has(year)) {
+            skipped++;
+            await logCandidate({
+              runId,
+              hit,
+              decision: "skipped",
+              reason: `Year ${year} outside allowed window (${allowedYears.join(", ")}) after verification retry`,
+              extracted: parsed,
+            });
             continue;
           }
 
           const missing: string[] = [];
-          if (!parsed.startDate) missing.push("start_date");
           if (!parsed.endDate) missing.push("end_date");
           if (!parsed.city) missing.push("city");
           if (!parsed.country) missing.push("country");
@@ -474,14 +513,14 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           if (!parsed.vertical) missing.push("vertical");
           if (parsed.estimatedAudienceSize == null) missing.push("estimated_audience_size");
 
-          const startDate = parsed.startDate ?? "9999-12-31";
+          const startDate = parsed.startDate;
           const endDate = parsed.endDate ?? startDate;
           const city = parsed.city ?? "Unknown";
           const country = parsed.country ?? "Unknown";
           const region = (parsed.region ?? "North America") as Region;
           const vertical = (parsed.vertical ?? "Fintech") as Vertical;
           const audience = parsed.estimatedAudienceSize ?? 0;
-          const dedupYear = year ?? 0;
+          const dedupYear = year;
 
           const dedupKey = `${parsed.name.toLowerCase()}|${dedupYear}|${city.toLowerCase()}`;
 
