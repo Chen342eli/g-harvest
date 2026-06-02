@@ -44,6 +44,7 @@ type GroupBy = "rep" | "vertical" | "region" | "tier" | "none";
 interface Props {
   conferences: Conference[];
   onSetStatus?: (id: string, status: DecisionStatus) => void;
+  onOpenInTable?: (id: string) => void;
 }
 
 interface PlacedBar {
