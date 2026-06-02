@@ -122,12 +122,11 @@ function PlanBuilderPage() {
 
             <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
               <PlanningTable
-                plan={planQuery.data.plan}
                 items={planQuery.data.items}
                 onSetStatus={(conferenceId, planStatus) => statusMutation.mutate({ conferenceId, planStatus })}
                 onRemove={(conferenceId) => removeMutation.mutate(conferenceId)}
-                onSaveCost={(v) => costMutation.mutate(v)}
               />
+
 
               <CoveragePanel
                 plan={planQuery.data.plan}
