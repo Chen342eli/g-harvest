@@ -188,8 +188,17 @@ function resolveConfIds(conferences: Conference[]): { map: Record<string, string
   };
 }
 
-export function loadDemoState(state: DemoState, conferences: Conference[]) {
+export async function loadDemoState(state: DemoState, conferences: Conference[]) {
   if (typeof window === "undefined") return;
+
+  // State A also wipes the Supabase conference tables so the discovery agent can
+  // be re-run from scratch. Do this BEFORE writing localStorage so a failure
+  // doesn't leave the UI in a half-loaded state.
+  if (state === "A") {
+    const { wipeConferences } = await import("./demo-data.functions");
+    await wipeConferences();
+  }
+
   const pick = state === "A" ? EMPTY : state === "B" ? BEFORE : AFTER;
   const { map, amsName } = resolveConfIds(conferences);
   const stamp = (name: string) => map[name] ?? name;
@@ -213,3 +222,4 @@ export function loadDemoState(state: DemoState, conferences: Conference[]) {
     floorPhaseOverride: state === "A" ? null : state === "B" ? "before" : "after",
   }));
 }
+
