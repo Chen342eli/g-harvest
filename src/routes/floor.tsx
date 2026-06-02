@@ -65,7 +65,11 @@ function FloorPage() {
   }, [conferences, upcoming]);
 
   const effectiveActiveId = settings.activeConferenceId || defaultConf?.id;
-  const activeConf = conferences.find((c) => c.id === effectiveActiveId);
+  // Fall back to the full list so a selected conference still resolves even when
+  // it isn't in the committed-plan filter (e.g. seeded via a demo state).
+  const activeConf =
+    conferences.find((c) => c.id === effectiveActiveId) ??
+    allConferences.find((c) => c.id === effectiveActiveId);
 
   useEffect(() => {
     if (!settings.activeConferenceId && defaultConf) {
