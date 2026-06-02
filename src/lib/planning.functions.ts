@@ -17,6 +17,7 @@ interface PlanRow {
   annual_budget_usd: number | string;
   planned_reps_per_conference: number;
   is_active: boolean;
+  status: "draft" | "approved";
   created_at: string;
   updated_at: string;
   archived_at: string | null;
@@ -41,6 +42,7 @@ function rowToPlan(r: PlanRow): Plan {
     annualBudgetUsd: Number(r.annual_budget_usd),
     plannedRepsPerConference: r.planned_reps_per_conference,
     isActive: r.is_active,
+    status: r.status ?? "draft",
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     archivedAt: r.archived_at,
@@ -182,6 +184,24 @@ export const removeFromPlan = createServerFn({ method: "POST" })
       .delete()
       .eq("plan_id", data.planId)
       .eq("conference_id", data.conferenceId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setPlanStatus = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        status: z.enum(["draft", "approved"]),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("plans")
+      .update({ status: data.status })
+      .eq("id", data.planId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

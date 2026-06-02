@@ -19,6 +19,7 @@ import {
   getActivePlan,
   listAllConferencesWithCost,
   setPlanItemStatus as setPlanItemStatusFn,
+  setPlanStatus as setPlanStatusFn,
 } from "@/lib/planning.functions";
 import { toggleRep as toggleRepFn } from "@/lib/conferences.functions";
 import {
@@ -63,6 +64,7 @@ function PlanBuilderPage() {
   const fetchAll = useServerFn(listAllConferencesWithCost);
   const callSetStatus = useServerFn(setPlanItemStatusFn);
   const callToggleRep = useServerFn(toggleRepFn);
+  const callSetPlanStatus = useServerFn(setPlanStatusFn);
 
   const planQuery = useQuery({ queryKey: ["active-plan"], queryFn: () => fetchPlan() });
   const allQuery = useQuery({ queryKey: ["all-conferences-cost"], queryFn: () => fetchAll() });
@@ -86,6 +88,16 @@ function PlanBuilderPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update reps"),
   });
 
+  const approveMutation = useMutation({
+    mutationFn: () => callSetPlanStatus({ data: { planId: planQuery.data!.plan.id, status: "approved" } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Plan approved");
+      navigate({ to: "/planning" });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to approve"),
+  });
+
   const [step, setStep] = useState<StepId>(1);
 
   const loading = planQuery.isLoading || allQuery.isLoading;
@@ -93,10 +105,7 @@ function PlanBuilderPage() {
   const items = planQuery.data?.items ?? [];
   const allConferences = allQuery.data ?? [];
 
-  const onApprove = () => {
-    toast.success("Plan approved");
-    navigate({ to: "/planning" });
-  };
+  const onApprove = () => approveMutation.mutate();
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,10 +130,25 @@ function PlanBuilderPage() {
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
                 Planning wizard · {plan.name}
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                    plan.status === "approved"
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                      : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+                  )}
+                >
+                  {plan.status === "approved" ? "Approved" : "Draft"}
+                </span>
               </div>
               <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                 Build your {plan.year} plan
               </h1>
+              {plan.status === "approved" && (
+                <p className="text-xs text-muted-foreground">
+                  Editing an approved plan — re-approve at the end to publish your changes.
+                </p>
+              )}
             </header>
 
             <Stepper current={step} onJump={setStep} />
@@ -355,7 +379,7 @@ function Step2Coverage({
         allConferences,
         items,
         // plan budget no longer used; pass a stub
-        plan: { id: "", name: "", year: planYear, annualBudgetUsd: 0, plannedRepsPerConference: 1, isActive: true, createdAt: "", updatedAt: "", archivedAt: null },
+        plan: { id: "", name: "", year: planYear, annualBudgetUsd: 0, plannedRepsPerConference: 1, isActive: true, status: "draft", createdAt: "", updatedAt: "", archivedAt: null },
         planYear,
       }).filter((r) => r.kind === "region_gap" || r.kind === "vertical_gap"),
     [allConferences, items, planYear],
