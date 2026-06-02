@@ -129,10 +129,7 @@ export function ConferenceTable({ conferences, onToggleRep, onUpdateConference, 
                     <ScoreCell score={c.icpScore} subScores={c.subScores} />
                   </td>
                   <td className="px-4 py-3 align-top">
-                    <div className="flex flex-col items-start gap-1">
-                      <TierBadge tier={c.tier} />
-                      {gap && <CoverageGapBadge />}
-                    </div>
+                    <TierBadge tier={c.tier} />
                   </td>
                   <td className="px-4 py-3 align-top min-w-[260px]">
                     <RepAssigner
