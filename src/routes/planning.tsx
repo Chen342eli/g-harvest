@@ -139,17 +139,14 @@ function PlanningPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav
-        rightSlot={
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <AgentStatusButton />
-            <Stat label={hasPlan && !showAll ? "In plan" : "Conferences"} value={stats.total} />
-            <Stat label="Coverage gaps" value={stats.gaps} accent={stats.gaps > 0 ? "text-red-700" : "text-foreground"} />
-          </div>
-        }
-      />
+      <TopNav />
+
 
       <main className="mx-auto max-w-[1600px] space-y-4 px-6 py-6">
+        <div className="flex justify-end">
+          <AgentStatusButton />
+        </div>
+
         {!isLoading && lifecycle === "approved" && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3">
             <div>
@@ -172,7 +169,7 @@ function PlanningPage() {
         )}
 
         {!isLoading && lifecycle === "draft" && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-400/60 bg-amber-50 px-5 py-3 dark:bg-amber-950/30">
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3 rounded-lg border border-amber-400/60 bg-amber-50 px-5 py-3 dark:bg-amber-950/30">
             <div className="flex items-start gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300">
                 <Sparkles className="h-4 w-4" />
@@ -182,7 +179,7 @@ function PlanningPage() {
                   {planQuery.data?.plan.name} is in draft
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Complete the wizard and approve the plan — the "In plan" view and upcoming events stay hidden until then.
+                  Complete the wizard and approve the plan.
                 </p>
               </div>
             </div>
@@ -193,6 +190,7 @@ function PlanningPage() {
             </Button>
           </div>
         )}
+
 
         {!isLoading && lifecycle === "none" && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-400/60 bg-amber-50 px-5 py-3 dark:bg-amber-950/30">
@@ -338,19 +336,13 @@ function ExportButton({ conferences }: { conferences: Conference[] }) {
       type="button"
       onClick={exportCsv}
       disabled={conferences.length === 0}
-      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+      title="Export CSV"
+      aria-label="Export CSV"
+      className="inline-flex items-center justify-center rounded-md border border-border bg-card p-2 text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <Download className="h-3.5 w-3.5" />
-      Export CSV
+      <Download className="h-4 w-4" />
     </button>
   );
+
 }
 
-function Stat({ label, value, accent }: { label: string; value: number; accent?: string }) {
-  return (
-    <div className="flex flex-col items-end">
-      <span className={`text-lg font-semibold tabular-nums ${accent ?? "text-foreground"}`}>{value}</span>
-      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
-    </div>
-  );
-}
