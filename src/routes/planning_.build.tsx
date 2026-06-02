@@ -254,34 +254,6 @@ function Stepper({ current, onJump }: { current: StepId; onJump: (s: StepId) => 
   );
 }
 
-function WizardFooter({
-  step,
-  onBack,
-  onNext,
-  onApprove,
-}: {
-  step: StepId;
-  onBack: () => void;
-  onNext: () => void;
-  onApprove: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <Button variant="outline" size="sm" onClick={onBack} disabled={step === 1}>
-        <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back
-      </Button>
-      {step < 4 ? (
-        <Button size="sm" onClick={onNext}>
-          Next <ArrowRight className="ml-1 h-3.5 w-3.5" />
-        </Button>
-      ) : (
-        <Button size="sm" onClick={onApprove}>
-          <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Approve plan
-        </Button>
-      )}
-    </div>
-  );
-}
 
 /* ---------- Step 1 · Anchors ---------- */
 
