@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, CalendarPlus, Check, ExternalLink, Pencil } from "lucide-react";
 import type { Conference } from "@/lib/conferences";
 import { SALES_TEAM, isCoverageGap } from "@/lib/conferences";
-import { TierBadge, CoverageGapBadge } from "./TierBadge";
+import { TierBadge } from "./TierBadge";
 import { ScoreCell } from "./ScoreCell";
 import { RepAssigner } from "./RepAssigner";
 import { EditConferenceDialog } from "./EditConferenceDialog";
