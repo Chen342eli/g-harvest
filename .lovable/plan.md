@@ -1,99 +1,125 @@
-## Goal
+# הפרדת קטלוג מתכנון, עם ניהול תקציב וכיסוי
 
-Turn the current passive table into an active decision-making workflow: the sales manager picks which conferences Grain attends, and a deterministic rules engine continuously validates coverage (vertical, geographic, owners, clustering) — no LLM needed for v1.
+## הרעיון המרכזי
 
-## Concept
+היום כל הצפייה, הסטטוסים וההחלטות יושבים על אותו מסך. הקטלוג והתכנון מתערבבים — `Going` משמש גם "מאושר לשנה הזו" וגם "המנהל מתעניין". נפריד אותם:
 
-Two new pieces, both deterministic and explainable:
+- **`/` — Catalog**: רשימת **כל** הכנסים שהסוכן מצא + ידניים. גילוי, סינון, חקירה, עריכה. בלי החלטות תכנון.
+- **`/planning` — Planning workspace**: שטח עבודה לתכנית השנתית. כאן בוחרים Must-go, מוסיפים מועמדים, רואים תקציב מול עלות בזמן אמת, ומקבלים המלצות לסגירת פערים.
 
-1. **Insights Engine** — a pure function `evaluateInsights(conferences) → Insight[]` that runs your 7 rules over the current dataset.
-2. **Decision Panel** — a right-hand sidebar that lives next to the table/map/timeline and is the single place to: pick conferences, see live insights, and act on them in one click.
+תכנית אחת פעילה בכל רגע נתון (Plan 2026). כשתרצי לעבוד על 2027 — פותחים חדשה, וזו הופכת לארכיון.
 
-The table stays as is for browsing; the decision happens in the sidebar.
+## מודל הסטטוסים החדש (אחיד בין קטלוג לתכנון)
 
-## Rules engine (`src/lib/insights.ts`)
+הסטטוס היום מבלבל כי הוא משרת שני עולמות. נפצל:
 
-A typed insight model:
+**שדה 1 — `catalog_status`** (נראה בקטלוג):
+- `New` — האייג'נט הוסיף, לא נסקר
+- `Reviewed` — נסקר ע"י מנהלת
+- `Archived` — לא רלוונטי לנו ככלל
 
-```ts
-type Insight = {
-  id: string;                 // stable, e.g. "no-owner:sibos"
-  severity: "warn" | "info";  // ⚠️ vs 💡
-  category: "coverage" | "concentration" | "trip" | "ownership";
-  title: string;              // one-line headline
-  detail: string;             // supporting sentence
-  conferenceIds: string[];    // which rows it points to
-  filterPreset?: Partial<Filters>; // click → apply this filter
-};
+**שדה 2 — `plan_status`** (שייך לתכנית הפעילה, לא לכנס):
+- `Must-go` — חובה, לא נמחק מהתכנית
+- `Shortlist` — מועמד חזק, סביר שייכלל
+- `Considering` — נשקל, צריך עוד מידע
+- `Approved` — נכלל סופית בתכנית (זה שמחליף את `Going` של היום)
+- `Dropped` — נשקל ונפסל לתכנית הזו
+
+הסיבה לפיצול: כנס יכול להיות `Reviewed` בקטלוג ו-`Approved` בתכנית 2026 וגם `Considering` בתכנית 2027 בעתיד. אם נשמור סטטוס אחד על הכנס עצמו — נצטרך לשכתב אותו בכל פעם שעוברים שנה.
+
+## תקציב ועלות
+
+נוסיף שלושה שדות חדשים לכנס:
+- `estimated_cost_usd` — עלות כוללת משוערת (כרטיס + טיסה + לינה לרפ אחד)
+- `cost_confidence` — `estimated` / `quoted` / `actual`
+- `cost_notes` — טקסט חופשי
+
+תכנית מחזיקה:
+- `annual_budget_usd`
+- `planned_reps_per_conference` (ברירת מחדל 1 — מכפיל את העלות אם משנים)
+
+מטריקה מחושבת בזמן אמת:
+- סה"כ Must-go committed
+- סה"כ Approved (כולל Must-go)
+- נשאר בתקציב = budget − approved
+- "אזור סיכון": Shortlist שאם נוסיף, נחרוג
+
+## /planning — מבנה המסך
+
+שלוש קומות במסך אחד:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Header: Plan 2026 · Budget $X · Committed $Y · Remaining $Z │
+├──────────────────────────────┬──────────────────────────────┤
+│ Timeline (כל השנה, צבוע      │ Coverage panel:              │
+│ לפי plan_status)             │ • Region coverage (meters)   │
+│                              │ • Vertical coverage          │
+│                              │ • Calendar gaps              │
+│                              │ • Recommendations live       │
+├──────────────────────────────┴──────────────────────────────┤
+│ Planning table: עמודות = שם, תאריכים, אזור, עלות, סטטוס    │
+│ פעולות מהירות: Must-go / Approved / Drop                    │
+│ שורת סיכום בתחתית: סך עלות נבחר, חריגה מתקציב              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-Rules implemented (1:1 with your list):
+המפה (Geographic) נשארת בקטלוג — שם היא משרתת חקירה. בתכנון היא פחות פעילה; אם נרצה אפשר לפתוח אותה כ-tab משני בתוך הפאנל הימני.
 
-| # | Rule | Severity |
-|---|---|---|
-| 1 | `icpScore ≥ 80` AND no assigned reps | warn |
-| 2 | `icpScore ≥ 80` AND `status ≠ Going` | warn |
-| 3 | Vertical with zero `Going` conferences (per `VERTICALS`) | warn |
-| 4 | >70% of `Going` share one vertical | info |
-| 5 | >80% of `Going` share one region | warn |
-| 6 | Trip pair: same city, ≤14 days apart, both `Going` or `Considering` | info |
-| 7 | Cluster: ≥3 conferences in same country within 30 days | info |
+## המלצות חיות (לא רק בסוף)
 
-Thresholds live as named constants at the top of the file so they are easy to tweak.
+הפאנל הימני מציג בכל רגע:
+- **Coverage meters**: לכל region/vertical — % כיסוי לפי קונפיגורציה ידועה (אזורים פעילים מההגדרות הקיימות), צבע אדום/כתום/ירוק
+- **Gap suggestions**: "אין כיסוי ב-APAC ברבעון 2 — 3 כנסים מתאימים, מהזולים: X ($1.2k), Y ($2k), Z..." — לחיצה מוסיפה ל-Shortlist
+- **Budget reality**: "נשאר $14k. אם תאשרי את כל ה-Shortlist, תחרגי ב-$3k. ה-3 הזולים מתוכם פותרים את פער ה-EU בלי לחרוג."
+- **Calendar conflicts**: שני כנסים שחופפים בתאריכים → אזהרה
 
-Each insight carries a `filterPreset` so clicking it filters the table (rule 1 → status=Going + gapsOnly; rule 3 → that vertical; rule 6/7 → those specific IDs via a new `ids` filter).
+ההמלצות פשוטות וחישוביות (לא AI חדש) — דירוג לפי `gap_score × (1/cost) × icp_score`. מהיר, מקומי, צפוי.
 
-## Decision Panel (`src/components/conference-radar/DecisionPanel.tsx`)
+## קטלוג — שינויים מינימליים
 
-Collapsible right sidebar on the main page, three tabs:
+המסך הקיים נשאר כמעט זהה, אבל:
+- עמודת הסטטוס משנה שם ל-`Catalog Status` (New/Reviewed/Archived)
+- הסטטוסים הישנים (Going/Considering/Passed) ממופים אוטומטית: `Going → plan_status=Approved`, `Considering → plan_status=Considering`, `Passed → plan_status=Dropped`. הקטלוג עצמו של כולם נהיה `Reviewed`.
+- מתווסף כפתור "Add to Plan 2026" על כל שורה — מוסיף ל-Shortlist בתכנית הפעילה
+- הפאנל הימני (DecisionPanel הקיים) נשאר עם תובנות חקירה כלליות, **בלי** ניהול החלטות תכנון
 
-- **Shortlist** — every conference grouped as `Going` / `Considering` / `Passed`, with one-click status toggle and rep assignment. Top of the list shows live coverage stats: # Going, total estimated audience reached, vertical mix bar, region mix bar.
-- **Insights** — the rules engine output, grouped by severity. Each card has:
-  - Headline + detail
-  - "Show involved" → applies `filterPreset` to the table
-  - For rule 1/2: inline "Mark Going" / "Assign rep" quick actions
-- **AI suggestion** *(stub)* — a "Suggest a shortlist" button that runs a deterministic pick: top N by `icpScore` covering every vertical and ≥2 regions, capped by a budget slider (number of conferences). Output is a preview the manager accepts/edits. Labeled as "Rule-based recommendation" so it's honest — you can swap in real AI later without changing the UI.
+## ניווט
 
-Layout:
+`SidebarTrigger` בכותרת + סייד-בר עם:
+- Catalog
+- Planning · Plan 2026 (badge: $Z remaining)
+- Agent runs (קיים)
 
-```text
-┌─────────────── main ───────────────┬── DecisionPanel ──┐
-│ FilterBar                          │ [Shortlist|Insights|AI] │
-│ Gap banner                         │ coverage stats          │
-│ ViewToggle  (Table/Map/Timeline)   │ ─────────────           │
-│ Current view                       │ rule cards / list       │
-└────────────────────────────────────┴─────────────────────────┘
-```
+## פרטים טכניים
 
-Panel is toggleable (button in header: "Decisions") and remembers state in `localStorage` so it doesn't get in the way during demos.
+**שינויי DB (מיגרציה אחת):**
+- טבלה חדשה `plans`: `id, name, year, annual_budget_usd, planned_reps_per_conference, is_active, created_at, archived_at`
+- טבלה חדשה `plan_items`: `id, plan_id, conference_id, plan_status, planned_reps_override, estimated_cost_override, must_go_locked_at, notes, created_at, updated_at` + unique (plan_id, conference_id)
+- `conferences`: הוספת `estimated_cost_usd`, `cost_confidence`, `cost_notes`. השדה הקיים `status` נשאר זמנית לקריאה בלבד עד שכל הקוד יעבור
+- migration data step: יצירת `Plan 2026`, מילוי `plan_items` מכל conference עם המיפוי הנ"ל
 
-## Wiring (`src/routes/index.tsx`)
+**קוד:**
+- `src/routes/planning.tsx` חדש
+- `src/components/planning/` — `PlanHeader`, `PlanTimeline`, `CoveragePanel`, `RecommendationsList`, `PlanningTable`, `BudgetMeter`
+- `src/lib/planning.functions.ts` — server fns: `getActivePlan`, `addToPlan`, `setPlanStatus`, `updatePlanBudget`, `updateConferenceCost`, `getRecommendations`
+- `src/lib/recommendations.ts` — לוגיקת ניקוד פערים (טהור, נבחן בקלות)
+- הסיידבר מתווסף ל-`__root.tsx`
+- `index.tsx` הקיים מתעדכן: עמודת סטטוס + כפתור Add to Plan, הסרת `DecisionPanel`'s status actions (נשארות התובנות בלבד)
 
-- Compute `insights = useMemo(() => evaluateInsights(conferences), [conferences])`.
-- Pass `conferences`, `insights`, `onSetStatus`, `onToggleRep`, `onApplyFilter` into `DecisionPanel`.
-- The existing red Gap banner becomes one of many insights and is removed (or kept as a pinned shortcut to rule 1).
+**מה לא נוגעים:**
+- האייג'נט וכל הלוגיקה שלו
+- `do_not_resurrect`
+- `conference_change_flags` ו-Needs Review (המסך החדש יציג גם flags פתוחים על כנסים בתכנית, אבל הזרימה זהה)
+- ה-API הציבורי של ה-cron
 
-## What gets removed / simplified
+## מה לא בתכנית הזו (יבוא בנפרד אם תרצי)
 
-- The Gap banner becomes a special-cased pinned insight inside the panel.
-- The header stats stay but get a "Coverage health" mini-badge driven by the rules (green if 0 warns, amber if any warn).
+- ניהול תקציב לפי רבעון/קוודרנט (כרגע שנתי בלבד)
+- היסטוריית תכניות קודמות עם השוואה
+- שיתוף תכנית עם הצוות + הרשאות
+- שמירת snapshots של התכנית בכל שינוי
 
-## Out of scope for this iteration
+## שאלה אחת שנשארה לפני בנייה
 
-- Real AI / LLM call. The "AI suggestion" tab is deterministic and clearly labeled. We can plug Lovable AI Gateway in a follow-up.
-- Persistence to a DB. State stays in-memory like today.
-
-## Files
-
-- `src/lib/insights.ts` (new) — types + `evaluateInsights`
-- `src/components/conference-radar/DecisionPanel.tsx` (new)
-- `src/components/conference-radar/InsightCard.tsx` (new, small)
-- `src/components/conference-radar/CoverageMeters.tsx` (new, small — vertical/region bars)
-- `src/routes/index.tsx` — wire panel, remove standalone gap banner
-- `src/components/conference-radar/FilterBar.tsx` — support an `ids` filter so insights can deep-link to specific rows
-
-## Open questions
-
-1. **Budget**: is there a target number of conferences per year (e.g. 8)? It would sharpen the AI/auto-pick logic.
-2. **Per-rep capacity**: should rule 1 also flag reps that are over/under-assigned, or only conferences with no owner?
-3. **Trip clustering (rules 6–7)**: include `Considering` events, or only `Going`?
+האם להזין עכשיו עלות ידנית לכל כנס, או שמספיק שהשדות יהיו ריקים בהתחלה ואת ממלאת תוך כדי שאת בוחנת? אני ממליץ ריק + הוספת מסנן "Has cost / Missing cost" בקטלוג כדי שתוכלי לרדוף אחרי המידע — אבל זו החלטה שלך.
