@@ -109,14 +109,15 @@ export const getActivePlan = createServerFn({ method: "GET" }).handler(async () 
     confById.set(c.id, rowToConferenceWithCost(c));
   }
 
-  const items: PlanItemWithConference[] = (itemRows ?? [])
-    .map((r) => {
-      const item = rowToPlanItem(r as PlanItemRow);
-      const conf = confById.get(item.conferenceId);
-      if (!conf) return null;
-      return { ...item, conference: conf };
-    })
-    .filter((x): x is PlanItemWithConference => x !== null);
+  const items: PlanItemWithConference[] = [];
+  for (const r of itemRows ?? []) {
+    const item = rowToPlanItem(r as PlanItemRow);
+    const conf = confById.get(item.conferenceId);
+    if (!conf) continue;
+    // The conference type here also carries `provenance` from the mapper, but
+    // PlanItemWithConference only requires the cost fields. Extra fields are fine.
+    items.push({ ...item, conference: conf } as PlanItemWithConference);
+  }
 
   return { plan, items };
 });
