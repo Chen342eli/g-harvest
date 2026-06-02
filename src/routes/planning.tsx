@@ -143,7 +143,31 @@ function PlanningPage() {
 
 
       <main className="mx-auto max-w-[1600px] space-y-4 px-6 py-6">
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex-1">
+            {!isLoading && lifecycle === "draft" && (
+              <div className="inline-flex flex-wrap items-center gap-3 rounded-lg border border-amber-400/60 bg-amber-50 px-4 py-2 dark:bg-amber-950/30">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground">
+                      {planQuery.data?.plan.name} is in draft
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      Complete the wizard and approve the plan.
+                    </p>
+                  </div>
+                </div>
+                <Button asChild size="sm">
+                  <Link to="/planning/build">
+                    Resume planning <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </div>
           <AgentStatusButton />
         </div>
 
@@ -163,29 +187,6 @@ function PlanningPage() {
             <Button asChild size="sm">
               <Link to="/planning/build">
                 <Pencil className="mr-1 h-3.5 w-3.5" /> Build / edit plan
-              </Link>
-            </Button>
-          </div>
-        )}
-
-        {!isLoading && lifecycle === "draft" && (
-          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3 rounded-lg border border-amber-400/60 bg-amber-50 px-5 py-3 dark:bg-amber-950/30">
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300">
-                <Sparkles className="h-4 w-4" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-foreground">
-                  {planQuery.data?.plan.name} is in draft
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Complete the wizard and approve the plan.
-                </p>
-              </div>
-            </div>
-            <Button asChild size="sm">
-              <Link to="/planning/build">
-                Resume planning <ArrowRight className="ml-1 h-3.5 w-3.5" />
               </Link>
             </Button>
           </div>

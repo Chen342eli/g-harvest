@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Bot, ExternalLink, Loader2, Square } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { runAgentNow, getLastRun, cancelRunningAgent } from "@/lib/agent.functions";
+import { getLastRun, cancelRunningAgent } from "@/lib/agent.functions";
 import { toast } from "sonner";
 
 function formatRelative(iso: string | null | undefined): string {
@@ -21,31 +21,12 @@ function formatRelative(iso: string | null | undefined): string {
 export function AgentStatusButton() {
   const qc = useQueryClient();
   const fetchLastRun = useServerFn(getLastRun);
-  const triggerRun = useServerFn(runAgentNow);
   const cancelRun = useServerFn(cancelRunningAgent);
 
   const { data: lastRun } = useQuery({
     queryKey: ["lastAgentRun"],
     queryFn: () => fetchLastRun(),
     refetchInterval: 15_000,
-  });
-
-  const mutation = useMutation({
-    mutationFn: () => triggerRun(),
-    onSuccess: (result) => {
-      qc.invalidateQueries({ queryKey: ["lastAgentRun"] });
-      qc.invalidateQueries({ queryKey: ["conferences"] });
-      qc.invalidateQueries({ queryKey: ["agentRuns"] });
-      qc.invalidateQueries({ queryKey: ["changeFlags"] });
-      if (result.error) {
-        toast.error(`Agent finished with errors: ${result.error}`);
-      } else {
-        toast.success(`Agent done · ${result.added} added · ${result.flagged} flagged · ${result.skipped} skipped`);
-      }
-    },
-    onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : "Agent failed");
-    },
   });
 
   const cancelMutation = useMutation({
@@ -58,7 +39,7 @@ export function AgentStatusButton() {
     onError: (err: unknown) => toast.error(err instanceof Error ? err.message : "Cancel failed"),
   });
 
-  const running = mutation.isPending || lastRun?.status === "running";
+  const running = lastRun?.status === "running";
   const cancelRequested = !!(lastRun as { cancel_requested?: boolean } | null)?.cancel_requested;
   const statusColor =
     lastRun?.status === "error" ? "bg-red-500"
@@ -79,7 +60,7 @@ export function AgentStatusButton() {
           +{lastRun.added_count ?? 0}
         </span>
       ) : null}
-      {running ? (
+      {running && (
         <button
           type="button"
           onClick={() => cancelMutation.mutate()}
@@ -89,15 +70,6 @@ export function AgentStatusButton() {
           <Loader2 className="h-3 w-3 animate-spin" />
           {cancelRequested ? "Stopping" : "Stop"}
           {!cancelRequested && <Square className="h-2 w-2 fill-current" />}
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={() => mutation.mutate()}
-          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 font-medium text-foreground hover:bg-muted disabled:opacity-60"
-        >
-          {mutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-          Run
         </button>
       )}
       <Link
