@@ -287,8 +287,8 @@ export function TimelineView({ conferences, onOpenInTable, committedIds }: Props
                             key={`${lane.key}:${bar.conference.id}`}
                             bar={bar}
                             top={LANE_PAD_Y + bar.subRow * (ROW_H + ROW_GAP)}
-                            onSetStatus={onSetStatus}
                             onOpenInTable={onOpenInTable}
+                            committedIds={committedIds}
                           />
                         ))}
                       </div>
