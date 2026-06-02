@@ -21,6 +21,7 @@ export function DuringPhase({ conferenceId, onEnterGameTime, canEnterGameTime }:
   const settings = useSettings();
   const accounts = useHotAccounts();
   const repId = settings.activeRepId;
+  const [mineOnly, setMineOnly] = useState(false);
 
   const myMeetingPeople = useMemo(() => {
     const items = schedule.filter(
