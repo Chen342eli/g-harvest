@@ -124,7 +124,7 @@ function Dashboard() {
                 </div>
               </div>
               <Link
-                to="/planning"
+                to="/planning/build"
                 className="inline-flex items-center gap-1.5 rounded-md bg-brand-base px-4 py-2 text-sm font-medium text-brand-base-foreground hover:opacity-90"
               >
                 Start planning <ArrowRight className="h-4 w-4" />

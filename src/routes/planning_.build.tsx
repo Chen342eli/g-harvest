@@ -51,7 +51,7 @@ type StepId = 1 | 2 | 3 | 4;
 
 const STEPS: { id: StepId; title: string; subtitle: string }[] = [
   { id: 1, title: "Anchors", subtitle: "The events you attend every year." },
-  { id: 2, title: "Coverage", subtitle: "Fill the gaps." },
+  { id: 2, title: "Additionally", subtitle: "Fill the gaps & add more events." },
   { id: 3, title: "Reps", subtitle: "Who's going." },
   { id: 4, title: "Review & Approve", subtitle: "Lock the plan." },
 ];
@@ -129,6 +129,13 @@ function PlanBuilderPage() {
 
             <Stepper current={step} onJump={setStep} />
 
+            <WizardFooter
+              step={step}
+              onBack={() => setStep((s) => (s > 1 ? ((s - 1) as StepId) : s))}
+              onNext={() => setStep((s) => (s < 4 ? ((s + 1) as StepId) : s))}
+              onApprove={onApprove}
+            />
+
             <div className="rounded-lg border border-border bg-card p-5">
               {step === 1 && (
                 <Step1Anchors
@@ -143,6 +150,7 @@ function PlanBuilderPage() {
                   allConferences={allConferences}
                   planYear={plan.year}
                   onAdd={(conferenceId) => statusMutation.mutate({ conferenceId, planStatus: "approved" })}
+                  onRemove={(conferenceId: string) => statusMutation.mutate({ conferenceId, planStatus: "dropped" })}
                 />
               )}
               {step === 3 && (
@@ -155,13 +163,6 @@ function PlanBuilderPage() {
                 <Step4Review items={items} onApprove={onApprove} />
               )}
             </div>
-
-            <WizardFooter
-              step={step}
-              onBack={() => setStep((s) => (s > 1 ? ((s - 1) as StepId) : s))}
-              onNext={() => setStep((s) => (s < 4 ? ((s + 1) as StepId) : s))}
-              onApprove={onApprove}
-            />
           </>
         )}
       </main>
@@ -340,11 +341,13 @@ function Step2Coverage({
   allConferences,
   planYear,
   onAdd,
+  onRemove,
 }: {
   items: PlanItemWithConference[];
   allConferences: (Conference & { estimatedCostUsd: number | null })[];
   planYear: number;
   onAdd: (conferenceId: string) => void;
+  onRemove: (conferenceId: string) => void;
 }) {
   const recs = useMemo(
     () =>
@@ -385,11 +388,37 @@ function Step2Coverage({
   const regions = regionCoverage(committed, REGIONS);
   const icpVerticalCoverage = verticalCoverage(committed, ICP_VERTICALS);
 
+  // In-plan conferences (committed) — editable list, can remove
+  const inPlanConferences = useMemo(() => {
+    return items
+      .filter((i) => isCommitted(i.planStatus))
+      .map((i) => ({ item: i, conf: confById.get(i.conferenceId) }))
+      .filter((x): x is { item: PlanItemWithConference; conf: Conference } => !!x.conf);
+  }, [items, confById]);
+
+  // Browse-all: anything not yet in plan
+  const [browseQuery, setBrowseQuery] = useState("");
+  const browseable = useMemo(() => {
+    const q = browseQuery.trim().toLowerCase();
+    return allConferences
+      .filter((c) => !inPlanIds.has(c.id))
+      .filter((c) =>
+        !q ||
+        c.name.toLowerCase().includes(q) ||
+        c.city.toLowerCase().includes(q) ||
+        c.country.toLowerCase().includes(q) ||
+        c.vertical.toLowerCase().includes(q) ||
+        c.region.toLowerCase().includes(q),
+      )
+      .sort((a, b) => b.icpScore - a.icpScore)
+      .slice(0, 12);
+  }, [allConferences, inPlanIds, browseQuery]);
+
   return (
     <div className="space-y-5">
       <StepHeader
-        title="Step 2 · Coverage"
-        subtitle="Fill region & ICP-vertical gaps."
+        title="Step 2 · Additionally"
+        subtitle="Fill region & ICP-vertical gaps — and add anything else worth attending."
         kicker={`${recs.length} gap${recs.length === 1 ? "" : "s"} to address`}
       />
 
@@ -417,12 +446,54 @@ function Step2Coverage({
         </div>
       )}
 
+      {/* Currently in plan — editable */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-foreground">
+          In plan · {inPlanConferences.length}
+        </h3>
+        {inPlanConferences.length === 0 ? (
+          <p className="rounded-md border border-dashed border-border bg-background p-4 text-center text-xs text-muted-foreground">
+            Nothing in the plan yet.
+          </p>
+        ) : (
+          <ul className="grid gap-1.5 sm:grid-cols-2">
+            {inPlanConferences.map(({ item, conf }) => (
+              <li
+                key={conf.id}
+                className="flex items-center justify-between gap-2 rounded border border-border bg-background px-2 py-1.5"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <TierBadge tier={conf.tier} />
+                    <span className="truncate text-xs font-medium text-foreground">{conf.name}</span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {conf.city} · {conf.vertical} · {item.planStatus === "must_go" ? "must-go" : "approved"}
+                  </div>
+                </div>
+                {item.planStatus !== "must_go" && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onRemove(conf.id)}
+                    className="h-7 px-2 text-muted-foreground hover:text-red-700"
+                    title="Remove from plan"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {/* Recommendations */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Recommended additions</h3>
         {rankedRecs.length === 0 ? (
           <p className="rounded-md border border-dashed border-border bg-background p-6 text-center text-sm text-muted-foreground">
-            Nice — no obvious region or vertical gaps. You can move on.
+            Nice — no obvious region or vertical gaps.
           </p>
         ) : (
           <div className="space-y-3">
@@ -462,6 +533,47 @@ function Step2Coverage({
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Browse all — add any conference */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-foreground">Add any conference</h3>
+          <input
+            type="search"
+            value={browseQuery}
+            onChange={(e) => setBrowseQuery(e.target.value)}
+            placeholder="Search name, city, vertical…"
+            className="h-8 w-56 rounded-md border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+        {browseable.length === 0 ? (
+          <p className="rounded-md border border-dashed border-border bg-background p-4 text-center text-xs text-muted-foreground">
+            No matching conferences.
+          </p>
+        ) : (
+          <ul className="grid gap-1.5 sm:grid-cols-2">
+            {browseable.map((c) => (
+              <li
+                key={c.id}
+                className="flex items-center justify-between gap-2 rounded border border-border bg-background px-2 py-1.5"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <TierBadge tier={c.tier} />
+                    <span className="truncate text-xs font-medium text-foreground">{c.name}</span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {c.city} · {c.vertical} · ICP {c.icpScore}
+                  </div>
+                </div>
+                <Button size="sm" onClick={() => onAdd(c.id)} className="h-7">
+                  Add
+                </Button>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>
