@@ -91,7 +91,7 @@ export function buildRecommendations(args: {
     recommendations.push({
       id: `region_gap:${region}`,
       kind: "region_gap",
-      title: `No coverage in ${region}`,
+      title: `Recommendations to close the gap in ${region}`,
       detail: `${inRegion.length} candidate${inRegion.length === 1 ? "" : "s"} available. Top picks below.`,
       conferenceIds: top.map((c) => c.id),
     });
@@ -109,7 +109,7 @@ export function buildRecommendations(args: {
     recommendations.push({
       id: `vertical_gap:${vertical}`,
       kind: "vertical_gap",
-      title: `No coverage for ${vertical}`,
+      title: `Recommendations to cover ${vertical}`,
       detail: `${inVertical.length} candidate${inVertical.length === 1 ? "" : "s"} in the catalog.`,
       conferenceIds: top.map((c) => c.id),
     });

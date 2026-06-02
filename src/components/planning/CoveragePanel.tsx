@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { AlertTriangle, Plus, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AlertTriangle, ChevronDown, ChevronRight, Plus, Sparkles } from "lucide-react";
 import { REGIONS, VERTICALS, type Conference } from "@/lib/conferences";
 import {
   regionCoverage,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/planning";
 import { buildRecommendations, findCalendarConflicts } from "@/lib/recommendations";
 import { Button } from "@/components/ui/button";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 interface ConferenceWithCost extends Conference {
   estimatedCostUsd: number | null;
@@ -56,41 +57,15 @@ export function CoveragePanel({ plan, items, allConferences, onAdd }: Props) {
             Nice — no obvious gaps to fill.
           </p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {recommendations.map((r) => (
-              <div key={r.id} className="rounded-md border border-border bg-background p-2.5">
-                <div className="text-xs font-medium text-foreground">{r.title}</div>
-                <div className="mt-0.5 text-[11px] text-muted-foreground">{r.detail}</div>
-                <ul className="mt-2 space-y-1">
-                  {r.conferenceIds.map((id) => {
-                    const c = confById.get(id);
-                    if (!c) return null;
-                    return (
-                      <li
-                        key={id}
-                        className="flex items-center justify-between gap-2 rounded border border-border/70 bg-card px-2 py-1"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-xs font-medium text-foreground">{c.name}</div>
-                          <div className="text-[10px] text-muted-foreground">
-                            {c.city} · ICP {c.icpScore}
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => onAdd(id)}
-                          className="h-6 w-6 shrink-0 p-0 text-primary hover:bg-primary/10"
-                          title="Add to plan as Shortlist"
-                          aria-label="Add to plan"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </Button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
+              <RecommendationItem
+                key={r.id}
+                title={r.title}
+                detail={r.detail}
+                conferences={r.conferenceIds.map((id) => confById.get(id)).filter(Boolean) as ConferenceWithCost[]}
+                onAdd={onAdd}
+              />
             ))}
           </div>
         )}
@@ -115,6 +90,117 @@ export function CoveragePanel({ plan, items, allConferences, onAdd }: Props) {
     </aside>
   );
 }
+
+function RecommendationItem({
+  title,
+  detail,
+  conferences,
+  onAdd,
+}: {
+  title: string;
+  detail: string;
+  conferences: ConferenceWithCost[];
+  onAdd: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-md border border-border bg-background">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-start gap-2 px-2.5 py-2 text-left hover:bg-muted/50"
+      >
+        {open ? (
+          <ChevronDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-medium text-foreground">{title}</div>
+          <div className="mt-0.5 text-[11px] text-muted-foreground">{detail}</div>
+        </div>
+      </button>
+      {open && (
+        <ul className="space-y-1 border-t border-border px-2.5 py-2">
+          {conferences.map((c) => (
+            <li
+              key={c.id}
+              className="flex items-center justify-between gap-2 rounded border border-border/70 bg-card px-2 py-1"
+            >
+              <HoverCard openDelay={150} closeDelay={80}>
+                <HoverCardTrigger asChild>
+                  <div className="min-w-0 flex-1 cursor-default">
+                    <div className="truncate text-xs font-medium text-foreground">{c.name}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {c.city} · ICP {c.icpScore}
+                    </div>
+                  </div>
+                </HoverCardTrigger>
+                <HoverCardContent side="left" align="start" className="w-72 text-xs">
+                  <div className="space-y-1.5">
+                    <div className="text-sm font-semibold text-foreground">{c.name}</div>
+                    <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-[11px]">
+                      <span className="text-muted-foreground">Dates</span>
+                      <span className="text-foreground">{c.startDate} → {c.endDate}</span>
+                      <span className="text-muted-foreground">Location</span>
+                      <span className="text-foreground">{c.city}, {c.country}</span>
+                      <span className="text-muted-foreground">Region</span>
+                      <span className="text-foreground">{c.region}</span>
+                      <span className="text-muted-foreground">Vertical</span>
+                      <span className="text-foreground">{c.vertical}</span>
+                      <span className="text-muted-foreground">Tier</span>
+                      <span className="text-foreground">{c.tier}</span>
+                      <span className="text-muted-foreground">ICP score</span>
+                      <span className="text-foreground">{c.icpScore}</span>
+                      <span className="text-muted-foreground">Audience</span>
+                      <span className="text-foreground tabular-nums">{c.estimatedAudienceSize?.toLocaleString() ?? "—"}</span>
+                      {c.estimatedCostUsd != null && (
+                        <>
+                          <span className="text-muted-foreground">Est. cost</span>
+                          <span className="text-foreground tabular-nums">${c.estimatedCostUsd.toLocaleString()}</span>
+                        </>
+                      )}
+                    </div>
+                    {c.tags && c.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {c.tags.map((t) => (
+                          <span key={t} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {c.sourceUrl && (
+                      <a
+                        href={c.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block truncate pt-1 text-[10px] text-primary underline"
+                      >
+                        {c.sourceUrl}
+                      </a>
+                    )}
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onAdd(c.id)}
+                className="h-6 w-6 shrink-0 p-0 text-primary hover:bg-primary/10"
+                title="Add to plan as Shortlist"
+                aria-label="Add to plan"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 
 function Section({
   title,
