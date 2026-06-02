@@ -172,17 +172,22 @@ function PlanningPage() {
         </div>
 
         {!isLoading && lifecycle === "approved" && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3">
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">
-                {planQuery.data?.plan.name}
-                <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                  Approved
-                </span>
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {committedIds.size} approved conference{committedIds.size === 1 ? "" : "s"} — your committed plan for {planQuery.data?.plan.year}.
-              </p>
+          <div className="inline-flex flex-wrap items-center gap-3 rounded-lg border border-emerald-400/60 bg-emerald-50 px-4 py-2 dark:bg-emerald-950/30">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-700 dark:text-emerald-300">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {planQuery.data?.plan.name}
+                  <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                    Approved
+                  </span>
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {committedIds.size} approved conference{committedIds.size === 1 ? "" : "s"} for {planQuery.data?.plan.year}.
+                </p>
+              </div>
             </div>
             <Button asChild size="sm">
               <Link to="/planning/build">
