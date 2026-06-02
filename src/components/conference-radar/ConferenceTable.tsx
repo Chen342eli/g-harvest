@@ -1,23 +1,22 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, CalendarPlus, Check, ExternalLink, Pencil } from "lucide-react";
-import type { Conference, DecisionStatus } from "@/lib/conferences";
+import type { Conference } from "@/lib/conferences";
 import { SALES_TEAM, isCoverageGap } from "@/lib/conferences";
 import { TierBadge, CoverageGapBadge } from "./TierBadge";
 import { ScoreCell } from "./ScoreCell";
 import { RepAssigner } from "./RepAssigner";
-import { StatusChip } from "./StatusChip";
 import { EditConferenceDialog } from "./EditConferenceDialog";
 import { cn } from "@/lib/utils";
 
-type SortKey = "name" | "startDate" | "city" | "vertical" | "estimatedAudienceSize" | "icpScore" | "status";
+type SortKey = "name" | "startDate" | "city" | "vertical" | "estimatedAudienceSize" | "icpScore";
 type SortDir = "asc" | "desc";
 
 interface Props {
   conferences: Conference[];
   onToggleRep: (conferenceId: string, rep: string) => void;
-  onSetStatus: (conferenceId: string, status: DecisionStatus) => void;
   onUpdateConference: (updated: Conference) => void;
   planItemConferenceIds?: Set<string>;
+  committedIds?: Set<string>;
   onAddToPlan?: (conferenceId: string) => void;
   activePlanName?: string;
 }
@@ -36,7 +35,7 @@ function formatDateRange(start: string, end: string) {
 
 const audienceFmt = new Intl.NumberFormat("en-US");
 
-export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdateConference, planItemConferenceIds, onAddToPlan, activePlanName }: Props) {
+export function ConferenceTable({ conferences, onToggleRep, onUpdateConference, planItemConferenceIds, committedIds, onAddToPlan, activePlanName }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("icpScore");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [editing, setEditing] = useState<Conference | null>(null);
@@ -93,7 +92,6 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdat
               <Th k="estimatedAudienceSize" label="Audience" className="text-right" />
               <Th k="icpScore" label="Score" />
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Tier</th>
-              <Th k="status" label="Status" />
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Assigned reps</th>
               {onAddToPlan && <th className="px-2 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Plan</th>}
               <th className="w-8 px-2 py-2.5" aria-label="Edit" />
@@ -101,7 +99,7 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdat
           </thead>
           <tbody>
             {sorted.map((c) => {
-              const gap = isCoverageGap(c);
+              const gap = isCoverageGap(c, committedIds);
               return (
                 <tr key={c.id} className="group border-b border-border last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 align-top">
@@ -142,9 +140,6 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdat
                       <TierBadge tier={c.tier} />
                       {gap && <CoverageGapBadge />}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <StatusChip status={c.status} onChange={(s) => onSetStatus(c.id, s)} />
                   </td>
                   <td className="px-4 py-3 align-top min-w-[260px]">
                     <RepAssigner
@@ -187,7 +182,7 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdat
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={onAddToPlan ? 11 : 10} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={onAddToPlan ? 10 : 9} className="px-4 py-12 text-center text-sm text-muted-foreground">
                   No conferences match the current filters.
                 </td>
               </tr>
