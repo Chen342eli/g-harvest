@@ -62,23 +62,31 @@ function Dashboard() {
   });
   const peopleData = usePeopleData();
 
-  const upcoming = useMemo(() => {
-    const now = Date.now();
-    return conferences
-      .filter((c) => new Date(c.endDate).getTime() >= now)
-      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-      .slice(0, 6);
-  }, [conferences]);
-
-  const next = upcoming[0];
-  const rest = upcoming.slice(1);
-
   const planItemConfIds = useMemo(
-    () => new Set((activePlan?.items ?? []).map((i) => i.conferenceId)),
+    () =>
+      new Set(
+        (activePlan?.items ?? [])
+          .filter((i) => isCommitted(i.planStatus))
+          .map((i) => i.conferenceId),
+      ),
     [activePlan],
   );
   const lifecycle = getPlanLifecycle(activePlan);
   const planApproved = lifecycle === "approved";
+
+  const upcoming = useMemo(() => {
+    const now = Date.now();
+    const base = conferences.filter((c) => new Date(c.endDate).getTime() >= now);
+    const scoped = planApproved
+      ? base.filter((c) => planItemConfIds.has(c.id))
+      : base;
+    return scoped
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+      .slice(0, 6);
+  }, [conferences, planApproved, planItemConfIds]);
+
+  const next = upcoming[0];
+  const rest = upcoming.slice(1);
 
   const derivedPeople = useMemo(
     () =>
