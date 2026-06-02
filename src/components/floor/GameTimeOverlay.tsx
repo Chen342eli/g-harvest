@@ -247,105 +247,126 @@ export function GameTimeOverlay({ onExit }: Props) {
         </button>
       </div>
 
-      {/* Capture sheet */}
+      {/* Capture sheet — full screen */}
       {draft && (
-        <div className="fixed inset-0 z-10 flex items-end justify-center bg-black/60 sm:items-center">
-          <div className="w-full max-w-md rounded-t-2xl bg-card text-foreground shadow-2xl sm:rounded-2xl">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <div className="min-w-0">
-                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                  {draft.mode === "existing" ? "Add encounter to" : "New lead"}
-                </div>
-                <input
-                  value={draft.name}
-                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  className="w-full bg-transparent text-lg font-semibold focus:outline-none"
-                />
+        <div className="fixed inset-0 z-10 flex flex-col bg-card text-foreground">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                {draft.mode === "existing" ? "Add encounter to" : "New lead"}
               </div>
-              <button
-                type="button"
-                onClick={closeSheet}
-                aria-label="Close"
-                className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3 p-4">
-              {/* Temperature - primary */}
-              <div className="grid grid-cols-3 gap-2">
-                {(["hot", "warm", "cold"] as Temperature[]).map((t) => {
-                  const active = temperature === t;
-                  const cls =
-                    t === "hot"
-                      ? active
-                        ? "bg-temp-hot text-temp-hot-foreground"
-                        : "border-temp-hot/40 text-foreground"
-                      : t === "warm"
-                      ? active
-                        ? "bg-temp-warm text-temp-warm-foreground"
-                        : "border-temp-warm/50 text-foreground"
-                      : active
-                      ? "bg-temp-cold text-temp-cold-foreground"
-                      : "border-temp-cold/50 text-foreground";
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setTemperature(t)}
-                      className={cn(
-                        "h-16 rounded-xl border-2 text-base font-semibold transition",
-                        active ? "border-transparent" : "bg-background",
-                        cls,
-                      )}
-                    >
-                      {t === "hot" ? "🔥 Hot" : t === "warm" ? "🟡 Warm" : "⚪ Cold"}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Company quick edit */}
               <input
-                value={draft.company}
-                onChange={(e) => setDraft({ ...draft, company: e.target.value })}
-                placeholder="Company (optional)"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={draft.name}
+                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                className="w-full bg-transparent text-xl font-semibold focus:outline-none"
               />
+            </div>
+            <button
+              type="button"
+              onClick={closeSheet}
+              aria-label="Close"
+              className="rounded-md p-2 text-muted-foreground hover:bg-muted"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
 
-              {/* Vertical chips - compact */}
-              <div className="flex flex-wrap gap-1.5">
-                {ENCOUNTER_VERTICALS.map((v) => (
+          <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            {/* Temperature - primary */}
+            <div className="grid grid-cols-3 gap-2">
+              {(["hot", "warm", "cold"] as Temperature[]).map((t) => {
+                const active = temperature === t;
+                const cls =
+                  t === "hot"
+                    ? active
+                      ? "bg-temp-hot text-temp-hot-foreground"
+                      : "border-temp-hot/40 text-foreground"
+                    : t === "warm"
+                    ? active
+                      ? "bg-temp-warm text-temp-warm-foreground"
+                      : "border-temp-warm/50 text-foreground"
+                    : active
+                    ? "bg-temp-cold text-temp-cold-foreground"
+                    : "border-temp-cold/50 text-foreground";
+                return (
                   <button
-                    key={v}
+                    key={t}
                     type="button"
-                    onClick={() => setVertical(vertical === v ? "" : v)}
+                    onClick={() => setTemperature(t)}
                     className={cn(
-                      "rounded-full border px-2.5 py-1 text-xs transition",
-                      vertical === v
-                        ? "border-brand-accent bg-brand-accent text-brand-accent-foreground"
-                        : "border-border bg-background text-muted-foreground",
+                      "h-20 rounded-xl border-2 text-base font-semibold transition",
+                      active ? "border-transparent" : "bg-background",
+                      cls,
                     )}
                   >
-                    {v}
+                    {t === "hot" ? "🔥 Hot" : t === "warm" ? "🟡 Warm" : "⚪ Cold"}
                   </button>
-                ))}
+                );
+              })}
+            </div>
+
+            {/* Company quick edit */}
+            <input
+              value={draft.company}
+              onChange={(e) => setDraft({ ...draft, company: e.target.value })}
+              placeholder="Company (optional)"
+              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
+            />
+
+            {/* Vertical chips */}
+            <div className="flex flex-wrap gap-1.5">
+              {ENCOUNTER_VERTICALS.map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setVertical(vertical === v ? "" : v)}
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-xs transition",
+                    vertical === v
+                      ? "border-brand-accent bg-brand-accent text-brand-accent-foreground"
+                      : "border-border bg-background text-muted-foreground",
+                  )}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="One-line note (the gold)"
+              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
+            />
+
+            {isHotAccountCompany(draft.company, accounts) && (
+              <div className="rounded-md border border-temp-hot/40 bg-temp-hot/10 px-3 py-2 text-xs font-medium text-foreground">
+                <Flame className="mr-1 inline h-3 w-3 text-temp-hot" />
+                Hot Account — auto-flagged
               </div>
+            )}
+          </div>
 
-              <input
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="One-line note (the gold)"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              />
-
-              {isHotAccountCompany(draft.company, accounts) && (
-                <div className="rounded-md border border-temp-hot/40 bg-temp-hot/10 px-3 py-2 text-xs font-medium text-foreground">
-                  <Flame className="mr-1 inline h-3 w-3 text-temp-hot" />
-                  Hot Account — auto-flagged
-                </div>
+          {/* Sticky save bar */}
+          <div className="sticky bottom-0 border-t border-border bg-card/95 p-4 backdrop-blur">
+            <button
+              type="button"
+              disabled={!canSave}
+              onClick={save}
+              className={cn(
+                "group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-5 text-lg font-bold uppercase tracking-wide transition-all",
+                canSave
+                  ? "bg-gradient-to-r from-temp-hot via-temp-hot to-temp-warm text-temp-hot-foreground shadow-lg shadow-temp-hot/40 hover:scale-[1.02] hover:shadow-temp-hot/60 active:scale-[0.98]"
+                  : "bg-muted text-muted-foreground",
               )}
+            >
+              {canSave && <Flame className="h-5 w-5" />}
+              <span>Save & next</span>
+              {canSave && <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />}
+            </button>
+          </div>
+        </div>
+      )}
 
               <button
                 type="button"
