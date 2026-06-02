@@ -2,8 +2,8 @@ import { useSyncExternalStore } from "react";
 import type { Encounter, PeopleData, Person } from "./people-types";
 import { SEED_PEOPLE_DATA } from "./seed-people";
 
-const STORAGE_KEY = "grain-radar.people.v1";
-const SEED_FLAG_KEY = "grain-radar.people.v1.seeded";
+const STORAGE_KEY = "grain-radar.people.v2";
+const SEED_FLAG_KEY = "grain-radar.people.v2.seeded";
 
 function readStorage(): PeopleData {
   if (typeof window === "undefined") return { people: [], encounters: [] };
