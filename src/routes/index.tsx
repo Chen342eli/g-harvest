@@ -71,7 +71,8 @@ function Dashboard() {
     () => new Set((activePlan?.items ?? []).map((i) => i.conferenceId)),
     [activePlan],
   );
-  const planningNeeded = !activePlan || (activePlan.items?.length ?? 0) === 0;
+  const lifecycle = getPlanLifecycle(activePlan);
+  const planApproved = lifecycle === "approved";
 
   const derivedPeople = useMemo(
     () =>
