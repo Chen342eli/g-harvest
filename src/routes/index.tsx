@@ -56,10 +56,36 @@ function Index() {
   const callSetStatus = useServerFn(setStatusFn);
   const callToggleRep = useServerFn(toggleRepFn);
   const callUpdate = useServerFn(updateConferenceFn);
+  const fetchActivePlan = useServerFn(getActivePlan);
+  const callSetPlanItemStatus = useServerFn(setPlanItemStatus);
 
   const { data: conferences = [], isLoading } = useQuery({
     queryKey: ["conferences"],
     queryFn: () => fetchAll(),
+  });
+
+  const { data: activePlan } = useQuery({
+    queryKey: ["activePlan"],
+    queryFn: () => fetchActivePlan(),
+  });
+
+  const planItemConfIds = useMemo(
+    () => new Set((activePlan?.items ?? []).map((i) => i.conferenceId)),
+    [activePlan],
+  );
+
+  const addToPlanMutation = useMutation({
+    mutationFn: (conferenceId: string) => {
+      if (!activePlan) throw new Error("No active plan");
+      return callSetPlanItemStatus({
+        data: { planId: activePlan.plan.id, conferenceId, planStatus: "considering" },
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["activePlan"] });
+      toast.success(`Added to ${activePlan?.plan.name ?? "plan"}`);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to add"),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["conferences"] });
