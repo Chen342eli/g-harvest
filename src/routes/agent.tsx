@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Check, ChevronDown, ChevronRight, X, ExternalLink } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, X, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { listAgentRuns, listChangeFlags, listRunCandidates, resolveFlag } from "@/lib/agent.functions";
+import { TopNav } from "@/components/TopNav";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -57,14 +58,12 @@ function AgentPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-6 py-4">
           <div>
-            <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-3 w-3" /> Back to radar
-            </Link>
-            <h1 className="mt-1 text-base font-semibold tracking-tight text-foreground">Discovery Agent</h1>
+            <h1 className="text-base font-semibold tracking-tight text-foreground">Discovery Agent</h1>
             <p className="text-xs text-muted-foreground">Weekly scans for new conferences and flagged changes.</p>
           </div>
+          <TopNav />
         </div>
       </header>
 

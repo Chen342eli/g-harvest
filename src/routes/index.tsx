@@ -11,6 +11,8 @@ import { TimelineView } from "@/components/conference-radar/TimelineView";
 import { FilterBar, DEFAULT_FILTERS, type Filters } from "@/components/conference-radar/FilterBar";
 import { DecisionPanel } from "@/components/conference-radar/DecisionPanel";
 import { AgentStatusButton } from "@/components/conference-radar/AgentStatusButton";
+import { TopNav } from "@/components/TopNav";
+import { getActivePlan, setPlanItemStatus } from "@/lib/planning.functions";
 import type { Insight } from "@/lib/insights";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -54,10 +56,36 @@ function Index() {
   const callSetStatus = useServerFn(setStatusFn);
   const callToggleRep = useServerFn(toggleRepFn);
   const callUpdate = useServerFn(updateConferenceFn);
+  const fetchActivePlan = useServerFn(getActivePlan);
+  const callSetPlanItemStatus = useServerFn(setPlanItemStatus);
 
   const { data: conferences = [], isLoading } = useQuery({
     queryKey: ["conferences"],
     queryFn: () => fetchAll(),
+  });
+
+  const { data: activePlan } = useQuery({
+    queryKey: ["activePlan"],
+    queryFn: () => fetchActivePlan(),
+  });
+
+  const planItemConfIds = useMemo(
+    () => new Set((activePlan?.items ?? []).map((i) => i.conferenceId)),
+    [activePlan],
+  );
+
+  const addToPlanMutation = useMutation({
+    mutationFn: (conferenceId: string) => {
+      if (!activePlan) throw new Error("No active plan");
+      return callSetPlanItemStatus({
+        data: { planId: activePlan.plan.id, conferenceId, planStatus: "considering" },
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["activePlan"] });
+      toast.success(`Added to ${activePlan?.plan.name ?? "plan"}`);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to add"),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["conferences"] });
@@ -129,19 +157,22 @@ function Index() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Radar className="h-4 w-4" />
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                <Radar className="h-4 w-4" />
+              </div>
+              <div>
+                <h1 className="text-base font-semibold tracking-tight text-foreground">Grain Conference Radar</h1>
+                <p className="text-xs text-muted-foreground">Catalog of every conference the agent has discovered.</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-base font-semibold tracking-tight text-foreground">Grain Conference Radar</h1>
-              <p className="text-xs text-muted-foreground">Prioritize where to invest and who covers it.</p>
-            </div>
+            <div className="hidden md:block h-8 w-px bg-border" />
+            <TopNav />
           </div>
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <AgentStatusButton />
             <Stat label="Conferences" value={stats.total} />
-            <Stat label="Going" value={stats.going} accent="text-emerald-700" />
             <Stat label="Coverage gaps" value={stats.gaps} accent={stats.gaps > 0 ? "text-red-700" : "text-foreground"} />
             <button
               type="button"
@@ -149,7 +180,7 @@ function Index() {
               className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
             >
               {panelOpen ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRightOpen className="h-3.5 w-3.5" />}
-              {panelOpen ? "Hide" : "Decisions"}
+              {panelOpen ? "Hide" : "Insights"}
             </button>
           </div>
         </div>
@@ -184,7 +215,17 @@ function Index() {
             </div>
           </div>
 
-          {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} onSetStatus={setStatus} onUpdateConference={updateConference} />}
+          {view === "table" && (
+            <ConferenceTable
+              conferences={filtered}
+              onToggleRep={toggleRep}
+              onSetStatus={setStatus}
+              onUpdateConference={updateConference}
+              planItemConferenceIds={planItemConfIds}
+              onAddToPlan={activePlan ? (id) => addToPlanMutation.mutate(id) : undefined}
+              activePlanName={activePlan?.plan.name}
+            />
+          )}
           {view === "map" && <MapView conferences={filtered} />}
           {view === "timeline" && <TimelineView conferences={filtered} onSetStatus={setStatus} />}
         </div>

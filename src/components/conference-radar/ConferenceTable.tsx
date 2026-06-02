@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Pencil } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, CalendarPlus, Check, ExternalLink, Pencil } from "lucide-react";
 import type { Conference, DecisionStatus } from "@/lib/conferences";
 import { SALES_TEAM, isCoverageGap } from "@/lib/conferences";
 import { TierBadge, CoverageGapBadge } from "./TierBadge";
@@ -17,6 +17,9 @@ interface Props {
   onToggleRep: (conferenceId: string, rep: string) => void;
   onSetStatus: (conferenceId: string, status: DecisionStatus) => void;
   onUpdateConference: (updated: Conference) => void;
+  planItemConferenceIds?: Set<string>;
+  onAddToPlan?: (conferenceId: string) => void;
+  activePlanName?: string;
 }
 
 function formatDateRange(start: string, end: string) {
@@ -33,7 +36,7 @@ function formatDateRange(start: string, end: string) {
 
 const audienceFmt = new Intl.NumberFormat("en-US");
 
-export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdateConference }: Props) {
+export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdateConference, planItemConferenceIds, onAddToPlan, activePlanName }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("icpScore");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [editing, setEditing] = useState<Conference | null>(null);
@@ -92,6 +95,7 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdat
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Tier</th>
               <Th k="status" label="Status" />
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Assigned reps</th>
+              {onAddToPlan && <th className="px-2 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Plan</th>}
               <th className="w-8 px-2 py-2.5" aria-label="Edit" />
             </tr>
           </thead>
@@ -149,6 +153,24 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdat
                       onToggle={(rep) => onToggleRep(c.id, rep)}
                     />
                   </td>
+                  {onAddToPlan && (
+                    <td className="px-2 py-3 align-top whitespace-nowrap">
+                      {planItemConferenceIds?.has(c.id) ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700">
+                          <Check className="h-3 w-3" /> In plan
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onAddToPlan(c.id)}
+                          title={activePlanName ? `Add to ${activePlanName}` : "Add to plan"}
+                          className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-[11px] font-medium text-foreground hover:bg-muted"
+                        >
+                          <CalendarPlus className="h-3 w-3" /> Add to plan
+                        </button>
+                      )}
+                    </td>
+                  )}
                   <td className="w-8 px-2 py-3 align-top text-right">
                     <button
                       type="button"
@@ -165,7 +187,7 @@ export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdat
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={onAddToPlan ? 11 : 10} className="px-4 py-12 text-center text-sm text-muted-foreground">
                   No conferences match the current filters.
                 </td>
               </tr>
