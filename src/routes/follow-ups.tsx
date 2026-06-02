@@ -124,7 +124,7 @@ function FollowUpsPage() {
                 {deprioOpen && (
                   <ul className="divide-y divide-border border-t border-border">
                     {deprioritized.map((p) => (
-                      <FollowUpRow key={p.id} person={p} muted />
+                      <Row key={p.id} person={p} muted />
                     ))}
                   </ul>
                 )}
@@ -174,7 +174,7 @@ function Section({
       ) : (
         <ul className="divide-y divide-border rounded-xl border border-border bg-card">
           {items.map((p) => (
-            <FollowUpRow key={p.id} person={p} />
+            <Row key={p.id} person={p} />
           ))}
         </ul>
       )}
