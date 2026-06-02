@@ -124,6 +124,7 @@ function ensureMarkerClusterScript(): Promise<void> {
 
 interface Props {
   conferences: Conference[];
+  onOpenInTable?: (id: string) => void;
 }
 
 const CITY_EXPAND_MIN_ZOOM = 5;
@@ -133,15 +134,15 @@ function locationKey(c: Conference) {
   return `${c.city.trim().toLowerCase()}|${c.country.trim().toLowerCase()}`;
 }
 
-export function MapView({ conferences }: Props) {
+export function MapView({ conferences, onOpenInTable }: Props) {
   return (
     <ClientOnly fallback={<MapFallback />}>
-      <MapViewClient conferences={conferences} />
+      <MapViewClient conferences={conferences} onOpenInTable={onOpenInTable} />
     </ClientOnly>
   );
 }
 
-function MapViewClient({ conferences }: Props) {
+function MapViewClient({ conferences, onOpenInTable }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
