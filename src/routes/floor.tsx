@@ -107,7 +107,7 @@ function FloorPage() {
             <select
               value={effectiveActiveId ?? ""}
               onChange={(e) => {
-                const c = conferences.find((x) => x.id === e.target.value);
+                const c = allConferences.find((x) => x.id === e.target.value);
                 updateSettings({
                   activeConferenceId: c?.id,
                   activeConferenceName: c?.name,
@@ -116,7 +116,10 @@ function FloorPage() {
               className="appearance-none rounded-md border border-border bg-background py-1.5 pl-3 pr-8 text-sm font-semibold text-foreground"
             >
               <option value="">— Select —</option>
-              {conferences.map((c) => {
+              {(activeConf && !conferences.some((c) => c.id === activeConf.id)
+                ? [activeConf, ...conferences]
+                : conferences
+              ).map((c) => {
                 const now = Date.now();
                 const s = new Date(c.startDate).getTime();
                 const e = new Date(c.endDate).getTime();
