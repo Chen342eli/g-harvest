@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowRight, Send, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { usePeopleData, updatePerson } from "@/lib/people-store";
+import { useSettings } from "@/lib/settings-store";
 import { useBulkAiReads } from "@/lib/use-bulk-ai";
 import type { AiSignal } from "@/lib/people-types";
 import { cn } from "@/lib/utils";
