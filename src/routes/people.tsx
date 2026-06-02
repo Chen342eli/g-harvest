@@ -319,23 +319,27 @@ function RelationshipsPage() {
         {/* Floating detail panel */}
         {selected && (
           <aside
-            className="absolute right-6 top-6 z-20 w-[420px] max-w-[calc(100%-3rem)] max-h-[calc(100vh-8rem)] overflow-auto rounded-lg border border-border bg-card shadow-xl"
+            className="absolute right-6 top-6 z-20 w-[560px] max-w-[calc(100%-3rem)] max-h-[calc(100vh-8rem)] overflow-hidden rounded-lg border border-border bg-card shadow-xl flex flex-col"
             role="dialog"
             aria-label={`${selected.person.fullName} details`}
           >
-            <button
-              type="button"
-              onClick={() => setSelectedId(null)}
-              className="absolute right-3 top-3 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <PersonDetail
-              person={selected.person}
-              encounters={selected.derived.encounters}
-              badges={selected.badges}
-            />
+            <div className="sticky top-0 z-10 flex justify-end border-b border-border bg-card/95 backdrop-blur px-3 py-2">
+              <button
+                type="button"
+                onClick={() => setSelectedId(null)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="overflow-auto">
+              <PersonDetail
+                person={selected.person}
+                encounters={selected.derived.encounters}
+                badges={selected.badges}
+              />
+            </div>
           </aside>
         )}
       </main>
