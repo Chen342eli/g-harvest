@@ -472,7 +472,7 @@ function Timeline({
                     {shortDateRange(c.startDate, c.endDate)}
                   </div>
                   {inPlan && (
-                    <span className="inline-block rounded-full bg-brand-accent/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-accent">
+                    <span className="mx-auto block w-fit rounded-full bg-brand-accent/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-accent">
                       In plan
                     </span>
                   )}
