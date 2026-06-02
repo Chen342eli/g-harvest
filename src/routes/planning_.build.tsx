@@ -859,14 +859,7 @@ function Step4Review({
 
   return (
     <div className="space-y-5">
-      <StepHeader title="Step 4 · Review & Approve" subtitle="Lock the plan." />
-
-      <div className="grid gap-3 sm:grid-cols-4">
-        <Metric label="Must-go" value={mustGo.length} />
-        <Metric label="Approved" value={approved.length} />
-        <Metric label="ICP verticals covered" value={`${ICP_VERTICALS.length - verticalGaps.length}/${ICP_VERTICALS.length}`} />
-        <Metric label="Regions covered" value={`${REGIONS.length - regionGaps.length}/${REGIONS.length}`} />
-      </div>
+      <StepHeader title="Step 4 · Review & Approve" />
 
       <ReviewSection title="Open gaps & issues">
         {verticalGaps.length === 0 && regionGaps.length === 0 && repsMissing.length === 0 ? (
@@ -941,12 +934,11 @@ function Step4Review({
 
 /* ---------- Shared ---------- */
 
-function StepHeader({ title, subtitle, kicker }: { title: string; subtitle: string; kicker?: string }) {
+function StepHeader({ title, kicker }: { title: string; subtitle?: string; kicker?: string }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-2">
       <div>
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
       </div>
       {kicker && (
         <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">{kicker}</span>
