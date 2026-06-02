@@ -341,11 +341,13 @@ function Step2Coverage({
   allConferences,
   planYear,
   onAdd,
+  onRemove,
 }: {
   items: PlanItemWithConference[];
   allConferences: (Conference & { estimatedCostUsd: number | null })[];
   planYear: number;
   onAdd: (conferenceId: string) => void;
+  onRemove: (conferenceId: string) => void;
 }) {
   const recs = useMemo(
     () =>
