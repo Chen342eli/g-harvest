@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Flame, Search, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
-import { findMatch, derivePerson } from "@/lib/matching";
+import { findMatch, derivePerson, computeBadges } from "@/lib/matching";
+import { BadgeList } from "@/components/people/Badges";
+import { TempDot } from "@/components/people/TempControls";
 import {
   usePeopleData,
   addPerson,
@@ -272,6 +274,11 @@ export function GameTimeOverlay({ onExit }: Props) {
           </div>
 
           <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            {draft.mode === "existing" && draft.personId && (
+              <ExistingPersonSummary personId={draft.personId} />
+            )}
+
+
             {/* Temperature - primary */}
             <div className="grid grid-cols-3 gap-2">
               {(["hot", "warm", "cold"] as Temperature[]).map((t) => {
@@ -365,6 +372,57 @@ export function GameTimeOverlay({ onExit }: Props) {
               {canSave && <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />}
             </button>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ExistingPersonSummary({ personId }: { personId: string }) {
+  const data = usePeopleData();
+  const person = data.people.find((p) => p.id === personId);
+  if (!person) return null;
+  const derived = derivePerson(person, data.encounters);
+  const badges = computeBadges(person, data.encounters);
+  const encounters = derived.encounters;
+  const last = encounters[encounters.length - 1];
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border bg-background p-4">
+      <div className="rounded-lg border border-dashed border-brand-accent/40 bg-brand-accent/5 p-3">
+        <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-brand-accent">
+          <Sparkles className="h-3 w-3" /> AI relationship read
+        </div>
+        <p className="text-xs leading-relaxed text-foreground">
+          {encounters.length === 0
+            ? "First time meeting — no prior context yet."
+            : `${encounters.length} prior encounter${encounters.length > 1 ? "s" : ""}${
+                last ? `. Last seen at ${last.conferenceName} (${last.temperature}) by ${last.repId}` : ""
+              }. ${person.currentRole ?? ""}${person.currentCompany ? ` @ ${person.currentCompany}` : ""}.`}
+        </p>
+      </div>
+
+      {badges.length > 0 && <BadgeList badges={badges} />}
+
+      {encounters.length > 0 && (
+        <div>
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Arc
+          </div>
+          <ol className="space-y-1.5">
+            {encounters.slice(-3).reverse().map((e) => (
+              <li key={e.id} className="flex items-start gap-2 text-xs">
+                <TempDot t={e.temperature} />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-foreground">
+                    <span className="font-medium">{e.conferenceName}</span>
+                    <span className="text-muted-foreground"> · {new Date(e.timestamp).toLocaleDateString()}</span>
+                  </div>
+                  {e.note && <div className="truncate italic text-muted-foreground">"{e.note}"</div>}
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
       )}
     </div>
