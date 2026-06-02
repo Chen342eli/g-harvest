@@ -215,7 +215,17 @@ function Index() {
             </div>
           </div>
 
-          {view === "table" && <ConferenceTable conferences={filtered} onToggleRep={toggleRep} onSetStatus={setStatus} onUpdateConference={updateConference} />}
+          {view === "table" && (
+            <ConferenceTable
+              conferences={filtered}
+              onToggleRep={toggleRep}
+              onSetStatus={setStatus}
+              onUpdateConference={updateConference}
+              planItemConferenceIds={planItemConfIds}
+              onAddToPlan={activePlan ? (id) => addToPlanMutation.mutate(id) : undefined}
+              activePlanName={activePlan?.plan.name}
+            />
+          )}
           {view === "map" && <MapView conferences={filtered} />}
           {view === "timeline" && <TimelineView conferences={filtered} onSetStatus={setStatus} />}
         </div>
