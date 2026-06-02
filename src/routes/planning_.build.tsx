@@ -214,27 +214,27 @@ function PlanBuilderPage() {
 
 function Stepper({ current, onJump }: { current: StepId; onJump: (s: StepId) => void }) {
   return (
-    <ol className="flex flex-wrap items-center gap-2">
+    <ol className="flex flex-wrap items-center gap-3">
       {STEPS.map((s, i) => {
         const isCurrent = s.id === current;
         const isDone = s.id < current;
         return (
-          <li key={s.id} className="flex items-center gap-2">
+          <li key={s.id} className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => onJump(s.id)}
               className={cn(
-                "group flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                "group flex items-center gap-2.5 rounded-full border-2 px-4 py-2 text-sm font-semibold transition shadow-sm hover:shadow-md",
                 isCurrent
-                  ? "border-primary bg-primary text-primary-foreground"
+                  ? "border-primary bg-primary text-primary-foreground scale-105"
                   : isDone
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted",
+                  ? "border-emerald-400 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
+                  : "border-border bg-card text-foreground hover:bg-muted hover:border-primary/40",
               )}
             >
               <span
                 className={cn(
-                  "flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold",
+                  "flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold",
                   isCurrent
                     ? "bg-primary-foreground/20"
                     : isDone
@@ -242,15 +242,16 @@ function Stepper({ current, onJump }: { current: StepId; onJump: (s: StepId) => 
                     : "bg-muted text-muted-foreground",
                 )}
               >
-                {isDone ? <Check className="h-3 w-3" /> : s.id}
+                {isDone ? <Check className="h-3.5 w-3.5" /> : s.id}
               </span>
               <span>{s.title}</span>
             </button>
-            {i < STEPS.length - 1 && <span className="text-muted-foreground">›</span>}
+            {i < STEPS.length - 1 && <span className="text-muted-foreground text-lg">›</span>}
           </li>
         );
       })}
     </ol>
+
   );
 }
 
