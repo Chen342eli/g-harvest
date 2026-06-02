@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -46,20 +46,17 @@ function FloorPage() {
   const activeConf = conferences.find((c) => c.id === effectiveActiveId);
 
   // Auto-persist default selection once data loads
-  if (
-    !settings.activeConferenceId &&
-    activeConf &&
-    typeof window !== "undefined"
-  ) {
-    updateSettings({
-      activeConferenceId: activeConf.id,
-      activeConferenceName: activeConf.name,
-    });
-  }
-
-  if (!settings.activeRepId && SALES_TEAM.length && typeof window !== "undefined") {
-    updateSettings({ activeRepId: SALES_TEAM[0] });
-  }
+  useEffect(() => {
+    if (!settings.activeConferenceId && activeConf) {
+      updateSettings({
+        activeConferenceId: activeConf.id,
+        activeConferenceName: activeConf.name,
+      });
+    }
+    if (!settings.activeRepId && SALES_TEAM.length) {
+      updateSettings({ activeRepId: SALES_TEAM[0] });
+    }
+  }, [settings.activeConferenceId, settings.activeRepId, activeConf]);
 
   const canEnterGameTime = !!activeConf && !!settings.activeRepId;
 
