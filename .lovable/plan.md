@@ -1,59 +1,57 @@
+# State A → גם מנקה את ה־Supabase
 
-## Timeline redesign — Gantt-style (Season Planner)
+## מטרה
+כשלוחצים **State A · Clean slate**, מלבד ניקוי ה־localStorage גם נמחקות **כל** השורות מטבלאות הכנסים ב־Supabase, כך שאפשר להריץ את סוכן הגילוי מאפס.
 
-Current timeline is a 12-column "month buckets" grid — each conference is a chip stacked inside its start month. The reference image (Airtable Gantt) is fundamentally different: a continuous horizontal time axis, rows on the left, and bars positioned and sized by actual start/end dates.
+## מה נמחק (hard delete)
+- `plan_items` (תלוי ב־`conferences`)
+- `conference_change_flags` (תלוי ב־`conferences`)
+- `agent_candidates` (תלוי ב־`conferences`, ו־`run_id`)
+- `agent_runs` (היסטוריית ריצות סוכן — כדי להתחיל נקי)
+- `conferences` (הטבלה עצמה)
 
-I'll rebuild `TimelineView` to match that paradigm, keeping the same data + popover/tooltip behavior so nothing downstream changes.
+**לא נוגעים** ב־`plans` (תכנית השנה נשארת), וב־`do_not_resurrect` (רשימת חסומים נשארת — אם רוצים לאפס גם אותה זה שינוי של שורה אחת).
 
-### What the new view looks like
+States B/C לא נוגעים ב־Supabase בכלל — רק ממפים שמות ל־IDs קיימים, כמו היום.
 
-```text
-                Jan      Feb      Mar      Apr      May      Jun  ...
-─────────────┬────────────────────────────────────────────────────────
-Aron Geneva  │   ▆▆▆ Money2026          ▆▆▆▆ FinovateEU
-Lisana Lng   │           ▆▆▆▆▆ Payments Summit
-Georgia Yuet │                    ▆▆▆▆ MoneyLIVE
-Unassigned   │       ▆▆ Embedded Fin       ▆▆▆ Treasury Days
-─────────────┴────────────────────────────────────────────────────────
-                          ▲ today
+## קבצים
+
+### 1. `src/lib/demo-data.functions.ts` (חדש)
+server function `wipeConferences` שמוחק את כל השורות בסדר הנכון:
+
+```ts
+import { createServerFn } from "@tanstack/react-start";
+
+export const wipeConferences = createServerFn({ method: "POST" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // סדר חשוב: ילדים לפני אבות
+  for (const table of ["plan_items", "conference_change_flags", "agent_candidates", "agent_runs", "conferences"] as const) {
+    const { error } = await supabaseAdmin.from(table).delete().not("id", "is", null);
+    if (error) throw new Error(`Failed to wipe ${table}: ${error.message}`);
+  }
+  return { ok: true };
+});
 ```
 
-- **Left gutter (sticky, ~180px):** one row per swimlane.
-- **Right canvas:** continuous 12-month axis with month dividers + light week gridlines + a vertical "today" line.
-- **Bars:** absolutely positioned (left = startDate offset, width = duration). Tier drives color (Tier 1 emerald, Tier 2 amber, Tier 3 slate), `Passed` is desaturated + strikethrough, `Going` gets a solid fill, `Considering` a soft fill, `Backlog` an outlined fill. Coverage-gap keeps the red "Gap" pill on the bar.
-- **Cluster marker:** bars whose start dates are within 14 days of another get a small fuchsia notch on the left edge (replaces today's stripe), preserving the existing cluster signal.
-- **Bar interaction:** unchanged — hover = Tooltip with name/dates/status, click = Popover with `ConferenceDetail` and decision controls.
+שימוש ב־`supabaseAdmin` כי לטבלאות האלה אין RLS/auth. הטעינה בתוך ה־handler כדי לא לדלוף ל־client bundle (חוק התבנית).
 
-### Swimlanes (rows)
+### 2. `src/lib/demo-data.ts` — שינוי ב־`loadDemoState`
+- להפוך את הפונקציה ל־`async`.
+- ב־State A: לקרוא ל־`await wipeConferences()` **לפני** כתיבת ה־localStorage.
+- אם המחיקה נכשלה — לזרוק; settings.tsx יציג toast שגיאה ולא יעשה reload.
 
-Default grouping: **Assigned rep**. Each rep gets a lane; conferences with multiple reps appear in each of their lanes; conferences with none go into an "Unassigned" lane at the bottom.
+### 3. `src/routes/settings.tsx` — שינוי קטן ב־`handleLoadDemo`
+- להמתין ל־`await loadDemoState(...)`.
+- ספינר ממשיך עד שהמחיקה והכתיבה הסתיימו, ואז checkmark + toast + reload (כמו היום).
+- הודעת ה־toast ב־State A: "Demo A loaded — conferences cleared, reloading…".
 
-Add a small toggle above the chart: **Group by → Rep / Vertical / Region / Tier / None (single lane)**. State lives locally in the component (no URL/store changes).
+## איך זה ייראה למשתמש
+1. לחיצה על State A → ספינר (כי המחיקה ב־Supabase לוקחת רגע).
+2. ✓ ירוק + toast.
+3. Reload — הדף Conferences/Planning ריק לגמרי, מוכן להרצת הסוכן.
 
-### Time axis
+## גודל השינוי
+~25 שורות סך הכל, קובץ חדש אחד קטן + 3 שורות שינוי בכל אחד מ־`demo-data.ts` ו־`settings.tsx`. עבודה של דקה.
 
-- Fixed to the same `YEAR = 2026` window the current view uses.
-- Header: month labels across the top, with subtle vertical month dividers extending down through the lanes.
-- Horizontal scroll on narrow viewports; min-width ~1100px so months stay readable. Sticky left gutter while scrolling horizontally.
-- "Today" vertical line only drawn if today falls inside the year.
-
-### Bar overlap within a lane
-
-If two bars in the same lane overlap in time, stack them vertically inside that lane (lane auto-grows by row height × stack depth). Simple greedy packing — scan bars sorted by start, assign each to the lowest free sub-row.
-
-### Legend + summary
-
-Keep the existing legend (Tier 1/2/3 + cluster). Add a tiny "N conferences in {YEAR}" count and keep the "X outside YEAR hidden" note.
-
-### Files
-
-- **Rewrite** `src/components/conference-radar/TimelineView.tsx` — new Gantt layout, same props (`conferences`, `onSetStatus`), same Popover/Tooltip wiring, reuses `ConferenceDetail`, `isCoverageGap`, `TIER_CHIP` palette.
-- No other files change. `planning.tsx` already renders `<TimelineView />` with the same props.
-
-### Out of scope
-
-- Drag-to-reschedule, resize handles, dependencies/arrows between bars (the reference shows none of these as required).
-- Zoom levels (quarter/week/day) — the year view stays month-resolution for now; easy to add later if you want.
-- Persisting the "Group by" choice.
-
-Want me to proceed with this, or should rows default to Vertical/Region instead of Rep?
+## שאלה אחרונה לפני שאני בונה
+האם למחוק גם את `do_not_resurrect` ב־State A? (אם משאירים — כנסים שדחית בעבר לא יחזרו כשהסוכן ירוץ שוב. אם מוחקים — הסוכן רשאי להציע שוב כל דבר.)
