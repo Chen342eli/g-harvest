@@ -17,7 +17,7 @@ const MODULES: Item[] = [
     to: "/planning",
     label: "Season Planner",
     icon: CalendarRange,
-    match: ["/catalog", "/agent"],
+    match: ["/agent"],
   },
   {
     to: "/floor",
