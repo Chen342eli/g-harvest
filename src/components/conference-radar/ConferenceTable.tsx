@@ -113,13 +113,6 @@ export function ConferenceTable({ conferences, onToggleRep, onUpdateConference, 
                       {c.name}
                       <ExternalLink className="h-3.5 w-3.5 opacity-70" />
                     </a>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {c.tags.slice(0, 3).map((t) => (
-                        <span key={t} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                          {t}
-                        </span>
-                      ))}
-                    </div>
                   </td>
                   <td className="px-4 py-3 align-top text-muted-foreground whitespace-nowrap">
                     {formatDateRange(c.startDate, c.endDate)}
