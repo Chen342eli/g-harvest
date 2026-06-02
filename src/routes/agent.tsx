@@ -87,7 +87,28 @@ function AgentPage() {
     <div className="min-h-screen bg-background">
       <TopNav />
 
-      <main className="mx-auto grid max-w-[1200px] gap-6 px-6 py-6 lg:grid-cols-[3fr_2fr]">
+      <main className="mx-auto max-w-[1200px] space-y-4 px-6 py-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/planning">
+              <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to Conference Management
+            </Link>
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => runMutation.mutate()}
+            disabled={runMutation.isPending}
+          >
+            {runMutation.isPending ? (
+              <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> Running…</>
+            ) : (
+              <><Play className="mr-1 h-3.5 w-3.5" /> Run agent now</>
+            )}
+          </Button>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
+
         <section className="rounded-lg border border-border bg-card">
           <div className="border-b border-border px-4 py-3">
             <h2 className="text-sm font-semibold text-foreground">Run history</h2>
