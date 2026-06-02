@@ -109,7 +109,7 @@ export function buildRecommendations(args: {
     recommendations.push({
       id: `vertical_gap:${vertical}`,
       kind: "vertical_gap",
-      title: `No coverage for ${vertical}`,
+      title: `Recommendations to cover ${vertical}`,
       detail: `${inVertical.length} candidate${inVertical.length === 1 ? "" : "s"} in the catalog.`,
       conferenceIds: top.map((c) => c.id),
     });
