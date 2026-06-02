@@ -157,54 +157,16 @@ function CapturePage() {
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div>
-            <h1 className="text-base font-semibold tracking-tight text-foreground">Field Capture</h1>
-            <p className="text-xs text-muted-foreground">~15 seconds per lead. Only name is required.</p>
+            <h1 className="text-base font-semibold tracking-tight text-foreground">Capture lead</h1>
+            {settings.activeConferenceName && (
+              <p className="text-xs text-muted-foreground">{settings.activeConferenceName}</p>
+            )}
           </div>
           <TopNav />
         </div>
       </header>
 
       <main className="mx-auto max-w-[560px] px-4 py-4 sm:py-6">
-        {/* Active context */}
-        <div className="mb-4 rounded-xl border border-border bg-card p-3">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <label className="block">
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">You are at</span>
-              <select
-                value={settings.activeConferenceId ?? ""}
-                onChange={(e) => {
-                  const c = conferences.find((x) => x.id === e.target.value);
-                  updateSettings({ activeConferenceId: e.target.value, activeConferenceName: c?.name });
-                }}
-                className="mt-1 w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
-              >
-                <option value="">— select —</option>
-                {conferences.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">You are</span>
-              <select
-                value={settings.activeRepId ?? ""}
-                onChange={(e) => updateSettings({ activeRepId: e.target.value })}
-                className="mt-1 w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
-              >
-                <option value="">— select —</option>
-                {SALES_TEAM.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </div>
-
-        {/* Just-saved confirmation */}
         {lastSaved && (
           <div className="mb-4 rounded-xl border border-signal-buying/40 bg-signal-buying/10 p-3 text-sm">
             <div className="font-medium">Saved {lastSaved.name}</div>
@@ -217,7 +179,12 @@ function CapturePage() {
         )}
 
         <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-          {/* Name */}
+          {/* Temperature first */}
+          <div>
+            <div className="mb-2 text-xs font-medium text-foreground">Temperature *</div>
+            <TempPickerButtons value={temperature} onChange={setTemperature} />
+          </div>
+
           <label className="block">
             <span className="text-xs font-medium text-foreground">Name *</span>
             <input
@@ -233,7 +200,6 @@ function CapturePage() {
             />
           </label>
 
-          {/* Recognition banner */}
           {matchedPerson && (
             <RecognitionBanner
               person={matchedPerson}
@@ -267,24 +233,6 @@ function CapturePage() {
             </label>
           </div>
 
-          <label className="block">
-            <span className="text-xs font-medium text-foreground">LinkedIn URL</span>
-            <input
-              value={linkedIn}
-              onChange={(e) => setLinkedIn(e.target.value)}
-              placeholder="https://linkedin.com/in/…"
-              inputMode="url"
-              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            />
-          </label>
-
-          {/* Temperature — the irreplaceable signal */}
-          <div>
-            <div className="mb-2 text-xs font-medium text-foreground">Temperature *</div>
-            <TempPickerButtons value={temperature} onChange={setTemperature} />
-          </div>
-
-          {/* Vertical */}
           <div>
             <div className="mb-2 text-xs font-medium text-foreground">Vertical</div>
             <div className="flex flex-wrap gap-1.5">
@@ -306,7 +254,6 @@ function CapturePage() {
             </div>
           </div>
 
-          {/* Note */}
           <label className="block">
             <span className="text-xs font-medium text-foreground">Note (the gold)</span>
             <input
@@ -330,17 +277,7 @@ function CapturePage() {
           >
             Save lead
           </button>
-          <p className="text-center text-[11px] text-muted-foreground">
-            Only name + temperature required. Everything else can be enriched later.
-          </p>
         </div>
-
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Need to see who you've already met?{" "}
-          <Link to="/people" className="underline">
-            Open People
-          </Link>
-        </p>
       </main>
     </div>
   );
