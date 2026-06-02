@@ -49,10 +49,13 @@ export function AgentStatusButton() {
 
   return (
     <div
-      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2 py-1 text-[11px]"
-      title="Discovery agent"
+      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[11px]"
+      title="Agent go"
     >
-      <Bot className="h-3 w-3 text-muted-foreground" />
+      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent/15 text-[13px] font-extrabold leading-none text-brand-accent">
+        A
+      </span>
+      <span className="font-semibold text-foreground">Agent go</span>
       <span className={`inline-block h-1.5 w-1.5 rounded-full ${statusColor}`} />
       <span className="text-muted-foreground">{formatRelative(lastRun?.started_at)}</span>
       {lastRun ? (
