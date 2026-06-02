@@ -370,8 +370,6 @@ export function GameTimeOverlay({ onExit }: Props) {
     </div>
   );
 }
-  );
-}
 
 function RecognitionLine({ person }: { person: Person }) {
   const data = usePeopleData();
