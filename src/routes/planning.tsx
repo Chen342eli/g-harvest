@@ -212,15 +212,15 @@ function PlanningPage() {
               </Button>
             </div>
           ) : (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/40 bg-gradient-to-r from-primary/10 to-primary/5 px-5 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-400/60 bg-amber-50 px-5 py-3 dark:bg-amber-950/30">
               <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300">
                   <Sparkles className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-foreground">Time to build your annual plan</h2>
+                  <h2 className="text-sm font-semibold text-foreground">No annual plan built for 2026 yet</h2>
                   <p className="text-xs text-muted-foreground">
-                    Browse the catalog below, then set your budget and pick the must-go conferences for the year.
+                    You're seeing the full catalog. Set your budget and pick the must-go conferences to lock the plan.
                   </p>
                 </div>
               </div>
