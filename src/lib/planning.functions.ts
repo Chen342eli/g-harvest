@@ -198,7 +198,11 @@ export const updatePlanConfig = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data }) => {
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      annual_budget_usd?: number;
+      planned_reps_per_conference?: number;
+      name?: string;
+    } = {};
     if (data.annualBudgetUsd !== undefined) patch.annual_budget_usd = data.annualBudgetUsd;
     if (data.plannedRepsPerConference !== undefined)
       patch.planned_reps_per_conference = data.plannedRepsPerConference;
