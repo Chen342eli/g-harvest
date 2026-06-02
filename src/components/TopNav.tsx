@@ -16,7 +16,7 @@ import { usePeopleData } from "@/lib/people-store";
 type Item = { to: string; label: string; icon: LucideIcon; match?: string[]; badge?: "follow-ups" };
 
 const MODULES: Item[] = [
-  { to: "/planning", label: "Season Planner", icon: CalendarRange, match: ["/agent"] },
+  { to: "/planning", label: "Conference Management", icon: CalendarRange, match: ["/agent"] },
   { to: "/floor", label: "Event Mode", icon: CalendarCheck, match: ["/today", "/capture", "/import", "/recap"] },
   { to: "/people", label: "People", icon: Users },
   { to: "/follow-ups", label: "Follow-ups", icon: Mail, badge: "follow-ups" },
