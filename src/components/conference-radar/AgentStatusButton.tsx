@@ -21,31 +21,12 @@ function formatRelative(iso: string | null | undefined): string {
 export function AgentStatusButton() {
   const qc = useQueryClient();
   const fetchLastRun = useServerFn(getLastRun);
-  const triggerRun = useServerFn(runAgentNow);
   const cancelRun = useServerFn(cancelRunningAgent);
 
   const { data: lastRun } = useQuery({
     queryKey: ["lastAgentRun"],
     queryFn: () => fetchLastRun(),
     refetchInterval: 15_000,
-  });
-
-  const mutation = useMutation({
-    mutationFn: () => triggerRun(),
-    onSuccess: (result) => {
-      qc.invalidateQueries({ queryKey: ["lastAgentRun"] });
-      qc.invalidateQueries({ queryKey: ["conferences"] });
-      qc.invalidateQueries({ queryKey: ["agentRuns"] });
-      qc.invalidateQueries({ queryKey: ["changeFlags"] });
-      if (result.error) {
-        toast.error(`Agent finished with errors: ${result.error}`);
-      } else {
-        toast.success(`Agent done · ${result.added} added · ${result.flagged} flagged · ${result.skipped} skipped`);
-      }
-    },
-    onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : "Agent failed");
-    },
   });
 
   const cancelMutation = useMutation({
