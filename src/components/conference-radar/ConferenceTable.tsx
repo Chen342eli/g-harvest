@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Pencil } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, CalendarPlus, Check, ExternalLink, Pencil } from "lucide-react";
 import type { Conference, DecisionStatus } from "@/lib/conferences";
 import { SALES_TEAM, isCoverageGap } from "@/lib/conferences";
 import { TierBadge, CoverageGapBadge } from "./TierBadge";
@@ -17,6 +17,9 @@ interface Props {
   onToggleRep: (conferenceId: string, rep: string) => void;
   onSetStatus: (conferenceId: string, status: DecisionStatus) => void;
   onUpdateConference: (updated: Conference) => void;
+  planItemConferenceIds?: Set<string>;
+  onAddToPlan?: (conferenceId: string) => void;
+  activePlanName?: string;
 }
 
 function formatDateRange(start: string, end: string) {
@@ -33,7 +36,7 @@ function formatDateRange(start: string, end: string) {
 
 const audienceFmt = new Intl.NumberFormat("en-US");
 
-export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdateConference }: Props) {
+export function ConferenceTable({ conferences, onToggleRep, onSetStatus, onUpdateConference, planItemConferenceIds, onAddToPlan, activePlanName }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("icpScore");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [editing, setEditing] = useState<Conference | null>(null);
