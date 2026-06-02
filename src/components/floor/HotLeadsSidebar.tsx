@@ -4,17 +4,24 @@ import { useHotAccounts, addHotAccount, removeHotAccount } from "@/lib/hot-accou
 import { usePeopleData } from "@/lib/people-store";
 import { derivePerson } from "@/lib/matching";
 import { isHotAccountCompany } from "@/lib/hot-accounts-store";
+import { openPersonDrawer } from "@/lib/person-drawer-store";
 
 export function HotLeadsSidebar() {
   const accounts = useHotAccounts();
   const people = usePeopleData();
   const [input, setInput] = useState("");
 
-  const matchedPeople = useMemo(() => {
-    return people.people
+  const grouped = useMemo(() => {
+    const matched = people.people
       .filter((p) => isHotAccountCompany(p.currentCompany, accounts))
-      .map((p) => ({ p, d: derivePerson(p, people.encounters) }))
-      .sort((a, b) => (b.d.lastSeenAt ?? "").localeCompare(a.d.lastSeenAt ?? ""));
+      .map((p) => ({ p, d: derivePerson(p, people.encounters) }));
+
+    return accounts.map((company) => {
+      const members = matched
+        .filter((m) => m.p.currentCompany?.toLowerCase().includes(company.toLowerCase()))
+        .sort((a, b) => (b.d.lastSeenAt ?? "").localeCompare(a.d.lastSeenAt ?? ""));
+      return { company, members };
+    });
   }, [people, accounts]);
 
   return (
@@ -51,62 +58,62 @@ export function HotLeadsSidebar() {
             <Plus className="h-3.5 w-3.5" />
           </button>
         </form>
-        <ul className="mt-2 flex flex-wrap gap-1.5">
-          {accounts.length === 0 && (
-            <li className="text-[11px] text-muted-foreground">No companies yet.</li>
-          )}
-          {accounts.map((c) => (
-            <li
-              key={c}
-              className="inline-flex items-center gap-1 rounded-full border border-temp-hot/40 bg-temp-hot/10 px-2 py-0.5 text-[11px] font-medium text-foreground"
-            >
-              <span>🔥 {c}</span>
-              <button
-                type="button"
-                onClick={() => removeHotAccount(c)}
-                className="text-muted-foreground hover:text-foreground"
-                aria-label={`Remove ${c}`}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </li>
-          ))}
-        </ul>
       </div>
 
-      <div className="max-h-[400px] overflow-auto">
-        <div className="px-4 py-2 text-[10px] uppercase tracking-wide text-muted-foreground">
-          People from hot accounts
-        </div>
+      <div className="max-h-[480px] overflow-auto">
         <ul className="divide-y divide-border">
-          {matchedPeople.length === 0 && (
+          {grouped.length === 0 && (
             <li className="px-4 py-6 text-center text-xs text-muted-foreground">
-              No one captured from these companies yet.
+              No companies yet.
             </li>
           )}
-          {matchedPeople.slice(0, 10).map(({ p, d }) => {
-            const last = d.encounters[d.encounters.length - 1];
-            return (
-              <li key={p.id} className="px-4 py-2.5">
-                <div className="mb-1.5">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-temp-hot/40 bg-temp-hot/10 px-2.5 py-1 text-sm font-semibold text-foreground">
-                    <Flame className="h-3.5 w-3.5 text-temp-hot" />
-                    {p.currentCompany}
-                  </span>
-                </div>
-                <div className="truncate text-xs text-muted-foreground">
-                  {p.fullName}
-                  {p.currentRole ? ` · ${p.currentRole}` : ""}
-                </div>
-                {last && (
-                  <div className="mt-0.5 text-[11px] text-muted-foreground">
-                    {last.conferenceName}
-                    {d.encounterCount > 1 ? ` · ${d.encounterCount}×` : ""}
-                  </div>
-                )}
-              </li>
-            );
-          })}
+          {grouped.map(({ company, members }) => (
+            <li key={company} className="px-4 py-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-temp-hot/40 bg-temp-hot/10 px-2.5 py-1 text-sm font-semibold text-foreground">
+                  <Flame className="h-3.5 w-3.5 text-temp-hot" />
+                  {company}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeHotAccount(company)}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label={`Remove ${company}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              {members.length > 0 && (
+                <ul className="space-y-1.5 pl-1">
+                  {members.map(({ p, d }) => {
+                    const last = d.encounters[d.encounters.length - 1];
+                    return (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          onClick={() => openPersonDrawer(p.id)}
+                          className="block w-full text-left hover:opacity-80"
+                        >
+                          <div className="truncate text-xs text-foreground">
+                            {p.fullName}
+                            {p.currentRole ? (
+                              <span className="text-muted-foreground"> · {p.currentRole}</span>
+                            ) : null}
+                          </div>
+                          {last && (
+                            <div className="truncate text-[11px] text-muted-foreground">
+                              {last.conferenceName}
+                              {d.encounterCount > 1 ? ` · ${d.encounterCount}×` : ""}
+                            </div>
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </li>
+          ))}
         </ul>
       </div>
     </aside>
