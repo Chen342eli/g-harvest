@@ -67,7 +67,7 @@ export function buildRecommendations(args: {
   plan: Plan;
   planYear: number;
 }): GapRecommendation[] {
-  const { allConferences, items, plan, planYear } = args;
+  const { allConferences, items, planYear } = args;
 
   const inPlanIds = new Set(items.map((i) => i.conferenceId));
   const candidates = allConferences.filter(
