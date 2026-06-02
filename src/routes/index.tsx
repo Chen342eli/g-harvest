@@ -24,6 +24,10 @@ import { TierBadge } from "@/components/conference-radar/TierBadge";
 import { updateSettings } from "@/lib/settings-store";
 import { cn } from "@/lib/utils";
 import type { Conference } from "@/lib/conferences";
+// Logo for the currently featured event. Swap this import when the next-up event changes.
+import eventLogo from "@/assets/event-logo.png.asset.json";
+
+const EVENT_LOGO_URL: string | null = eventLogo.url;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -268,9 +272,17 @@ function NextUpHero({
       <div className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-brand-base/10 blur-3xl" />
 
       <div className="relative grid gap-6 sm:grid-cols-[auto_1fr] sm:items-start">
-        {/* Logo placeholder */}
-        <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border border-border bg-background/80 shadow-sm sm:h-28 sm:w-28">
-          <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+        {/* Event logo — replace EVENT_LOGO_URL below when the next-up event changes */}
+        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background/80 shadow-sm sm:h-28 sm:w-28">
+          {EVENT_LOGO_URL ? (
+            <img
+              src={EVENT_LOGO_URL}
+              alt={`${conference.name} logo`}
+              className="h-full w-full object-contain"
+            />
+          ) : (
+            <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+          )}
         </div>
 
         <div className="min-w-0 space-y-4">
