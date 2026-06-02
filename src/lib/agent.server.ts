@@ -119,6 +119,38 @@ function normalizeUrl(u: string): string {
   }
 }
 
+/**
+ * Normalize a conference name for fuzzy dedup. Strips:
+ *  - subtitles after `|`, `:`, ` - `, ` – `, ` — ` (so "AFP 2026 | The Treasury..." == "AFP 2026")
+ *  - 4-digit year tokens (so "Nordic Fintech Summit 2026" == "Nordic Fintech Summit")
+ *  - generic suffixes like "festival/conference/summit/expo/forum/week/fest/show/meetup"
+ *    when they appear AFTER the core brand — kept only when they're part of the brand
+ *  - all punctuation; collapses whitespace; lowercases.
+ */
+function normalizeConfName(raw: string): string {
+  let s = raw.toLowerCase();
+  // strip subtitle separators
+  s = s.split(/[|:]| - | – | — /)[0];
+  // strip 4-digit years
+  s = s.replace(/\b(19|20)\d{2}\b/g, " ");
+  // remove punctuation
+  s = s.replace(/[^a-z0-9\s]/g, " ");
+  // collapse whitespace
+  s = s.replace(/\s+/g, " ").trim();
+  return s;
+}
+
+function dateOverlapDays(aStart: string, aEnd: string, bStart: string, bEnd: string): number {
+  const as = new Date(aStart).getTime();
+  const ae = new Date(aEnd).getTime();
+  const bs = new Date(bStart).getTime();
+  const be = new Date(bEnd).getTime();
+  const start = Math.max(as, bs);
+  const end = Math.min(ae, be);
+  if (end < start) return -Math.round((start - end) / 86_400_000);
+  return Math.round((end - start) / 86_400_000) + 1;
+}
+
 const DateVerificationSchema = z.object({
   startDate: z.string().nullable(),
   endDate: z.string().nullable(),
@@ -284,13 +316,56 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
     );
     const { data: existing } = await supabaseAdmin
       .from("conferences")
-      .select("id, name, start_date, city, end_date, estimated_audience_size, source_url")
+      .select("id, name, start_date, city, country, end_date, estimated_audience_size, source_url")
       .is("deleted_at", null);
-    const existingByKey = new Map<string, NonNullable<typeof existing>[number]>();
+    type ExistingRow = NonNullable<typeof existing>[number];
+    const existingByKey = new Map<string, ExistingRow>();
+    const existingList: ExistingRow[] = [];
     for (const e of existing ?? []) {
       const k = `${e.name.toLowerCase()}|${new Date(e.start_date).getUTCFullYear()}|${e.city.toLowerCase()}`;
       existingByKey.set(k, e);
+      existingList.push(e);
     }
+
+    /** Fuzzy lookup: normalized name + year, with city-as-wildcard when either side is "Unknown",
+     *  plus a date+country fallback (overlap within ±2 days). */
+    function findExistingFuzzy(
+      candName: string,
+      candYear: number,
+      candCity: string,
+      candCountry: string,
+      candStart: string,
+      candEnd: string,
+    ): ExistingRow | undefined {
+      const candNorm = normalizeConfName(candName);
+      const candCityLc = candCity.toLowerCase();
+      for (const e of existingList) {
+        const eYear = new Date(e.start_date).getUTCFullYear();
+        if (eYear !== candYear) continue;
+        const eNorm = normalizeConfName(e.name);
+        const eCityLc = e.city.toLowerCase();
+        const nameMatch =
+          eNorm === candNorm ||
+          (eNorm.length >= 6 && candNorm.length >= 6 &&
+            (eNorm.includes(candNorm) || candNorm.includes(eNorm)));
+        const cityMatch =
+          eCityLc === candCityLc || eCityLc === "unknown" || candCityLc === "unknown";
+        if (nameMatch && cityMatch) return e;
+        // Date+country fallback: same country & overlapping dates (within ±2 days)
+        if (
+          e.country?.toLowerCase() === candCountry.toLowerCase() &&
+          dateOverlapDays(e.start_date, e.end_date, candStart, candEnd) >= -2
+        ) {
+          // Require at least one shared significant token to avoid false positives
+          const eTokens = new Set(eNorm.split(" ").filter((t) => t.length >= 4));
+          const cTokens = candNorm.split(" ").filter((t) => t.length >= 4);
+          if (cTokens.some((t) => eTokens.has(t))) return e;
+        }
+      }
+      return undefined;
+    }
+
+
 
     const yrs = yearsAllowed();
 
@@ -530,7 +605,9 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             continue;
           }
 
-          const dupe = existingByKey.get(dedupKey);
+          const dupe =
+            existingByKey.get(dedupKey) ??
+            findExistingFuzzy(parsed.name, dedupYear, city, country, startDate, endDate);
           if (dupe) {
             const changes: { field: string; old: unknown; next: unknown }[] = [];
             if (parsed.startDate && dupe.start_date !== parsed.startDate)
@@ -603,15 +680,18 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           // Track the newly-inserted conference so later items in this aggregator
           // (or later candidates this run) deduplicate against it.
           if (inserted?.id) {
-            existingByKey.set(dedupKey, {
+            const newRow: ExistingRow = {
               id: inserted.id,
               name: parsed.name,
               start_date: startDate,
               end_date: endDate,
               city,
+              country,
               estimated_audience_size: audience,
               source_url: hit.url,
-            });
+            };
+            existingByKey.set(dedupKey, newRow);
+            existingList.push(newRow);
           }
 
           const reviewReasons: string[] = [];
