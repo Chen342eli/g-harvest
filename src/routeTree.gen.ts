@@ -20,6 +20,7 @@ import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PlanningBuildRouteImport } from './routes/planning.build'
 import { Route as ApiPublicAgentRunRouteImport } from './routes/api/public/agent/run'
 
 const TodayRoute = TodayRouteImport.update({
@@ -77,6 +78,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlanningBuildRoute = PlanningBuildRouteImport.update({
+  id: '/build',
+  path: '/build',
+  getParentRoute: () => PlanningRoute,
+} as any)
 const ApiPublicAgentRunRoute = ApiPublicAgentRunRouteImport.update({
   id: '/api/public/agent/run',
   path: '/api/public/agent/run',
@@ -91,10 +97,11 @@ export interface FileRoutesByFullPath {
   '/follow-ups': typeof FollowUpsRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
-  '/planning': typeof PlanningRoute
+  '/planning': typeof PlanningRouteWithChildren
   '/recap': typeof RecapRoute
   '/settings': typeof SettingsRoute
   '/today': typeof TodayRoute
+  '/planning/build': typeof PlanningBuildRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRoutesByTo {
@@ -105,10 +112,11 @@ export interface FileRoutesByTo {
   '/follow-ups': typeof FollowUpsRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
-  '/planning': typeof PlanningRoute
+  '/planning': typeof PlanningRouteWithChildren
   '/recap': typeof RecapRoute
   '/settings': typeof SettingsRoute
   '/today': typeof TodayRoute
+  '/planning/build': typeof PlanningBuildRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRoutesById {
@@ -120,10 +128,11 @@ export interface FileRoutesById {
   '/follow-ups': typeof FollowUpsRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
-  '/planning': typeof PlanningRoute
+  '/planning': typeof PlanningRouteWithChildren
   '/recap': typeof RecapRoute
   '/settings': typeof SettingsRoute
   '/today': typeof TodayRoute
+  '/planning/build': typeof PlanningBuildRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRouteTypes {
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/settings'
     | '/today'
+    | '/planning/build'
     | '/api/public/agent/run'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/settings'
     | '/today'
+    | '/planning/build'
     | '/api/public/agent/run'
   id:
     | '__root__'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/settings'
     | '/today'
+    | '/planning/build'
     | '/api/public/agent/run'
   fileRoutesById: FileRoutesById
 }
@@ -179,7 +191,7 @@ export interface RootRouteChildren {
   FollowUpsRoute: typeof FollowUpsRoute
   ImportRoute: typeof ImportRoute
   PeopleRoute: typeof PeopleRoute
-  PlanningRoute: typeof PlanningRoute
+  PlanningRoute: typeof PlanningRouteWithChildren
   RecapRoute: typeof RecapRoute
   SettingsRoute: typeof SettingsRoute
   TodayRoute: typeof TodayRoute
@@ -265,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/planning/build': {
+      id: '/planning/build'
+      path: '/build'
+      fullPath: '/planning/build'
+      preLoaderRoute: typeof PlanningBuildRouteImport
+      parentRoute: typeof PlanningRoute
+    }
     '/api/public/agent/run': {
       id: '/api/public/agent/run'
       path: '/api/public/agent/run'
@@ -275,6 +294,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface PlanningRouteChildren {
+  PlanningBuildRoute: typeof PlanningBuildRoute
+}
+
+const PlanningRouteChildren: PlanningRouteChildren = {
+  PlanningBuildRoute: PlanningBuildRoute,
+}
+
+const PlanningRouteWithChildren = PlanningRoute._addFileChildren(
+  PlanningRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentRoute: AgentRoute,
@@ -283,7 +314,7 @@ const rootRouteChildren: RootRouteChildren = {
   FollowUpsRoute: FollowUpsRoute,
   ImportRoute: ImportRoute,
   PeopleRoute: PeopleRoute,
-  PlanningRoute: PlanningRoute,
+  PlanningRoute: PlanningRouteWithChildren,
   RecapRoute: RecapRoute,
   SettingsRoute: SettingsRoute,
   TodayRoute: TodayRoute,
