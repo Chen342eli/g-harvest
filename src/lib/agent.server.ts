@@ -119,6 +119,58 @@ function normalizeUrl(u: string): string {
   }
 }
 
+const DateVerificationSchema = z.object({
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  year: z.number().int().nullable(),
+  notes: z.string().optional(),
+});
+
+/**
+ * Targeted retry: if the first extraction returned no date or a year that's
+ * outside the allowed window, ask the model a focused second question about
+ * just the dates/year. Returns updated startDate/endDate or null if still unknown.
+ */
+async function verifyConferenceDates(args: {
+  model: Parameters<typeof generateText>[0]["model"];
+  name: string;
+  hit: SearchHit;
+  markdown: string | null;
+  allowedYears: number[];
+}): Promise<{ startDate: string | null; endDate: string | null }> {
+  const { model, name, hit, markdown, allowedYears } = args;
+  if (!markdown) return { startDate: null, endDate: null };
+
+  try {
+    const res = await generateText({
+      model,
+      prompt:
+        `You previously extracted a conference but the dates were missing or had an unreasonable year.\n` +
+        `Re-read the page below and find ONLY the dates of the next edition of "${name}".\n` +
+        `Look for explicit phrases like "March 4-6, 2026", date headers near the title/hero, footer "© 2026", or registration pages.\n` +
+        `Allowed years: ${allowedYears.join(", ")}. If the page describes a past edition, reply with nulls.\n` +
+        `Return ONLY one JSON object: { "startDate": "YYYY-MM-DD" | null, "endDate": "YYYY-MM-DD" | null, "year": integer | null, "notes": string }.\n` +
+        `Use null for any field you cannot determine with high confidence. Do NOT invent a year.\n\n` +
+        `URL: ${hit.url}\nTitle: ${hit.title ?? ""}\n\n` +
+        `--- PAGE CONTENT (markdown, possibly truncated) ---\n${markdown}`,
+    });
+    const raw = res.text ?? "";
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (!m) return { startDate: null, endDate: null };
+    const parsed = DateVerificationSchema.parse(JSON.parse(m[0]));
+    const start = parsed.startDate;
+    const end = parsed.endDate ?? start;
+    if (!start) return { startDate: null, endDate: null };
+    const y = new Date(start).getUTCFullYear();
+    if (!Number.isFinite(y) || !allowedYears.includes(y)) {
+      return { startDate: null, endDate: null };
+    }
+    return { startDate: start, endDate: end ?? start };
+  } catch {
+    return { startDate: null, endDate: null };
+  }
+}
+
 function normalizeHits(raw: unknown): SearchHit[] {
   const out: SearchHit[] = [];
   if (!raw) return out;
