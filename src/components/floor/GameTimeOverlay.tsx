@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, Copy, Flame, Mail, Search, Sparkles, X, Zap } from "lucide-react";
+import { ArrowRight, Flame, Search, Sparkles, X, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { findMatch, derivePerson, computeBadges } from "@/lib/matching";
-import { BadgeList } from "@/components/people/Badges";
+import { findMatch, derivePerson } from "@/lib/matching";
 import {
   usePeopleData,
   addPerson,
@@ -259,21 +258,31 @@ export function GameTimeOverlay({ onExit }: Props) {
             <div className="flex items-start justify-between gap-3 px-6 pt-6">
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-[10px] font-bold tracking-[0.2em] text-brand-base-foreground/40 uppercase">
-                  {draft.mode === "existing" ? "Person identified" : "New lead"}
+                  {draft.mode === "existing" ? "Person identified" : "New lead · name required"}
                 </p>
-                <input
-                  value={draft.name}
-                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  className="w-full bg-transparent text-2xl font-extrabold tracking-tight text-brand-base-foreground focus:outline-none"
-                />
-                {draft.mode === "existing" && draft.personId && (
-                  <PersonIdentitySub personId={draft.personId} />
+                {draft.mode === "existing" && draft.personId ? (
+                  <>
+                    <PersonFullNameDisplay personId={draft.personId} />
+                    {query.trim() && query.trim().toLowerCase() !== draft.name.toLowerCase() && (
+                      <p className="text-[11px] text-brand-base-foreground/50">
+                        You searched: <span className="font-mono">"{query.trim()}"</span>
+                      </p>
+                    )}
+                    <PersonIdentitySub personId={draft.personId} />
+                  </>
+                ) : (
+                  <input
+                    value={draft.name}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                    placeholder="Full name *"
+                    className="w-full bg-transparent text-2xl font-extrabold tracking-tight text-brand-base-foreground placeholder:text-brand-base-foreground/30 focus:outline-none"
+                  />
                 )}
               </div>
               <button
                 type="button"
                 onClick={closeSheet}
-                aria-label="Close"
+                aria-label="Close without saving"
                 className="rounded-full bg-white/5 p-2 text-brand-base-foreground/60 hover:bg-white/10 hover:text-brand-base-foreground"
               >
                 <X className="h-5 w-5" />
@@ -286,12 +295,31 @@ export function GameTimeOverlay({ onExit }: Props) {
             )}
 
             {/* Capture controls */}
-            <div className="mt-auto border-t border-white/10 bg-white/[0.02] p-6 space-y-5">
+            <div className="mt-auto border-t border-white/10 bg-white/[0.04] p-6 space-y-5">
 
-              {/* Temperature */}
+              {/* Helper banner — clarifies what's required vs optional */}
+              <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] leading-relaxed text-brand-base-foreground/70">
+                <span className="font-bold text-brand-base-foreground">Did you meet them just now?</span>{" "}
+                Tap a temperature to log it. Everything else is optional.
+                {" "}If you were only checking a name,{" "}
+                <button
+                  type="button"
+                  onClick={closeSheet}
+                  className="font-bold text-brand-accent underline-offset-2 hover:underline"
+                >
+                  close without saving
+                </button>
+                .
+              </div>
+
+              {/* Temperature — REQUIRED */}
               <div>
-                <p className="mb-2 text-[10px] font-bold tracking-[0.2em] text-brand-base-foreground/40 uppercase">
+                <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold tracking-[0.2em] text-brand-base-foreground/60 uppercase">
                   Today's read
+                  <span className="text-temp-hot">*</span>
+                  <span className="ml-auto text-[9px] font-medium normal-case tracking-normal text-brand-base-foreground/40">
+                    required to save
+                  </span>
                 </p>
                 <div className="grid grid-cols-3 gap-3">
                   {(["hot", "warm", "cold"] as Temperature[]).map((t) => {
@@ -311,7 +339,7 @@ export function GameTimeOverlay({ onExit }: Props) {
                           "flex flex-col items-center justify-center gap-1 rounded-xl border p-4 transition active:scale-95",
                           active
                             ? tone
-                            : "border-white/10 bg-white/5 text-brand-base-foreground/50 hover:bg-white/10",
+                            : "border-white/10 bg-white/[0.06] text-brand-base-foreground/60 hover:bg-white/10",
                         )}
                       >
                         <span className="text-xl">
@@ -326,49 +354,68 @@ export function GameTimeOverlay({ onExit }: Props) {
                 </div>
               </div>
 
+              {/* Optional section divider */}
+              <div className="flex items-center gap-2 pt-1">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="text-[9px] font-bold uppercase tracking-widest text-brand-base-foreground/30">
+                  Optional context
+                </span>
+                <div className="h-px flex-1 bg-white/10" />
+              </div>
+
               {/* Company */}
               <div className="relative">
-                <label className="absolute -top-2 left-3 bg-brand-base px-1 text-[9px] font-black uppercase tracking-widest text-brand-base-foreground/40">
+                <label className="absolute -top-2 left-3 bg-brand-base px-1 text-[9px] font-black uppercase tracking-widest text-brand-base-foreground/50">
                   Company
                 </label>
                 <input
                   value={draft.company}
                   onChange={(e) => setDraft({ ...draft, company: e.target.value })}
-                  placeholder="—"
-                  className="w-full rounded-lg border border-white/10 bg-transparent p-3 text-sm font-medium text-brand-base-foreground outline-none focus:border-brand-accent/60"
+                  placeholder="Where do they work?"
+                  className="w-full rounded-lg border border-white/15 bg-white/[0.06] p-3 text-sm font-medium text-brand-base-foreground placeholder:text-brand-base-foreground/30 outline-none focus:border-brand-accent/60 focus:bg-white/[0.08]"
                 />
               </div>
 
               {/* Vertical chips */}
-              <div className="flex flex-wrap gap-2">
-                {ENCOUNTER_VERTICALS.map((v) => {
-                  const on = vertical === v;
-                  return (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setVertical(on ? "" : v)}
-                      className={cn(
-                        "rounded-full border px-3 py-1.5 text-xs font-bold transition",
-                        on
-                          ? "border-brand-accent bg-brand-accent text-brand-accent-foreground"
-                          : "border-white/10 bg-white/5 text-brand-base-foreground/60 hover:bg-white/10",
-                      )}
-                    >
-                      {v}
-                    </button>
-                  );
-                })}
+              <div>
+                <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-brand-base-foreground/50">
+                  Vertical
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ENCOUNTER_VERTICALS.map((v) => {
+                    const on = vertical === v;
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setVertical(on ? "" : v)}
+                        className={cn(
+                          "rounded-full border px-3 py-1.5 text-xs font-bold transition",
+                          on
+                            ? "border-brand-accent bg-brand-accent text-brand-accent-foreground"
+                            : "border-white/15 bg-white/[0.06] text-brand-base-foreground/70 hover:bg-white/10",
+                        )}
+                      >
+                        {v}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Note */}
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Tap to add note (the gold)…"
-                rows={2}
-                className="w-full resize-none rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-brand-base-foreground outline-none focus:border-brand-accent/60"
-              />
+              <div className="relative">
+                <label className="absolute -top-2 left-3 bg-brand-base px-1 text-[9px] font-black uppercase tracking-widest text-brand-base-foreground/50">
+                  Note · the gold
+                </label>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="What did they say? What's the hook?"
+                  rows={2}
+                  className="w-full resize-none rounded-lg border border-white/15 bg-white/[0.06] p-3 text-sm text-brand-base-foreground placeholder:text-brand-base-foreground/30 outline-none focus:border-brand-accent/60 focus:bg-white/[0.08]"
+                />
+              </div>
 
               {isHotAccountCompany(draft.company, accounts) && (
                 <div className="rounded-md border border-temp-hot/40 bg-temp-hot/10 px-3 py-2 text-xs font-medium text-brand-base-foreground">
@@ -377,20 +424,29 @@ export function GameTimeOverlay({ onExit }: Props) {
                 </div>
               )}
 
-              {/* CTA */}
-              <button
-                type="button"
-                disabled={!canSave}
-                onClick={save}
-                className={cn(
-                  "w-full rounded-xl py-4 text-sm font-extrabold uppercase tracking-[0.2em] transition active:scale-[0.98]",
-                  canSave
-                    ? "bg-brand-base-foreground text-brand-base shadow-xl shadow-black/40 hover:opacity-90"
-                    : "bg-white/10 text-brand-base-foreground/40",
-                )}
-              >
-                Save & Next
-              </button>
+              {/* CTA row */}
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  disabled={!canSave}
+                  onClick={save}
+                  className={cn(
+                    "w-full rounded-xl py-4 text-sm font-extrabold uppercase tracking-[0.2em] transition active:scale-[0.98]",
+                    canSave
+                      ? "bg-brand-base-foreground text-brand-base shadow-xl shadow-black/40 hover:opacity-90"
+                      : "bg-white/10 text-brand-base-foreground/40",
+                  )}
+                >
+                  {canSave ? "Save & Next" : "Pick a temperature to save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={closeSheet}
+                  className="w-full rounded-xl border border-white/10 py-2.5 text-[11px] font-bold uppercase tracking-widest text-brand-base-foreground/60 hover:bg-white/5"
+                >
+                  Didn't meet — close
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -411,7 +467,35 @@ function PersonIdentitySub({ personId }: { personId: string }) {
   return <p className="text-sm font-medium text-brand-base-foreground/60">{sub}</p>;
 }
 
-// Game Time briefing — AI signal hero, suggested follow-up, badges, relationship arc.
+// Full name display for identified person (uses canonical fullName, not search query)
+function PersonFullNameDisplay({ personId }: { personId: string }) {
+  const data = usePeopleData();
+  const person = data.people.find((p) => p.id === personId);
+  if (!person) return null;
+  return (
+    <h2 className="text-2xl font-extrabold tracking-tight text-brand-base-foreground">
+      {person.fullName}
+    </h2>
+  );
+}
+
+// Maps raw AI signal -> action-oriented label + helper line a rep can act on instantly.
+function signalAction(signal?: string): { label: string; helper: string } | null {
+  switch (signal) {
+    case "Warming":
+      return { label: "Worth investing · move now", helper: "Active buying signal — push a concrete next step." };
+    case "Steady":
+      return { label: "Keep warm · light touch", helper: "Engaged but flat — nurture, don't pressure." };
+    case "Tire-kicker":
+      return { label: "Low priority · don't over-invest", helper: "Repeated low engagement. Stay polite, save energy." };
+    case "Too early":
+      return { label: "Too early · gather more", helper: "Not enough data yet. One more touchpoint to read direction." };
+    default:
+      return null;
+  }
+}
+
+// Game Time briefing — AI signal only + relationship arc (notes).
 // Auto-generates the AI read on open if not cached. Uses cached on later opens.
 function PersonBriefing({ personId }: { personId: string }) {
   const data = usePeopleData();
@@ -419,15 +503,10 @@ function PersonBriefing({ personId }: { personId: string }) {
   const analyze = useServerFn(analyzeRelationship);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [nudgeOpen, setNudgeOpen] = useState(false);
   const ranForRef = useRef<string | null>(null);
 
   const derived = useMemo(
     () => (person ? derivePerson(person, data.encounters) : null),
-    [person, data.encounters],
-  );
-  const badges = useMemo(
-    () => (person ? computeBadges(person, data.encounters) : []),
     [person, data.encounters],
   );
   const encounters = derived?.encounters ?? [];
@@ -494,27 +573,12 @@ function PersonBriefing({ personId }: { personId: string }) {
       ? "border-temp-cold/40 from-temp-cold/20 text-temp-cold"
       : "border-white/15 from-white/10 text-brand-base-foreground/70";
 
-  const copyNudge = async () => {
-    if (!person.aiNudge) return;
-    try {
-      await navigator.clipboard.writeText(`Subject: ${person.aiNudge.subject}\n\n${person.aiNudge.body}`);
-      toast.success("Nudge copied");
-    } catch {
-      toast.error("Could not copy");
-    }
-  };
+  const action = signalAction(person.aiSignal);
 
   return (
     <div className="px-6 pb-4 pt-2 space-y-4">
 
-      {/* Badges */}
-      {badges.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          <BadgeList badges={badges} />
-        </div>
-      )}
-
-      {/* AI Signal hero */}
+      {/* AI Signal hero — action-oriented label, plain rationale */}
       <div className={cn(
         "relative overflow-hidden rounded-2xl border bg-gradient-to-br to-transparent p-5",
         signalTone,
@@ -527,14 +591,19 @@ function PersonBriefing({ personId }: { personId: string }) {
             )} />
             <span className="text-[11px] font-black uppercase tracking-[0.15em]">
               {loading && !person.aiSignal
-                ? "Analyzing…"
-                : person.aiSignal
-                ? `Signal: ${person.aiSignal}${person.aiConfidence ? ` · ${person.aiConfidence} confidence` : ""}`
+                ? "Analyzing relationship…"
+                : action
+                ? action.label
                 : encounters.length === 0
                 ? "First meeting · no signal yet"
                 : "No signal yet"}
             </span>
           </div>
+          {action && (
+            <p className="mb-2 text-[11px] font-medium text-brand-base-foreground/60">
+              {action.helper}
+            </p>
+          )}
           {person.aiReasoning ? (
             <p className="text-[15px] font-semibold leading-snug text-brand-base-foreground">
               {person.aiReasoning}
@@ -553,62 +622,15 @@ function PersonBriefing({ personId }: { personId: string }) {
                 : "Generating relationship read…"}
             </p>
           )}
+          {person.aiConfidence && (
+            <p className="mt-2 text-[10px] uppercase tracking-widest text-brand-base-foreground/40">
+              AI confidence: {person.aiConfidence}
+            </p>
+          )}
         </div>
         <Zap className="pointer-events-none absolute -right-3 -bottom-3 h-24 w-24 opacity-10" />
       </div>
 
-      {/* Suggested follow-up */}
-      {person.aiNudge && (
-        <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setNudgeOpen((v) => !v)}
-            className="flex w-full items-center justify-between p-4 text-left hover:bg-white/[0.07] transition"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="rounded-lg bg-brand-accent/15 p-2 shrink-0">
-                <Mail className="h-4 w-4 text-brand-accent" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-brand-base-foreground/40">
-                  Suggested follow-up
-                </p>
-                <p className="truncate text-sm font-medium text-brand-base-foreground/90">
-                  {person.aiNudge.subject}
-                </p>
-              </div>
-            </div>
-            <span className="ml-3 text-[10px] text-brand-base-foreground/40">
-              {nudgeOpen ? "Hide" : "Open"}
-            </span>
-          </button>
-          {nudgeOpen && (
-            <div className="border-t border-white/10 bg-black/20 p-4 space-y-3">
-              <p className="whitespace-pre-wrap text-xs leading-relaxed text-brand-base-foreground/80">
-                {person.aiNudge.body}
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={copyNudge}
-                  className="inline-flex items-center gap-1 rounded-md bg-brand-accent px-2.5 py-1.5 text-[10px] font-bold text-brand-accent-foreground hover:opacity-90"
-                >
-                  <Copy className="h-3 w-3" /> Copy
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2.5 py-1.5 text-[10px] font-bold text-brand-base-foreground/40 cursor-not-allowed"
-                  title="Coming soon"
-                >
-                  <Mail className="h-3 w-3" /> Open in email
-                  <span className="ml-1 rounded bg-white/10 px-1 py-0.5 text-[8px] uppercase tracking-wide">soon</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Relationship arc */}
       {encounters.length > 0 && (
