@@ -74,22 +74,14 @@ export function DuringPhase({ conferenceId, onEnterGameTime, canEnterGameTime }:
   return (
     <div className="space-y-4">
       {/* Game Time call-to-action */}
-      <div className="flex items-center justify-between gap-4 rounded-xl border border-temp-hot/40 bg-temp-hot/5 p-4">
-        <div className="min-w-0">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-temp-hot">
-            Live · capture fast
-          </div>
-          <div className="text-sm font-semibold text-foreground">
-            One tap, one name, one read — Game Time keeps you in the conversation.
-          </div>
-        </div>
+      <div className="flex justify-end">
         <button
           type="button"
           disabled={!canEnterGameTime}
           onClick={onEnterGameTime}
-          className="inline-flex shrink-0 items-center gap-2 rounded-md bg-temp-hot px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-temp-hot-foreground transition hover:opacity-90 disabled:opacity-40"
+          className="inline-flex shrink-0 items-center gap-2 rounded-md bg-temp-hot px-4 py-2 text-xs font-bold uppercase tracking-wide text-temp-hot-foreground transition hover:opacity-90 disabled:opacity-40"
         >
-          <Zap className="h-4 w-4" /> Enter Game Time
+          <Zap className="h-3.5 w-3.5" /> Enter Game Time
         </button>
       </div>
 

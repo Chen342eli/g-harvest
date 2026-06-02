@@ -273,7 +273,7 @@ function AddRow({
       <input
         value={location}
         onChange={(e) => setLocation(e.target.value)}
-        placeholder="Location"
+        placeholder="Location (optional)"
         className="rounded-md border border-input bg-background px-2 py-1.5"
       />
       <div className="flex gap-1">
