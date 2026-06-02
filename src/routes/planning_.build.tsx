@@ -51,7 +51,7 @@ type StepId = 1 | 2 | 3 | 4;
 
 const STEPS: { id: StepId; title: string; subtitle: string }[] = [
   { id: 1, title: "Anchors", subtitle: "The events you attend every year." },
-  { id: 2, title: "Coverage", subtitle: "Fill the gaps." },
+  { id: 2, title: "Additionally", subtitle: "Fill the gaps & add more events." },
   { id: 3, title: "Reps", subtitle: "Who's going." },
   { id: 4, title: "Review & Approve", subtitle: "Lock the plan." },
 ];
