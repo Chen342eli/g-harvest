@@ -9,17 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TodayRouteImport } from './routes/today'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RecapRouteImport } from './routes/recap'
 import { Route as PlanningRouteImport } from './routes/planning'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as FollowUpsRouteImport } from './routes/follow-ups'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicAgentRunRouteImport } from './routes/api/public/agent/run'
 
+const TodayRoute = TodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -43,6 +50,11 @@ const PeopleRoute = PeopleRouteImport.update({
 const ImportRoute = ImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FollowUpsRoute = FollowUpsRouteImport.update({
+  id: '/follow-ups',
+  path: '/follow-ups',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogRoute = CatalogRouteImport.update({
@@ -76,11 +88,13 @@ export interface FileRoutesByFullPath {
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
   '/catalog': typeof CatalogRoute
+  '/follow-ups': typeof FollowUpsRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
   '/recap': typeof RecapRoute
   '/settings': typeof SettingsRoute
+  '/today': typeof TodayRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRoutesByTo {
@@ -88,11 +102,13 @@ export interface FileRoutesByTo {
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
   '/catalog': typeof CatalogRoute
+  '/follow-ups': typeof FollowUpsRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
   '/recap': typeof RecapRoute
   '/settings': typeof SettingsRoute
+  '/today': typeof TodayRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRoutesById {
@@ -101,11 +117,13 @@ export interface FileRoutesById {
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
   '/catalog': typeof CatalogRoute
+  '/follow-ups': typeof FollowUpsRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
   '/recap': typeof RecapRoute
   '/settings': typeof SettingsRoute
+  '/today': typeof TodayRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRouteTypes {
@@ -115,11 +133,13 @@ export interface FileRouteTypes {
     | '/agent'
     | '/capture'
     | '/catalog'
+    | '/follow-ups'
     | '/import'
     | '/people'
     | '/planning'
     | '/recap'
     | '/settings'
+    | '/today'
     | '/api/public/agent/run'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -127,11 +147,13 @@ export interface FileRouteTypes {
     | '/agent'
     | '/capture'
     | '/catalog'
+    | '/follow-ups'
     | '/import'
     | '/people'
     | '/planning'
     | '/recap'
     | '/settings'
+    | '/today'
     | '/api/public/agent/run'
   id:
     | '__root__'
@@ -139,11 +161,13 @@ export interface FileRouteTypes {
     | '/agent'
     | '/capture'
     | '/catalog'
+    | '/follow-ups'
     | '/import'
     | '/people'
     | '/planning'
     | '/recap'
     | '/settings'
+    | '/today'
     | '/api/public/agent/run'
   fileRoutesById: FileRoutesById
 }
@@ -152,16 +176,25 @@ export interface RootRouteChildren {
   AgentRoute: typeof AgentRoute
   CaptureRoute: typeof CaptureRoute
   CatalogRoute: typeof CatalogRoute
+  FollowUpsRoute: typeof FollowUpsRoute
   ImportRoute: typeof ImportRoute
   PeopleRoute: typeof PeopleRoute
   PlanningRoute: typeof PlanningRoute
   RecapRoute: typeof RecapRoute
   SettingsRoute: typeof SettingsRoute
+  TodayRoute: typeof TodayRoute
   ApiPublicAgentRunRoute: typeof ApiPublicAgentRunRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/today': {
+      id: '/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof TodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -195,6 +228,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/follow-ups': {
+      id: '/follow-ups'
+      path: '/follow-ups'
+      fullPath: '/follow-ups'
+      preLoaderRoute: typeof FollowUpsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalog': {
@@ -240,13 +280,25 @@ const rootRouteChildren: RootRouteChildren = {
   AgentRoute: AgentRoute,
   CaptureRoute: CaptureRoute,
   CatalogRoute: CatalogRoute,
+  FollowUpsRoute: FollowUpsRoute,
   ImportRoute: ImportRoute,
   PeopleRoute: PeopleRoute,
   PlanningRoute: PlanningRoute,
   RecapRoute: RecapRoute,
   SettingsRoute: SettingsRoute,
+  TodayRoute: TodayRoute,
   ApiPublicAgentRunRoute: ApiPublicAgentRunRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
