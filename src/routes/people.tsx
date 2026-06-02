@@ -77,12 +77,39 @@ function fmtDate(iso?: string): string {
 
 // ---------- Sort ----------
 //
-// Phase 1: prioritize by most recent activity (lastSeenAt desc) by default.
-// Phase 3 will replace the default with an AI-signal-driven sort.
-//   → PLUG IN: when sortKey === "ai", sort by row.person.aiSignal then aiConfidence.
+// Phase 3: default sort is AI signal (Warming → Steady → Too early → Tire-kicker),
+// then confidence (high→low), then recency.
 
-type SortKey = "person" | "role" | "vertical" | "met" | "lastSeen" | "trend";
+type SortKey = "signal" | "person" | "role" | "vertical" | "met" | "lastSeen" | "trend";
 type SortDir = "asc" | "desc";
+
+const SIGNAL_RANK: Record<AiSignal, number> = {
+  "Warming": 4,
+  "Steady": 3,
+  "Too early": 2,
+  "Tire-kicker": 1,
+};
+const CONFIDENCE_RANK: Record<AiConfidence, number> = { high: 3, medium: 2, low: 1 };
+
+const SIGNAL_STYLE: Record<AiSignal, string> = {
+  "Warming": "bg-temp-hot/15 text-temp-hot border-temp-hot/30",
+  "Steady": "bg-temp-warm/15 text-temp-warm border-temp-warm/30",
+  "Too early": "bg-muted text-muted-foreground border-border",
+  "Tire-kicker": "bg-temp-cold/15 text-temp-cold border-temp-cold/30",
+};
+
+function SignalBadge({ signal, confidence }: { signal?: AiSignal; confidence?: AiConfidence }) {
+  if (!signal) {
+    return <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-border px-1.5 py-0.5 text-[10px] text-muted-foreground"><Sparkles className="h-2.5 w-2.5" />no read</span>;
+  }
+  return (
+    <span className={cn("inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium", SIGNAL_STYLE[signal])}>
+      <Sparkles className="h-2.5 w-2.5" />
+      {signal}
+      {confidence && <span className="opacity-70">· {confidence}</span>}
+    </span>
+  );
+}
 
 function RelationshipsPage() {
   const data = usePeopleData();
@@ -90,7 +117,7 @@ function RelationshipsPage() {
   const [verticalFilter, setVerticalFilter] = useState<EncounterVertical | "all">("all");
   const [repFilter, setRepFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("lastSeen");
+  const [sortKey, setSortKey] = useState<SortKey>("signal");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const toggleSort = (key: SortKey) => {
