@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { AlertTriangle, Plus, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AlertTriangle, ChevronDown, ChevronRight, Plus, Sparkles } from "lucide-react";
 import { REGIONS, VERTICALS, type Conference } from "@/lib/conferences";
 import {
   regionCoverage,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/planning";
 import { buildRecommendations, findCalendarConflicts } from "@/lib/recommendations";
 import { Button } from "@/components/ui/button";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 interface ConferenceWithCost extends Conference {
   estimatedCostUsd: number | null;
