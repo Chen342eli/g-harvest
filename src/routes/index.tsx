@@ -142,23 +142,31 @@ function Dashboard() {
         )}
 
 
-        {lifecycle === "approved" && (
-          <section className="rounded-xl border border-border bg-card px-4 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Active plan · approved
+        {lifecycle === "approved" && activePlan && (
+          <section className="flex justify-center">
+            <div className="inline-flex flex-wrap items-center gap-3 rounded-lg border border-emerald-400/60 bg-emerald-50 px-4 py-2 dark:bg-emerald-950/30">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-700 dark:text-emerald-300">
+                  <Sparkles className="h-4 w-4" />
                 </div>
-                <div className="text-sm font-semibold text-foreground">
-                  {activePlan!.plan.name} · {activePlan!.items.length} conferences
+                <div>
+                  <h2 className="text-sm font-semibold text-foreground">
+                    {activePlan.plan.name}
+                    <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                      Approved
+                    </span>
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    {activePlan.items.filter((i) => isCommitted(i.planStatus)).length} approved conference
+                    {activePlan.items.filter((i) => isCommitted(i.planStatus)).length === 1 ? "" : "s"} for {activePlan.plan.year}.
+                  </p>
                 </div>
               </div>
-              <Link
-                to="/planning"
-                className="inline-flex items-center gap-1 text-xs font-medium text-brand-accent hover:underline"
-              >
-                Open planning workspace <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+              <Button asChild size="sm">
+                <Link to="/planning/build">
+                  <Pencil className="mr-1 h-3.5 w-3.5" /> Edit plan
+                </Link>
+              </Button>
             </div>
           </section>
         )}
