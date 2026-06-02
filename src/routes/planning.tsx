@@ -139,15 +139,8 @@ function PlanningPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav
-        rightSlot={
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <AgentStatusButton />
-            <Stat label={hasPlan && !showAll ? "In plan" : "Conferences"} value={stats.total} />
-            <Stat label="Coverage gaps" value={stats.gaps} accent={stats.gaps > 0 ? "text-red-700" : "text-foreground"} />
-          </div>
-        }
-      />
+      <TopNav />
+
 
       <main className="mx-auto max-w-[1600px] space-y-4 px-6 py-6">
         {!isLoading && lifecycle === "approved" && (
