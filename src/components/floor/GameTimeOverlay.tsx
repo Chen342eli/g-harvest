@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Flame, Search, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
-import { findMatch, derivePerson } from "@/lib/matching";
+import { findMatch, derivePerson, computeBadges } from "@/lib/matching";
+import { BadgeList } from "@/components/people/Badges";
+import { TempDot } from "@/components/people/TempControls";
 import {
   usePeopleData,
   addPerson,
