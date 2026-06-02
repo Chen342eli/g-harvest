@@ -99,7 +99,6 @@ export function ConferenceTable({ conferences, onToggleRep, onUpdateConference, 
           </thead>
           <tbody>
             {sorted.map((c) => {
-              const gap = isCoverageGap(c, committedIds);
               return (
                 <tr key={c.id} className="group border-b border-border last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 align-top">
