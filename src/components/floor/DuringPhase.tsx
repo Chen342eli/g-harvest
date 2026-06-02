@@ -108,15 +108,22 @@ export function DuringPhase({ conferenceId, onEnterGameTime, canEnterGameTime }:
             ) : (
               <ul className="divide-y divide-border">
                 {myMeetingPeople.map(({ person, time }) => (
-                  <li key={person!.id} className="flex items-center gap-3 px-4 py-2.5">
-                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                      {time.slice(11, 16)}
-                    </span>
-                    <User className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-sm font-medium text-foreground">{person!.fullName}</span>
-                    {person!.currentCompany && (
-                      <span className="text-xs text-muted-foreground">@ {person!.currentCompany}</span>
-                    )}
+                  <li key={person!.id}>
+                    <button
+                      type="button"
+                      onClick={() => openPersonDrawer(person!.id)}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-muted/50"
+                      title="Open contact card"
+                    >
+                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                        {time.slice(11, 16)}
+                      </span>
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">{person!.fullName}</span>
+                      {person!.currentCompany && (
+                        <span className="text-xs text-muted-foreground">@ {person!.currentCompany}</span>
+                      )}
+                    </button>
                   </li>
                 ))}
               </ul>
