@@ -255,7 +255,7 @@ function PlanningPage() {
             </div>
             <div className="flex items-center gap-2">
               <ExportButton conferences={filtered} />
-              <ViewToggle value={view} onChange={setView} />
+              <ViewToggle value={view} onChange={setViewOverride} />
             </div>
           </div>
 
