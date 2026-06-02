@@ -45,6 +45,18 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand-base: var(--brand-base);
+  --color-brand-base-foreground: var(--brand-base-foreground);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-foreground: var(--brand-accent-foreground);
+  --color-temp-hot: var(--temp-hot);
+  --color-temp-hot-foreground: var(--temp-hot-foreground);
+  --color-temp-warm: var(--temp-warm);
+  --color-temp-warm-foreground: var(--temp-warm-foreground);
+  --color-temp-cold: var(--temp-cold);
+  --color-temp-cold-foreground: var(--temp-cold-foreground);
+  --color-signal-buying: var(--signal-buying);
+  --color-signal-buying-foreground: var(--signal-buying-foreground);
   --color-ring-offset-background: var(--background);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
