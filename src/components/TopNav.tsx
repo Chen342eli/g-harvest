@@ -49,7 +49,7 @@ export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) 
         <div className={cn("mx-auto flex flex-wrap items-center justify-between gap-3 px-6 py-3", maxWidth)}>
           <div className="flex items-center gap-6">
             <Link to="/" className="group flex items-center gap-2.5" aria-label="Grain Harvest — Home">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition group-hover:opacity-90">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-accent text-brand-accent-foreground transition group-hover:opacity-90">
                 <Sprout className="h-4 w-4" />
               </div>
               <span className="text-sm font-semibold tracking-tight text-foreground">Grain Harvest</span>
