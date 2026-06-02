@@ -155,14 +155,32 @@ export function SchedulePanel({ conferenceId, conferenceStartDate, conferenceEnd
                           <div className="min-w-0">
                             <div className="truncate text-sm font-medium text-foreground">
                               {it.kind === "meeting" && it.personName ? (
-                                <span className="inline-flex items-center gap-1">
-                                  <User className="h-3 w-3 text-muted-foreground" />
-                                  {it.personName}
-                                </span>
+                                (() => {
+                                  const personId = findPersonId(it.personName);
+                                  const content = (
+                                    <>
+                                      <User className="h-3 w-3 text-muted-foreground" />
+                                      {it.personName}
+                                    </>
+                                  );
+                                  return personId ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => openPersonDrawer(personId)}
+                                      className="inline-flex items-center gap-1 rounded text-left hover:text-primary hover:underline"
+                                      title="Open contact card"
+                                    >
+                                      {content}
+                                    </button>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1">{content}</span>
+                                  );
+                                })()
                               ) : (
                                 it.title
                               )}
                             </div>
+
                             <div className="text-[11px] text-muted-foreground">
                               {it.repId ?? "Unassigned"}
                               {it.location ? (
