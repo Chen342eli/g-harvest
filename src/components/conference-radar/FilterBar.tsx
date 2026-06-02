@@ -4,7 +4,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DecisionStatus, Region, Tier, Vertical } from "@/lib/conferences";
-import { DECISION_STATUSES } from "@/lib/conferences";
 
 export interface Filters {
   search: string;
@@ -93,7 +92,6 @@ export function FilterBar({
     filters.verticals.length ||
     filters.regions.length ||
     filters.tiers.length ||
-    filters.statuses.length ||
     filters.dateFrom ||
     filters.dateTo ||
     filters.gapsOnly ||
@@ -113,7 +111,6 @@ export function FilterBar({
       <MultiSelect label="Vertical" options={VERTICALS} values={filters.verticals} onChange={(v) => set("verticals", v)} />
       <MultiSelect label="Region" options={REGIONS} values={filters.regions} onChange={(v) => set("regions", v)} />
       <MultiSelect label="Tier" options={TIERS} values={filters.tiers} onChange={(v) => set("tiers", v)} />
-      <MultiSelect label="Status" options={DECISION_STATUSES} values={filters.statuses} onChange={(v) => set("statuses", v)} />
       <div className="flex items-center gap-1.5">
         <Input
           type="date"

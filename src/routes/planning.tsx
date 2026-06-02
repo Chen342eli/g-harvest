@@ -8,40 +8,32 @@ import {
   CalendarDays,
   Download,
   Map as MapIcon,
-  PanelRightClose,
-  PanelRightOpen,
   Pencil,
   Sparkles,
   Table as TableIcon,
 } from "lucide-react";
-import {
-  getActivePlan,
-  setPlanItemStatus as setPlanItemStatusFn,
-} from "@/lib/planning.functions";
+import { getActivePlan } from "@/lib/planning.functions";
 import {
   listConferences,
-  setStatus as setStatusFn,
   toggleRep as toggleRepFn,
   updateConference as updateConferenceFn,
 } from "@/lib/conferences.functions";
 import { isCommitted } from "@/lib/planning";
-import { isCoverageGap, type Conference, type DecisionStatus } from "@/lib/conferences";
+import { isCoverageGap, type Conference } from "@/lib/conferences";
 import { TopNav } from "@/components/TopNav";
 import { AgentStatusButton } from "@/components/conference-radar/AgentStatusButton";
 import { ConferenceTable } from "@/components/conference-radar/ConferenceTable";
 import { MapView } from "@/components/conference-radar/MapView";
 import { TimelineView } from "@/components/conference-radar/TimelineView";
 import { FilterBar, DEFAULT_FILTERS, type Filters } from "@/components/conference-radar/FilterBar";
-import { DecisionPanel } from "@/components/conference-radar/DecisionPanel";
 import { Button } from "@/components/ui/button";
-import type { Insight } from "@/lib/insights";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/planning")({
   head: () => ({
     meta: [
-      { title: "Season Planner — Grain Harvest" },
-      { name: "description", content: "Catalog and approved annual conference plan." },
+      { title: "Conference Management — Grain Harvest" },
+      { name: "description", content: "Browse the conference catalog and your approved annual plan." },
     ],
   }),
   component: PlanningPage,
@@ -49,7 +41,7 @@ export const Route = createFileRoute("/planning")({
 
 type ViewMode = "table" | "map" | "timeline";
 
-function applyFilters(items: Conference[], f: Filters): Conference[] {
+function applyFilters(items: Conference[], f: Filters, committedIds: Set<string>): Conference[] {
   const q = f.search.trim().toLowerCase();
   const from = f.dateFrom ? new Date(f.dateFrom).getTime() : null;
   const to = f.dateTo ? new Date(f.dateTo).getTime() : null;
@@ -60,12 +52,11 @@ function applyFilters(items: Conference[], f: Filters): Conference[] {
     if (f.verticals.length && !f.verticals.includes(c.vertical)) return false;
     if (f.regions.length && !f.regions.includes(c.region)) return false;
     if (f.tiers.length && !f.tiers.includes(c.tier)) return false;
-    if (f.statuses.length && !f.statuses.includes(c.status)) return false;
     const start = new Date(c.startDate).getTime();
     const end = new Date(c.endDate).getTime();
     if (from !== null && end < from) return false;
     if (to !== null && start > to) return false;
-    if (f.gapsOnly && !isCoverageGap(c)) return false;
+    if (f.gapsOnly && !isCoverageGap(c, committedIds)) return false;
     return true;
   });
 }
@@ -74,8 +65,6 @@ function PlanningPage() {
   const qc = useQueryClient();
   const fetchPlan = useServerFn(getActivePlan);
   const fetchCatalog = useServerFn(listConferences);
-  const callSetPlanItemStatus = useServerFn(setPlanItemStatusFn);
-  const callConfSetStatus = useServerFn(setStatusFn);
   const callConfToggleRep = useServerFn(toggleRepFn);
   const callConfUpdate = useServerFn(updateConferenceFn);
 
@@ -85,52 +74,33 @@ function PlanningPage() {
   const isLoading = planQuery.isLoading || catalogQuery.isLoading;
   const conferences = catalogQuery.data ?? [];
 
-  const hasPlan = useMemo(
-    () => (planQuery.data?.items ?? []).some((i) => isCommitted(i.planStatus)),
+  const committedIds = useMemo(
+    () =>
+      new Set(
+        (planQuery.data?.items ?? [])
+          .filter((i) => isCommitted(i.planStatus))
+          .map((i) => i.conferenceId),
+      ),
     [planQuery.data],
   );
+
+  const hasPlan = committedIds.size > 0;
 
   const planItemConfIds = useMemo(
     () => new Set((planQuery.data?.items ?? []).map((i) => i.conferenceId)),
     [planQuery.data],
   );
 
-  const committedItems = useMemo(
-    () => (planQuery.data?.items ?? []).filter((i) => isCommitted(i.planStatus)),
-    [planQuery.data],
-  );
+  const [showAll, setShowAll] = useState(false);
 
-  // Source dataset: when a plan is approved → only committed; otherwise → entire catalog.
+  // Source dataset: when a plan exists and showAll=false → committed only; else → full catalog.
   const sourceConferences: Conference[] = useMemo(() => {
-    if (!hasPlan) return conferences;
-    const map = new Map(conferences.map((c) => [c.id, c]));
-    const out: Conference[] = [];
-    for (const i of committedItems) {
-      const c = map.get(i.conferenceId);
-      if (c) out.push(c);
-    }
-    return out;
-  }, [hasPlan, conferences, committedItems]);
-
-  const addToPlanMutation = useMutation({
-    mutationFn: (conferenceId: string) =>
-      callSetPlanItemStatus({
-        data: { planId: planQuery.data!.plan.id, conferenceId, planStatus: "shortlist" },
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["active-plan"] });
-      toast.success("Added to plan as Shortlist");
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to add"),
-  });
+    if (!hasPlan || showAll) return conferences;
+    return conferences.filter((c) => committedIds.has(c.id));
+  }, [hasPlan, showAll, conferences, committedIds]);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["conferences"] });
 
-  const statusMutation = useMutation({
-    mutationFn: (v: { id: string; status: DecisionStatus }) => callConfSetStatus({ data: v }),
-    onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update"),
-  });
   const repMutation = useMutation({
     mutationFn: (v: { id: string; rep: string }) => callConfToggleRep({ data: v }),
     onSuccess: invalidate,
@@ -151,29 +121,16 @@ function PlanningPage() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [viewOverride, setViewOverride] = useState<ViewMode | null>(null);
   const view: ViewMode = viewOverride ?? (hasPlan ? "timeline" : "table");
-  const [panelOpen, setPanelOpen] = useState(true);
 
-  const filtered = useMemo(() => applyFilters(sourceConferences, filters), [sourceConferences, filters]);
+  const filtered = useMemo(
+    () => applyFilters(sourceConferences, filters, committedIds),
+    [sourceConferences, filters, committedIds],
+  );
 
   const stats = useMemo(() => {
-    const gaps = sourceConferences.filter(isCoverageGap);
-    const going = sourceConferences.filter((c) => c.status === "Going").length;
-    const considering = sourceConferences.filter((c) => c.status === "Considering").length;
-    const passed = sourceConferences.filter((c) => c.status === "Passed").length;
-    return { total: sourceConferences.length, gaps: gaps.length, going, considering, passed };
-  }, [sourceConferences]);
-
-  const applyInsight = (insight: Insight) => {
-    if (!insight.action) return;
-    const next = { ...DEFAULT_FILTERS };
-    switch (insight.action.kind) {
-      case "filter-ids": next.ids = insight.action.ids; break;
-      case "filter-vertical": next.verticals = [insight.action.vertical]; break;
-      case "filter-region": next.regions = [insight.action.region]; break;
-      case "filter-gaps": next.gapsOnly = true; break;
-    }
-    setFilters(next);
-  };
+    const gaps = sourceConferences.filter((c) => isCoverageGap(c, committedIds)).length;
+    return { total: sourceConferences.length, gaps };
+  }, [sourceConferences, committedIds]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -181,116 +138,106 @@ function PlanningPage() {
         rightSlot={
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <AgentStatusButton />
-            <Stat label={hasPlan ? "In plan" : "Conferences"} value={stats.total} />
+            <Stat label={hasPlan && !showAll ? "In plan" : "Conferences"} value={stats.total} />
             <Stat label="Coverage gaps" value={stats.gaps} accent={stats.gaps > 0 ? "text-red-700" : "text-foreground"} />
-            <button
-              type="button"
-              onClick={() => setPanelOpen((v) => !v)}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
-            >
-              {panelOpen ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRightOpen className="h-3.5 w-3.5" />}
-              {panelOpen ? "Hide" : "Insights"}
-            </button>
           </div>
         }
       />
 
-      <main className="mx-auto flex max-w-[1600px] gap-4 px-6 py-6">
-        <div className="flex-1 min-w-0 space-y-4">
-          {!isLoading && (hasPlan ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3">
+      <main className="mx-auto max-w-[1600px] space-y-4 px-6 py-6">
+        {!isLoading && (hasPlan ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">{planQuery.data?.plan.name}</h2>
+              <p className="text-xs text-muted-foreground">
+                {committedIds.size} approved conference{committedIds.size === 1 ? "" : "s"} — your committed plan for {planQuery.data?.plan.year}.
+              </p>
+            </div>
+            <Button asChild size="sm">
+              <Link to="/planning/build">
+                <Pencil className="mr-1 h-3.5 w-3.5" /> Build / edit plan
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-400/60 bg-amber-50 px-5 py-3 dark:bg-amber-950/30">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300">
+                <Sparkles className="h-4 w-4" />
+              </div>
               <div>
-                <h2 className="text-sm font-semibold text-foreground">{planQuery.data?.plan.name}</h2>
+                <h2 className="text-sm font-semibold text-foreground">No annual plan built for 2026 yet</h2>
                 <p className="text-xs text-muted-foreground">
-                  {committedItems.length} approved conference{committedItems.length === 1 ? "" : "s"} — your committed plan for {planQuery.data?.plan.year}.
+                  You're seeing the full catalog. Pick the must-go conferences to lock the plan.
                 </p>
               </div>
-              <Button asChild size="sm" variant="outline">
-                <Link to="/planning/build">
-                  <Pencil className="mr-1 h-3.5 w-3.5" /> Edit plan
-                </Link>
-              </Button>
             </div>
-          ) : (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-400/60 bg-amber-50 px-5 py-3 dark:bg-amber-950/30">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300">
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground">No annual plan built for 2026 yet</h2>
-                  <p className="text-xs text-muted-foreground">
-                    You're seeing the full catalog. Set your budget and pick the must-go conferences to lock the plan.
-                  </p>
-                </div>
-              </div>
-              <Button asChild size="sm">
-                <Link to="/planning/build">
-                  Build the plan <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                </Link>
-              </Button>
-            </div>
-          ))}
-
-          <FilterBar filters={filters} onChange={setFilters} />
-
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-xs text-muted-foreground">
-              {isLoading ? "Loading…" : <>Showing <span className="font-medium text-foreground">{filtered.length}</span> of {stats.total} {hasPlan ? "approved" : "conferences"}</>}
-              <span className="mx-2 text-border">|</span>
-              <span className="inline-flex items-center gap-1">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Going <span className="font-medium text-foreground tabular-nums">{stats.going}</span>
-              </span>
-              <span className="mx-1.5 text-border">·</span>
-              <span className="inline-flex items-center gap-1">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-500" />
-                Considering <span className="font-medium text-foreground tabular-nums">{stats.considering}</span>
-              </span>
-              <span className="mx-1.5 text-border">·</span>
-              <span className="inline-flex items-center gap-1">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-400" />
-                Passed <span className="font-medium text-foreground tabular-nums">{stats.passed}</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <ExportButton conferences={filtered} />
-              <ViewToggle value={view} onChange={setViewOverride} />
-            </div>
+            <Button asChild size="sm">
+              <Link to="/planning/build">
+                Build / edit plan <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Button>
           </div>
+        ))}
 
-          {view === "table" && (
-            <ConferenceTable
-              conferences={filtered}
-              onToggleRep={(id, rep) => repMutation.mutate({ id, rep })}
-              onSetStatus={(id, status) => statusMutation.mutate({ id, status })}
-              onUpdateConference={(c) => updateMutation.mutate(c)}
-              planItemConferenceIds={planItemConfIds}
-              onAddToPlan={!hasPlan && planQuery.data ? (id) => addToPlanMutation.mutate(id) : undefined}
-              activePlanName={planQuery.data?.plan.name}
-            />
-          )}
-          {view === "map" && (
-            <MapView
-              conferences={filtered}
-              onOpenInTable={(id) => { setFilters({ ...DEFAULT_FILTERS, ids: [id] }); setViewOverride("table"); }}
-            />
-          )}
-          {view === "timeline" && (
-            <TimelineView
-              conferences={filtered}
-              onSetStatus={(id, status) => statusMutation.mutate({ id, status })}
-              onOpenInTable={(id) => { setFilters({ ...DEFAULT_FILTERS, ids: [id] }); setViewOverride("table"); }}
-            />
-          )}
+        <FilterBar filters={filters} onChange={setFilters} />
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="text-xs text-muted-foreground">
+            {isLoading ? "Loading…" : <>Showing <span className="font-medium text-foreground">{filtered.length}</span> of {stats.total} {hasPlan && !showAll ? "in plan" : "conferences"}</>}
+          </div>
+          <div className="flex items-center gap-2">
+            {hasPlan && (
+              <div className="inline-flex items-center rounded-md border border-border bg-card p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setShowAll(false)}
+                  className={cn(
+                    "rounded px-3 py-1.5 text-xs font-medium transition",
+                    !showAll ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  In plan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAll(true)}
+                  className={cn(
+                    "rounded px-3 py-1.5 text-xs font-medium transition",
+                    showAll ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  Show all (industry)
+                </button>
+              </div>
+            )}
+            <ExportButton conferences={filtered} />
+            <ViewToggle value={view} onChange={setViewOverride} />
+          </div>
         </div>
 
-        {panelOpen && (
-          <DecisionPanel
-            conferences={sourceConferences}
-            onClose={() => setPanelOpen(false)}
-            onSetStatus={(id, status) => statusMutation.mutate({ id, status })}
-            onApplyInsight={applyInsight}
+        {view === "table" && (
+          <ConferenceTable
+            conferences={filtered}
+            onToggleRep={(id, rep) => repMutation.mutate({ id, rep })}
+            onUpdateConference={(c) => updateMutation.mutate(c)}
+            planItemConferenceIds={planItemConfIds}
+            committedIds={committedIds}
+            activePlanName={planQuery.data?.plan.name}
+          />
+        )}
+        {view === "map" && (
+          <MapView
+            conferences={filtered}
+            committedIds={committedIds}
+            onOpenInTable={(id) => { setFilters({ ...DEFAULT_FILTERS, ids: [id] }); setViewOverride("table"); }}
+          />
+        )}
+        {view === "timeline" && (
+          <TimelineView
+            conferences={filtered}
+            committedIds={committedIds}
+            onOpenInTable={(id) => { setFilters({ ...DEFAULT_FILTERS, ids: [id] }); setViewOverride("table"); }}
           />
         )}
       </main>
@@ -328,7 +275,7 @@ function ExportButton({ conferences }: { conferences: Conference[] }) {
   const exportCsv = () => {
     const headers = [
       "Name","Start Date","End Date","City","Country","Region","Vertical",
-      "Audience","Tier","ICP Score","Status","Assigned Reps","Tags","Source URL",
+      "Audience","Tier","ICP Score","Assigned Reps","Tags","Source URL",
     ];
     const escape = (v: unknown) => {
       const s = v == null ? "" : String(v);
@@ -336,7 +283,7 @@ function ExportButton({ conferences }: { conferences: Conference[] }) {
     };
     const rows = conferences.map((c) => [
       c.name, c.startDate, c.endDate, c.city, c.country, c.region, c.vertical,
-      c.estimatedAudienceSize, c.tier, c.icpScore, c.status,
+      c.estimatedAudienceSize, c.tier, c.icpScore,
       (c.assignedReps ?? []).join("; "), (c.tags ?? []).join("; "), c.sourceUrl ?? "",
     ].map(escape).join(","));
     const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");

@@ -65,7 +65,9 @@ export interface Conference {
   status: DecisionStatus;
 }
 
-export function isCoverageGap(c: Conference): boolean {
+export function isCoverageGap(c: Conference, committedIds?: Set<string>): boolean {
+  if (committedIds) return committedIds.has(c.id) && c.assignedReps.length === 0;
+  // Legacy fallback (status system retired in UI; kept for any non-plan-aware callers).
   return c.status === "Going" && c.assignedReps.length === 0;
 }
 
