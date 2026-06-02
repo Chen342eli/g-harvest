@@ -526,16 +526,6 @@ function PersonBriefing({ personId }: { personId: string }) {
       ? "border-temp-cold/40 from-temp-cold/20 text-temp-cold"
       : "border-white/15 from-white/10 text-brand-base-foreground/70";
 
-  const copyNudge = async () => {
-    if (!person.aiNudge) return;
-    try {
-      await navigator.clipboard.writeText(`Subject: ${person.aiNudge.subject}\n\n${person.aiNudge.body}`);
-      toast.success("Nudge copied");
-    } catch {
-      toast.error("Could not copy");
-    }
-  };
-
   const action = signalAction(person.aiSignal);
 
   return (
