@@ -69,10 +69,6 @@ export function AfterPhase({ conferenceId }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-dashed border-border bg-card/40 px-4 py-2 text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">Wrap-up mode.</span> Plug gaps from
-        scanner exports, then push the right leads into the Follow-ups inbox.
-      </div>
 
       {/* Missing-info section */}
       <section className="space-y-2">
