@@ -369,8 +369,12 @@ function PersonDetail({
 
       <BadgeList badges={badges} />
 
+      <div className="rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
+        🤖 AI relationship read — coming in Phase 2
+      </div>
+
       <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Arc</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Touchpoints</h3>
         <ol className="space-y-2">
           {encounters.map((e) => (
             <li key={e.id} className="rounded-lg border border-border bg-background p-3">
@@ -391,9 +395,6 @@ function PersonDetail({
         </ol>
       </div>
 
-      <div className="rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
-        🤖 AI relationship read — coming in Phase 2
-      </div>
     </div>
   );
 }
