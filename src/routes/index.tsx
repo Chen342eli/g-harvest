@@ -268,11 +268,11 @@ function NextUpHero({
       <div className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-brand-base/10 blur-3xl" />
 
       <div className="relative grid gap-6 sm:grid-cols-[auto_1fr] sm:items-start">
-        {/* Event logo */}
+        {/* Event logo — replace EVENT_LOGO_URL below when the next-up event changes */}
         <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background/80 shadow-sm sm:h-28 sm:w-28">
-          {conference.logoUrl ? (
+          {EVENT_LOGO_URL ? (
             <img
-              src={conference.logoUrl}
+              src={EVENT_LOGO_URL}
               alt={`${conference.name} logo`}
               className="h-full w-full object-contain"
             />
