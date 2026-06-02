@@ -297,20 +297,8 @@ export function GameTimeOverlay({ onExit }: Props) {
             {/* Capture controls */}
             <div className="mt-auto border-t border-white/10 bg-white/[0.04] p-6 space-y-5">
 
-              {/* Helper banner — clarifies what's required vs optional */}
-              <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] leading-relaxed text-brand-base-foreground/70">
-                <span className="font-bold text-brand-base-foreground">Did you meet them just now?</span>{" "}
-                Tap a temperature to log it. Everything else is optional.
-                {" "}If you were only checking a name,{" "}
-                <button
-                  type="button"
-                  onClick={closeSheet}
-                  className="font-bold text-brand-accent underline-offset-2 hover:underline"
-                >
-                  close without saving
-                </button>
-                .
-              </div>
+
+
 
               {/* Temperature — REQUIRED */}
               <div>
