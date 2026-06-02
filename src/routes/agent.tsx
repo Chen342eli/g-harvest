@@ -42,6 +42,7 @@ function AgentPage() {
   const fetchRuns = useServerFn(listAgentRuns);
   const fetchFlags = useServerFn(listChangeFlags);
   const resolve = useServerFn(resolveFlag);
+  const triggerRun = useServerFn(runAgentNow);
 
   const { data: runs = [] } = useQuery({ queryKey: ["agentRuns"], queryFn: () => fetchRuns(), refetchInterval: 15_000 });
   const { data: flags = [] } = useQuery({ queryKey: ["changeFlags"], queryFn: () => fetchFlags() });
@@ -53,9 +54,34 @@ function AgentPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["changeFlags"] });
       qc.invalidateQueries({ queryKey: ["conferences"] });
-      toast.success("Flag resolved");
     },
   });
+
+  const runMutation = useMutation({
+    mutationFn: () => triggerRun(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agentRuns"] });
+      qc.invalidateQueries({ queryKey: ["changeFlags"] });
+      qc.invalidateQueries({ queryKey: ["conferences"] });
+      toast.success("Agent run complete");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Agent run failed"),
+  });
+
+  const acceptAllMutation = useMutation({
+    mutationFn: async () => {
+      for (const f of flags) {
+        await resolve({ data: { id: f.id, action: "accept" } });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["changeFlags"] });
+      qc.invalidateQueries({ queryKey: ["conferences"] });
+      toast.success("All pending flags accepted");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to accept all"),
+  });
+
 
   return (
     <div className="min-h-screen bg-background">
