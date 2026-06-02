@@ -109,16 +109,16 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 
   /* Grain brand + traffic-light semantic tokens (Unit 2) */
-  --brand-base: oklch(0.30 0.09 255);          /* dark blue */
+  --brand-base: oklch(0.27 0.07 255);            /* deep ink-navy (≈ #15233B) */
   --brand-base-foreground: oklch(0.98 0.003 247);
-  --brand-accent: oklch(0.78 0.14 80);         /* grain gold */
-  --brand-accent-foreground: oklch(0.22 0.04 250);
+  --brand-accent: oklch(0.72 0.13 175);          /* emerald-teal (≈ #16B8A6) */
+  --brand-accent-foreground: oklch(0.20 0.03 250);
 
-  --temp-hot: oklch(0.65 0.22 25);             /* warm red/orange */
+  --temp-hot: oklch(0.63 0.22 25);               /* red-orange (≈ #E5503B) */
   --temp-hot-foreground: oklch(0.99 0 0);
-  --temp-warm: oklch(0.82 0.16 80);            /* amber */
-  --temp-warm-foreground: oklch(0.22 0.04 60);
-  --temp-cold: oklch(0.68 0.03 250);           /* cool slate */
+  --temp-warm: oklch(0.80 0.15 80);              /* amber (≈ #E5A53C) */
+  --temp-warm-foreground: oklch(0.24 0.04 60);
+  --temp-cold: oklch(0.70 0.03 250);             /* cool slate (≈ #98A1B2) */
   --temp-cold-foreground: oklch(0.99 0 0);
 
   --signal-buying: oklch(0.62 0.17 150);       /* green - moved-to-ICP */
