@@ -4,6 +4,7 @@ import { usePeopleData } from "@/lib/people-store";
 import { useSchedule } from "@/lib/schedule-store";
 import { useSettings } from "@/lib/settings-store";
 import { useHotAccounts, isHotAccountCompany } from "@/lib/hot-accounts-store";
+import { openPersonDrawer } from "@/lib/person-drawer-store";
 import { HotLeadsSidebar } from "./HotLeadsSidebar";
 import { cn } from "@/lib/utils";
 
