@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { TopNav } from "@/components/TopNav";
 import { useSettings, updateSettings } from "@/lib/settings-store";
 import { resetSeed } from "@/lib/people-store";
+import { listConferences } from "@/lib/conferences.functions";
+import { DEMO_STATES, loadDemoState, type DemoState } from "@/lib/demo-data";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
@@ -11,12 +15,47 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsPage() {
   const s = useSettings();
+  const fetchConfs = useServerFn(listConferences);
+  const { data: conferences = [] } = useQuery({
+    queryKey: ["conferences"],
+    queryFn: () => fetchConfs(),
+  });
+
+  const handleLoadDemo = (state: DemoState) => {
+    loadDemoState(state, conferences);
+    toast.success(`Loaded demo ${state}. Reloading…`);
+    setTimeout(() => window.location.reload(), 350);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
 
       <main className="mx-auto max-w-[680px] space-y-6 px-6 py-6">
+        <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div>
+            <h2 className="text-sm font-semibold">Demo data</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Force-overwrites all local people, encounters, hot accounts, schedule and the active
+              conference / rep with one of three coherent snapshots. Use this to reset the demo to a
+              known state.
+            </p>
+          </div>
+          <div className="grid gap-2">
+            {DEMO_STATES.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => handleLoadDemo(d.id)}
+                className="rounded-md border border-border bg-background p-3 text-left transition hover:border-foreground/40"
+              >
+                <div className="text-sm font-semibold text-foreground">{d.title}</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">{d.desc}</div>
+              </button>
+            ))}
+          </div>
+        </section>
+
         <section className="rounded-lg border border-border bg-card p-4 space-y-3">
           <h2 className="text-sm font-semibold">Email recap (Resend)</h2>
           <p className="text-xs text-muted-foreground">
