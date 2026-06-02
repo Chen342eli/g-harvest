@@ -25,12 +25,16 @@ function SettingsPage() {
   const [busy, setBusy] = useState<DemoState | null>(null);
   const [done, setDone] = useState<DemoState | null>(null);
 
-  const handleLoadDemo = (state: DemoState) => {
+  const handleLoadDemo = async (state: DemoState) => {
     setBusy(state);
     try {
-      loadDemoState(state, conferences);
+      await loadDemoState(state, conferences);
       setDone(state);
-      toast.success(`Demo ${state} loaded — reloading…`);
+      toast.success(
+        state === "A"
+          ? "Demo A loaded — conferences cleared, reloading…"
+          : `Demo ${state} loaded — reloading…`,
+      );
       setTimeout(() => window.location.reload(), 900);
     } catch (err) {
       setBusy(null);
