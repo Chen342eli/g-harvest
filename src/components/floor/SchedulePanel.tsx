@@ -9,6 +9,8 @@ import {
   type ScheduleKind,
 } from "@/lib/schedule-store";
 import { SALES_TEAM } from "@/lib/conferences";
+import { usePeopleData } from "@/lib/people-store";
+import { openPersonDrawer } from "@/lib/person-drawer-store";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -31,7 +33,20 @@ const KIND_COLOR: Record<ScheduleKind, string> = {
 
 export function SchedulePanel({ conferenceId, conferenceStartDate, conferenceEndDate }: Props) {
   const items = useSchedule();
+  const peopleData = usePeopleData();
   const [adding, setAdding] = useState(false);
+
+  const findPersonId = (name: string | undefined): string | null => {
+    if (!name) return null;
+    const target = name.trim().toLowerCase();
+    if (!target) return null;
+    const match = peopleData.people.find((p) => {
+      if (p.fullName.toLowerCase() === target) return true;
+      return p.nameVariations.some((v) => v.toLowerCase() === target);
+    });
+    return match?.id ?? null;
+  };
+
 
   const days = useMemo(() => {
     const out: string[] = [];
@@ -140,14 +155,32 @@ export function SchedulePanel({ conferenceId, conferenceStartDate, conferenceEnd
                           <div className="min-w-0">
                             <div className="truncate text-sm font-medium text-foreground">
                               {it.kind === "meeting" && it.personName ? (
-                                <span className="inline-flex items-center gap-1">
-                                  <User className="h-3 w-3 text-muted-foreground" />
-                                  {it.personName}
-                                </span>
+                                (() => {
+                                  const personId = findPersonId(it.personName);
+                                  const content = (
+                                    <>
+                                      <User className="h-3 w-3 text-muted-foreground" />
+                                      {it.personName}
+                                    </>
+                                  );
+                                  return personId ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => openPersonDrawer(personId)}
+                                      className="inline-flex items-center gap-1 rounded text-left hover:text-primary hover:underline"
+                                      title="Open contact card"
+                                    >
+                                      {content}
+                                    </button>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1">{content}</span>
+                                  );
+                                })()
                               ) : (
                                 it.title
                               )}
                             </div>
+
                             <div className="text-[11px] text-muted-foreground">
                               {it.repId ?? "Unassigned"}
                               {it.location ? (
