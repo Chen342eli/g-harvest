@@ -1,11 +1,26 @@
 export type Region = "North America" | "Europe" | "APAC" | "Middle East" | "LATAM";
-export type Vertical = "Payments" | "Fintech" | "Treasury" | "Travel" | "SaaS" | "General Tech";
+export type Vertical =
+  | "Payments"
+  | "Fintech"
+  | "Treasury"
+  | "Embedded Finance"
+  | "Neobanking"
+  | "Cross-Border Payments"
+  | "Travel Tech";
 export type Tier = "Tier 1" | "Tier 2" | "Tier 3";
 export type DecisionStatus = "Considering" | "Going" | "Passed";
 
 export const DECISION_STATUSES: DecisionStatus[] = ["Considering", "Going", "Passed"];
 export const REGIONS: Region[] = ["North America", "Europe", "APAC", "Middle East", "LATAM"];
-export const VERTICALS: Vertical[] = ["Payments", "Fintech", "Treasury", "Travel", "SaaS", "General Tech"];
+export const VERTICALS: Vertical[] = [
+  "Payments",
+  "Fintech",
+  "Treasury",
+  "Embedded Finance",
+  "Neobanking",
+  "Cross-Border Payments",
+  "Travel Tech",
+];
 
 export const SCORE_WEIGHTS = {
   verticalFit: 0.4,
@@ -234,7 +249,7 @@ const RAW: RawConference[] = [
     name: "Phocuswright Conference",
     startDate: "2026-11-16", endDate: "2026-11-19",
     city: "Fort Lauderdale", country: "USA", region: "North America",
-    vertical: "Travel", estimatedAudienceSize: 2000,
+    vertical: "Travel Tech", estimatedAudienceSize: 2000,
     tags: ["travel tech", "marketplaces", "OTA"],
     sourceUrl: "https://www.phocuswright.com/",
     subScores: { verticalFit: 62, decisionMakerPresence: 55, audienceQuality: 55, accessibility: 65, pastPerformance: 50 },
@@ -245,7 +260,7 @@ const RAW: RawConference[] = [
     name: "ITB Berlin",
     startDate: "2026-03-03", endDate: "2026-03-05",
     city: "Berlin", country: "Germany", region: "Europe",
-    vertical: "Travel", estimatedAudienceSize: 90000,
+    vertical: "Travel Tech", estimatedAudienceSize: 90000,
     tags: ["travel trade", "tourism", "B2B"],
     sourceUrl: "https://www.itb.com/",
     subScores: { verticalFit: 60, decisionMakerPresence: 45, audienceQuality: 55, accessibility: 85, pastPerformance: 50 },
@@ -256,7 +271,7 @@ const RAW: RawConference[] = [
     name: "Web Summit",
     startDate: "2026-11-02", endDate: "2026-11-05",
     city: "Lisbon", country: "Portugal", region: "Europe",
-    vertical: "General Tech", estimatedAudienceSize: 70000,
+    vertical: "Fintech", estimatedAudienceSize: 70000,
     tags: ["tech", "startups", "broad"],
     sourceUrl: "https://websummit.com/",
     subScores: { verticalFit: 35, decisionMakerPresence: 40, audienceQuality: 45, accessibility: 85, pastPerformance: 50 },
@@ -267,7 +282,7 @@ const RAW: RawConference[] = [
     name: "CES",
     startDate: "2026-01-06", endDate: "2026-01-09",
     city: "Las Vegas", country: "USA", region: "North America",
-    vertical: "General Tech", estimatedAudienceSize: 115000,
+    vertical: "Fintech", estimatedAudienceSize: 115000,
     tags: ["consumer tech", "hardware", "broad"],
     sourceUrl: "https://www.ces.tech/",
     subScores: { verticalFit: 20, decisionMakerPresence: 30, audienceQuality: 40, accessibility: 65, pastPerformance: 50 },
