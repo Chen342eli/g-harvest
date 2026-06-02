@@ -64,6 +64,11 @@ const FloorRoute = FloorRouteImport.update({
   path: '/floor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FloorRoute = FloorRouteImport.update({
+  id: '/floor',
+  path: '/floor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogRoute = CatalogRouteImport.update({
   id: '/catalog',
   path: '/catalog',
