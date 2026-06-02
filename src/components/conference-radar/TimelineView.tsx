@@ -354,18 +354,19 @@ function LegendSwatch({ className, label }: { className: string; label: string }
 function BarChip({
   bar,
   top,
-  onSetStatus,
   onOpenInTable,
+  committedIds,
 }: {
   bar: PlacedBar;
   top: number;
-  onSetStatus?: (id: string, status: DecisionStatus) => void;
   onOpenInTable?: (id: string) => void;
+  committedIds?: Set<string>;
 }) {
   const [open, setOpen] = useState(false);
   const c = bar.conference;
   const palette = TIER_FILL[c.tier];
-  const gap = isCoverageGap(c);
+  const gap = isCoverageGap(c, committedIds);
+  const inPlan = committedIds?.has(c.id) ?? false;
 
   const start = new Date(c.startDate);
   const end = new Date(c.endDate);
@@ -376,15 +377,8 @@ function BarChip({
         ? `${start.getDate()}–${end.getDate()} ${MONTHS[start.getMonth()]}`
         : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]}`;
 
-  // Fill style by status.
-  const fillClass =
-    c.status === "Going"
-      ? palette.solid
-      : c.status === "Considering"
-        ? palette.soft
-        : c.status === "Passed"
-          ? cn(palette.soft, "opacity-50")
-          : palette.outline;
+  // Fill style: solid when in committed plan, outline otherwise.
+  const fillClass = inPlan ? palette.solid : palette.outline;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -411,14 +405,7 @@ function BarChip({
                   aria-hidden
                 />
               )}
-              <span
-                className={cn(
-                  "truncate pl-1",
-                  c.status === "Passed" && "line-through",
-                )}
-              >
-                {c.name}
-              </span>
+              <span className="truncate pl-1">{c.name}</span>
               <span className="ml-auto hidden shrink-0 pl-1 text-[10px] opacity-80 tabular-nums sm:inline">
                 {range}
               </span>
@@ -433,14 +420,14 @@ function BarChip({
         <TooltipContent side="top" className="max-w-xs">
           <div className="font-medium">{c.name}</div>
           <div className="text-xs opacity-80">{range} · {c.tier}</div>
-          <div className="text-xs opacity-80">Status: {c.status}</div>
+          {inPlan && <div className="text-xs opacity-80">In plan</div>}
           {c.assignedReps.length > 0 && (
             <div className="text-xs opacity-80">Reps: {c.assignedReps.join(", ")}</div>
           )}
         </TooltipContent>
       </Tooltip>
       <PopoverContent align="start" className="w-auto p-3">
-        <ConferenceDetail conference={c} onSetStatus={onSetStatus} onOpenInTable={onOpenInTable} />
+        <ConferenceDetail conference={c} onOpenInTable={onOpenInTable} committedIds={committedIds} />
       </PopoverContent>
     </Popover>
   );
