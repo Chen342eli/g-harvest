@@ -90,13 +90,10 @@ export function ActiveConferenceBar() {
           <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         </div>
 
-        <span className="text-muted-foreground">·</span>
-
-        <span className="font-semibold uppercase tracking-wider text-muted-foreground">You</span>
         <select
           value={settings.activeRepId ?? ""}
           onChange={(e) => updateSettings({ activeRepId: e.target.value || undefined })}
-          className="rounded-md border border-border bg-background py-1 px-2 text-xs font-medium text-foreground"
+          className="ml-auto rounded-md border border-border bg-background py-0.5 px-1.5 text-[11px] font-medium text-foreground"
         >
           <option value="">—</option>
           {SALES_TEAM.map((r) => (
@@ -105,6 +102,7 @@ export function ActiveConferenceBar() {
             </option>
           ))}
         </select>
+
 
         {!activeId && (
           <span className="text-amber-600">
