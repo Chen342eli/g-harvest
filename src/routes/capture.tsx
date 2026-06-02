@@ -108,7 +108,7 @@ function CapturePage() {
       if (company) patch.currentCompany = company;
       if (role) patch.currentRole = role;
       if (vertical) patch.currentVertical = vertical as EncounterVertical;
-      if (linkedIn) patch.linkedInUrl = linkedIn;
+      
       if (Object.keys(patch).length) updatePerson(matchedId, patch);
       person = { ...existing, ...patch };
     } else {
