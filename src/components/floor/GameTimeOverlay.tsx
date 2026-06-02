@@ -274,6 +274,11 @@ export function GameTimeOverlay({ onExit }: Props) {
           </div>
 
           <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            {draft.mode === "existing" && draft.personId && (
+              <ExistingPersonSummary personId={draft.personId} />
+            )}
+
+
             {/* Temperature - primary */}
             <div className="grid grid-cols-3 gap-2">
               {(["hot", "warm", "cold"] as Temperature[]).map((t) => {
