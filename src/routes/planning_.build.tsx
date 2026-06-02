@@ -130,10 +130,25 @@ function PlanBuilderPage() {
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
                 Planning wizard · {plan.name}
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                    plan.status === "approved"
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                      : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+                  )}
+                >
+                  {plan.status === "approved" ? "Approved" : "Draft"}
+                </span>
               </div>
               <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                 Build your {plan.year} plan
               </h1>
+              {plan.status === "approved" && (
+                <p className="text-xs text-muted-foreground">
+                  Editing an approved plan — re-approve at the end to publish your changes.
+                </p>
+              )}
             </header>
 
             <Stepper current={step} onJump={setStep} />
