@@ -9,14 +9,44 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RecapRouteImport } from './routes/recap'
 import { Route as PlanningRouteImport } from './routes/planning'
+import { Route as PeopleRouteImport } from './routes/people'
+import { Route as ImportRouteImport } from './routes/import'
+import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicAgentRunRouteImport } from './routes/api/public/agent/run'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecapRoute = RecapRouteImport.update({
+  id: '/recap',
+  path: '/recap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlanningRoute = PlanningRouteImport.update({
   id: '/planning',
   path: '/planning',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PeopleRoute = PeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportRoute = ImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptureRoute = CaptureRouteImport.update({
+  id: '/capture',
+  path: '/capture',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentRoute = AgentRouteImport.update({
@@ -38,44 +68,127 @@ const ApiPublicAgentRunRoute = ApiPublicAgentRunRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
+  '/capture': typeof CaptureRoute
+  '/import': typeof ImportRoute
+  '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
+  '/recap': typeof RecapRoute
+  '/settings': typeof SettingsRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
+  '/capture': typeof CaptureRoute
+  '/import': typeof ImportRoute
+  '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
+  '/recap': typeof RecapRoute
+  '/settings': typeof SettingsRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
+  '/capture': typeof CaptureRoute
+  '/import': typeof ImportRoute
+  '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
+  '/recap': typeof RecapRoute
+  '/settings': typeof SettingsRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/agent' | '/planning' | '/api/public/agent/run'
+  fullPaths:
+    | '/'
+    | '/agent'
+    | '/capture'
+    | '/import'
+    | '/people'
+    | '/planning'
+    | '/recap'
+    | '/settings'
+    | '/api/public/agent/run'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agent' | '/planning' | '/api/public/agent/run'
-  id: '__root__' | '/' | '/agent' | '/planning' | '/api/public/agent/run'
+  to:
+    | '/'
+    | '/agent'
+    | '/capture'
+    | '/import'
+    | '/people'
+    | '/planning'
+    | '/recap'
+    | '/settings'
+    | '/api/public/agent/run'
+  id:
+    | '__root__'
+    | '/'
+    | '/agent'
+    | '/capture'
+    | '/import'
+    | '/people'
+    | '/planning'
+    | '/recap'
+    | '/settings'
+    | '/api/public/agent/run'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentRoute: typeof AgentRoute
+  CaptureRoute: typeof CaptureRoute
+  ImportRoute: typeof ImportRoute
+  PeopleRoute: typeof PeopleRoute
   PlanningRoute: typeof PlanningRoute
+  RecapRoute: typeof RecapRoute
+  SettingsRoute: typeof SettingsRoute
   ApiPublicAgentRunRoute: typeof ApiPublicAgentRunRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recap': {
+      id: '/recap'
+      path: '/recap'
+      fullPath: '/recap'
+      preLoaderRoute: typeof RecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/planning': {
       id: '/planning'
       path: '/planning'
       fullPath: '/planning'
       preLoaderRoute: typeof PlanningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/people': {
+      id: '/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof PeopleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/import': {
+      id: '/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capture': {
+      id: '/capture'
+      path: '/capture'
+      fullPath: '/capture'
+      preLoaderRoute: typeof CaptureRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agent': {
@@ -105,7 +218,12 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentRoute: AgentRoute,
+  CaptureRoute: CaptureRoute,
+  ImportRoute: ImportRoute,
+  PeopleRoute: PeopleRoute,
   PlanningRoute: PlanningRoute,
+  RecapRoute: RecapRoute,
+  SettingsRoute: SettingsRoute,
   ApiPublicAgentRunRoute: ApiPublicAgentRunRoute,
 }
 export const routeTree = rootRouteImport
