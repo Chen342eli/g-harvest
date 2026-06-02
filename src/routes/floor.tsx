@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { CalendarCheck, ChevronDown, ChevronRight } from "lucide-react";
 import { TopNav } from "@/components/TopNav";
 import { listConferences } from "@/lib/conferences.functions";
+import { getActivePlan } from "@/lib/planning.functions";
 import { useSettings, updateSettings } from "@/lib/settings-store";
 import { SALES_TEAM } from "@/lib/conferences";
 import { GameTimeOverlay } from "@/components/floor/GameTimeOverlay";
