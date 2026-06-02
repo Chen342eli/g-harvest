@@ -680,15 +680,18 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           // Track the newly-inserted conference so later items in this aggregator
           // (or later candidates this run) deduplicate against it.
           if (inserted?.id) {
-            existingByKey.set(dedupKey, {
+            const newRow: ExistingRow = {
               id: inserted.id,
               name: parsed.name,
               start_date: startDate,
               end_date: endDate,
               city,
+              country,
               estimated_audience_size: audience,
               source_url: hit.url,
-            });
+            };
+            existingByKey.set(dedupKey, newRow);
+            existingList.push(newRow);
           }
 
           const reviewReasons: string[] = [];
