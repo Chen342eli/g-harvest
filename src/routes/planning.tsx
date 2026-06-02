@@ -149,7 +149,8 @@ function PlanningPage() {
   });
 
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
-  const [view, setView] = useState<ViewMode>("table");
+  const [viewOverride, setViewOverride] = useState<ViewMode | null>(null);
+  const view: ViewMode = viewOverride ?? (hasPlan ? "timeline" : "table");
   const [panelOpen, setPanelOpen] = useState(true);
 
   const filtered = useMemo(() => applyFilters(sourceConferences, filters), [sourceConferences, filters]);
