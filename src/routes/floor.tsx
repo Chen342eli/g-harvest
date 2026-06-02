@@ -72,7 +72,7 @@ function FloorPage() {
   const autoPhase: Phase = activeConf
     ? inferPhase(activeConf.startDate, activeConf.endDate)
     : "before";
-  const phase: Phase = phaseOverride ?? autoPhase;
+  const phase: Phase = phaseOverride ?? "before";
 
   const canEnterGameTime = !!activeConf && !!settings.activeRepId;
 
