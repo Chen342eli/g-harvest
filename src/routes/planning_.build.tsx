@@ -158,14 +158,23 @@ function PlanBuilderPage() {
               )}
             </header>
 
-            <Stepper current={step} onJump={setStep} />
-
-            <WizardFooter
-              step={step}
-              onBack={() => setStep((s) => (s > 1 ? ((s - 1) as StepId) : s))}
-              onNext={() => setStep((s) => (s < 4 ? ((s + 1) as StepId) : s))}
-              onApprove={onApprove}
-            />
+            <div className="flex items-center justify-between gap-3">
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setStep((s) => (s > 1 ? ((s - 1) as StepId) : s))} disabled={step === 1}>
+                <ArrowLeft className="mr-1 h-3 w-3" /> Back
+              </Button>
+              <div className="flex-1 flex justify-center">
+                <Stepper current={step} onJump={setStep} />
+              </div>
+              {step < 4 ? (
+                <Button size="sm" className="h-7 px-2 text-xs" onClick={() => setStep((s) => (s < 4 ? ((s + 1) as StepId) : s))}>
+                  Next <ArrowRight className="ml-1 h-3 w-3" />
+                </Button>
+              ) : (
+                <Button size="sm" className="h-7 px-2 text-xs" onClick={onApprove}>
+                  <CheckCircle2 className="mr-1 h-3 w-3" /> Approve
+                </Button>
+              )}
+            </div>
 
             <div className="rounded-lg border border-border bg-card p-5">
               {step === 1 && (
@@ -245,34 +254,6 @@ function Stepper({ current, onJump }: { current: StepId; onJump: (s: StepId) => 
   );
 }
 
-function WizardFooter({
-  step,
-  onBack,
-  onNext,
-  onApprove,
-}: {
-  step: StepId;
-  onBack: () => void;
-  onNext: () => void;
-  onApprove: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <Button variant="outline" size="sm" onClick={onBack} disabled={step === 1}>
-        <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back
-      </Button>
-      {step < 4 ? (
-        <Button size="sm" onClick={onNext}>
-          Next <ArrowRight className="ml-1 h-3.5 w-3.5" />
-        </Button>
-      ) : (
-        <Button size="sm" onClick={onApprove}>
-          <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Approve plan
-        </Button>
-      )}
-    </div>
-  );
-}
 
 /* ---------- Step 1 · Anchors ---------- */
 
