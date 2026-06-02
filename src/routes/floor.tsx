@@ -151,44 +151,37 @@ function FloorPage() {
         {/* Phase tabs */}
         {activeConf && (
           <div className="mx-auto max-w-[1600px] px-6 pb-3">
-            <div className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">
-              {(["before", "during", "after"] as const).map((p) => {
-                const active = p === phase;
-                const isAuto = p === autoPhase;
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPhaseOverride(p === autoPhase ? null : p)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
-                      active
-                        ? "bg-background text-foreground shadow"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {p}
-                    {isAuto && (
-                      <span
+            <div className="flex flex-col items-center gap-2">
+              <div className="inline-flex items-center rounded-full border border-border bg-muted/40 p-1 shadow-sm">
+                {(["before", "during", "after"] as const).map((p, idx) => {
+                  const active = p === phase;
+                  return (
+                    <div key={p} className="flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => setPhaseOverride(p)}
                         className={cn(
-                          "rounded-full px-1.5 py-0.5 text-[8px] font-medium normal-case tracking-normal",
+                          "rounded-full px-5 py-1.5 text-xs font-bold uppercase tracking-wider transition",
                           active
-                            ? "bg-temp-hot/15 text-temp-hot"
-                            : "bg-muted text-muted-foreground/70",
+                            ? "bg-background text-foreground shadow"
+                            : "text-muted-foreground hover:text-foreground",
                         )}
                       >
-                        now
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                        {p}
+                      </button>
+                      {idx < 2 && (
+                        <ChevronRight className="mx-0.5 h-3.5 w-3.5 text-muted-foreground/60" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <span className="text-[11px] text-muted-foreground">
+                {phase === "before" && "Plan meetings & line up Hot Accounts."}
+                {phase === "during" && "Capture leads as you meet them."}
+                {phase === "after" && "Clean up data & route to Follow-ups."}
+              </span>
             </div>
-            <span className="ml-3 text-[11px] text-muted-foreground">
-              {phase === "before" && "Plan meetings & line up Hot Accounts."}
-              {phase === "during" && "Capture leads as you meet them."}
-              {phase === "after" && "Clean up data & route to Follow-ups."}
-            </span>
           </div>
         )}
       </div>
