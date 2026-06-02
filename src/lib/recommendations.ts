@@ -91,7 +91,7 @@ export function buildRecommendations(args: {
     recommendations.push({
       id: `region_gap:${region}`,
       kind: "region_gap",
-      title: `No coverage in ${region}`,
+      title: `Recommendations to close the gap in ${region}`,
       detail: `${inRegion.length} candidate${inRegion.length === 1 ? "" : "s"} available. Top picks below.`,
       conferenceIds: top.map((c) => c.id),
     });
