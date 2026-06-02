@@ -33,15 +33,7 @@ function FollowUpsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-6 py-4">
-          <div>
-            <h1 className="text-base font-semibold tracking-tight text-foreground">Follow-ups</h1>
-            <p className="text-xs text-muted-foreground">Hot &amp; warm leads waiting for action</p>
-          </div>
-          <TopNav />
-        </div>
-      </header>
+      <TopNav />
 
       <main className="mx-auto max-w-[1100px] space-y-4 px-6 py-6">
         {rows.length === 0 ? (
