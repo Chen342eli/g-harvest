@@ -95,6 +95,22 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  /* Grain brand + traffic-light semantic tokens (Unit 2) */
+  --brand-base: oklch(0.22 0.04 250);          /* deep navy/ink */
+  --brand-base-foreground: oklch(0.98 0.003 247);
+  --brand-accent: oklch(0.78 0.14 80);         /* grain gold */
+  --brand-accent-foreground: oklch(0.22 0.04 250);
+
+  --temp-hot: oklch(0.65 0.22 25);             /* warm red/orange */
+  --temp-hot-foreground: oklch(0.99 0 0);
+  --temp-warm: oklch(0.82 0.16 80);            /* amber */
+  --temp-warm-foreground: oklch(0.22 0.04 60);
+  --temp-cold: oklch(0.68 0.03 250);           /* cool slate */
+  --temp-cold-foreground: oklch(0.99 0 0);
+
+  --signal-buying: oklch(0.62 0.17 150);       /* green - moved-to-ICP */
+  --signal-buying-foreground: oklch(0.99 0 0);
 }
 
 .dark {
