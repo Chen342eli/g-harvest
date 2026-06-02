@@ -67,46 +67,46 @@ export function AgentStatusButton() {
     : "bg-zinc-300";
 
   return (
-    <div className="flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5">
-      <div className="flex items-center gap-1.5">
-        <Bot className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Agent</span>
-      </div>
-      <div className="flex items-center gap-1.5 text-xs text-foreground">
-        <span className={`inline-block h-1.5 w-1.5 rounded-full ${statusColor}`} />
-        <span className="text-muted-foreground">{formatRelative(lastRun?.started_at)}</span>
-        {lastRun && (
-          <span className="text-muted-foreground">
-            · <span className="font-medium text-foreground">+{lastRun.added_count ?? 0}</span>
-          </span>
-        )}
-      </div>
+    <div
+      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2 py-1 text-[11px]"
+      title="Discovery agent"
+    >
+      <Bot className="h-3 w-3 text-muted-foreground" />
+      <span className={`inline-block h-1.5 w-1.5 rounded-full ${statusColor}`} />
+      <span className="text-muted-foreground">{formatRelative(lastRun?.started_at)}</span>
+      {lastRun ? (
+        <span className="font-medium text-foreground tabular-nums">
+          +{lastRun.added_count ?? 0}
+        </span>
+      ) : null}
       {running ? (
         <button
           type="button"
           onClick={() => cancelMutation.mutate()}
           disabled={cancelRequested || cancelMutation.isPending}
-          className="inline-flex items-center gap-1.5 rounded border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 hover:bg-amber-500/20 disabled:opacity-60 dark:text-amber-400"
+          className="inline-flex items-center gap-1 rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 font-medium text-amber-600 hover:bg-amber-500/20 disabled:opacity-60 dark:text-amber-400"
         >
           <Loader2 className="h-3 w-3 animate-spin" />
-          <span className="uppercase tracking-wide">{cancelRequested ? "Stopping…" : "Running"}</span>
-          {!cancelRequested && <Square className="h-2.5 w-2.5 fill-current" />}
+          {cancelRequested ? "Stopping" : "Stop"}
+          {!cancelRequested && <Square className="h-2 w-2 fill-current" />}
         </button>
       ) : (
         <button
           type="button"
           onClick={() => mutation.mutate()}
-          className="inline-flex items-center gap-1 rounded border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-60"
+          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 font-medium text-foreground hover:bg-muted disabled:opacity-60"
         >
           {mutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-          Run now
+          Run
         </button>
       )}
       <Link
         to="/agent"
-        className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center text-muted-foreground hover:text-foreground"
+        title="History"
+        aria-label="Agent history"
       >
-        History <ExternalLink className="h-3 w-3" />
+        <ExternalLink className="h-3 w-3" />
       </Link>
     </div>
   );

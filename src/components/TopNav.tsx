@@ -4,8 +4,6 @@ import {
   CalendarRange,
   Home,
   Inbox,
-  ListTree,
-  Radar,
   Settings,
   Sun,
   Upload,
@@ -19,14 +17,10 @@ type Item = { to: string; label: string; icon: LucideIcon; exact?: boolean };
 
 const HOME: Item = { to: "/", label: "Home", icon: Home, exact: true };
 
-// 1. Planning (before)
-const PLANNING: Item[] = [
-  { to: "/catalog", label: "Catalog", icon: ListTree },
-  { to: "/planning", label: "Plan", icon: CalendarRange },
-  { to: "/agent", label: "Agent", icon: Radar },
-];
+// Planning hub (catalog + agent live inside it)
+const PLANNING: Item = { to: "/planning", label: "Planning", icon: CalendarRange };
 
-// 2. Conference Mode (during)
+// Conference Mode (during)
 const CONFERENCE: Item[] = [
   { to: "/today", label: "Today", icon: CalendarCheck },
   { to: "/capture", label: "Capture", icon: UserPlus },
@@ -34,13 +28,13 @@ const CONFERENCE: Item[] = [
   { to: "/recap", label: "Recap", icon: Sun },
 ];
 
-// 3. Leads (after + cross-conference)
+// Leads (after + cross-conference)
 const LEADS: Item[] = [
   { to: "/people", label: "People", icon: Users },
   { to: "/follow-ups", label: "Follow-ups", icon: Inbox },
 ];
 
-const META: Item[] = [{ to: "/settings", label: "Settings", icon: Settings }];
+const SETTINGS: Item = { to: "/settings", label: "Settings", icon: Settings };
 
 export function TopNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -50,11 +44,9 @@ export function TopNav() {
   return (
     <nav className="flex flex-wrap items-center gap-1">
       <NavItem item={HOME} active={isActive(HOME)} />
-      <Sep label="Planning" />
-      {PLANNING.map((it) => (
-        <NavItem key={it.to} item={it} active={isActive(it)} />
-      ))}
-      <Sep label="Conference Mode" />
+      <Sep />
+      <NavItem item={PLANNING} active={isActive(PLANNING)} />
+      <Sep label="Conference" />
       {CONFERENCE.map((it) => (
         <NavItem key={it.to} item={it} active={isActive(it)} />
       ))}
@@ -63,9 +55,7 @@ export function TopNav() {
         <NavItem key={it.to} item={it} active={isActive(it)} />
       ))}
       <Sep />
-      {META.map((it) => (
-        <NavItem key={it.to} item={it} active={isActive(it)} />
-      ))}
+      <NavItem item={SETTINGS} active={isActive(SETTINGS)} />
     </nav>
   );
 }
