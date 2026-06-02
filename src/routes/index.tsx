@@ -576,25 +576,11 @@ function FollowUpsCard({ chaseNow }: { chaseNow: HotLead[] }) {
           to="/follow-ups"
           className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
-          Inbox <ChevronRight className="h-3.5 w-3.5" />
+          Manage all <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </header>
 
       <div className="flex flex-1 flex-col gap-4 p-5">
-        <div className="flex items-baseline gap-3">
-          <span className="text-5xl font-bold leading-none text-foreground tabular-nums">
-            {chaseNow.length}
-          </span>
-          <div className="space-y-0.5">
-            <div className="text-xs font-bold uppercase tracking-widest text-brand-accent">
-              Chase now
-            </div>
-            <div className="text-[11px] text-muted-foreground">
-              Warming · awaiting your reply
-            </div>
-          </div>
-        </div>
-
         {top.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border bg-background/40 px-4 py-6 text-center text-xs text-muted-foreground">
             Inbox zero. Nothing to chase right now.
@@ -621,13 +607,6 @@ function FollowUpsCard({ chaseNow }: { chaseNow: HotLead[] }) {
             ))}
           </ul>
         )}
-
-        <Link
-          to="/follow-ups"
-          className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-md bg-brand-base px-4 py-2 text-sm font-semibold text-brand-base-foreground transition hover:opacity-90"
-        >
-          Open follow-ups <ArrowRight className="h-4 w-4" />
-        </Link>
       </div>
     </section>
   );
