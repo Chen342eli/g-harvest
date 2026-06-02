@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { TopNav } from "@/components/TopNav";
+import { ActiveConferenceBar } from "@/components/conference-mode/ActiveConferenceBar";
 import { useSettings, updateSettings } from "@/lib/settings-store";
 import { usePeopleData } from "@/lib/people-store";
 import { computeBadges } from "@/lib/matching";
@@ -95,6 +96,9 @@ function RecapPage() {
           <TopNav />
         </div>
       </header>
+      <ActiveConferenceBar />
+
+
 
       <main className="mx-auto max-w-[900px] space-y-4 px-6 py-6">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-3">

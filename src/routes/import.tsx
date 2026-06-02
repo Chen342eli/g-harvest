@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { listConferences } from "@/lib/conferences.functions";
 import { TopNav } from "@/components/TopNav";
+import { ActiveConferenceBar } from "@/components/conference-mode/ActiveConferenceBar";
 import { useSettings } from "@/lib/settings-store";
 import { SALES_TEAM } from "@/lib/conferences";
 import {
@@ -310,6 +311,9 @@ function ImportPage() {
           <TopNav />
         </div>
       </header>
+      <ActiveConferenceBar />
+
+
 
       <main className="mx-auto max-w-[1100px] space-y-6 px-6 py-6">
         <section className="rounded-lg border border-border bg-card p-4">
