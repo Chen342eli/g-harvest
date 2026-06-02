@@ -541,17 +541,12 @@ function PersonBriefing({ personId }: { personId: string }) {
     }
   };
 
+  const action = signalAction(person.aiSignal);
+
   return (
     <div className="px-6 pb-4 pt-2 space-y-4">
 
-      {/* Badges */}
-      {badges.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          <BadgeList badges={badges} />
-        </div>
-      )}
-
-      {/* AI Signal hero */}
+      {/* AI Signal hero — action-oriented label, plain rationale */}
       <div className={cn(
         "relative overflow-hidden rounded-2xl border bg-gradient-to-br to-transparent p-5",
         signalTone,
@@ -564,14 +559,19 @@ function PersonBriefing({ personId }: { personId: string }) {
             )} />
             <span className="text-[11px] font-black uppercase tracking-[0.15em]">
               {loading && !person.aiSignal
-                ? "Analyzing…"
-                : person.aiSignal
-                ? `Signal: ${person.aiSignal}${person.aiConfidence ? ` · ${person.aiConfidence} confidence` : ""}`
+                ? "Analyzing relationship…"
+                : action
+                ? action.label
                 : encounters.length === 0
                 ? "First meeting · no signal yet"
                 : "No signal yet"}
             </span>
           </div>
+          {action && (
+            <p className="mb-2 text-[11px] font-medium text-brand-base-foreground/60">
+              {action.helper}
+            </p>
+          )}
           {person.aiReasoning ? (
             <p className="text-[15px] font-semibold leading-snug text-brand-base-foreground">
               {person.aiReasoning}
@@ -590,62 +590,15 @@ function PersonBriefing({ personId }: { personId: string }) {
                 : "Generating relationship read…"}
             </p>
           )}
+          {person.aiConfidence && (
+            <p className="mt-2 text-[10px] uppercase tracking-widest text-brand-base-foreground/40">
+              AI confidence: {person.aiConfidence}
+            </p>
+          )}
         </div>
         <Zap className="pointer-events-none absolute -right-3 -bottom-3 h-24 w-24 opacity-10" />
       </div>
 
-      {/* Suggested follow-up */}
-      {person.aiNudge && (
-        <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setNudgeOpen((v) => !v)}
-            className="flex w-full items-center justify-between p-4 text-left hover:bg-white/[0.07] transition"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="rounded-lg bg-brand-accent/15 p-2 shrink-0">
-                <Mail className="h-4 w-4 text-brand-accent" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-brand-base-foreground/40">
-                  Suggested follow-up
-                </p>
-                <p className="truncate text-sm font-medium text-brand-base-foreground/90">
-                  {person.aiNudge.subject}
-                </p>
-              </div>
-            </div>
-            <span className="ml-3 text-[10px] text-brand-base-foreground/40">
-              {nudgeOpen ? "Hide" : "Open"}
-            </span>
-          </button>
-          {nudgeOpen && (
-            <div className="border-t border-white/10 bg-black/20 p-4 space-y-3">
-              <p className="whitespace-pre-wrap text-xs leading-relaxed text-brand-base-foreground/80">
-                {person.aiNudge.body}
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={copyNudge}
-                  className="inline-flex items-center gap-1 rounded-md bg-brand-accent px-2.5 py-1.5 text-[10px] font-bold text-brand-accent-foreground hover:opacity-90"
-                >
-                  <Copy className="h-3 w-3" /> Copy
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2.5 py-1.5 text-[10px] font-bold text-brand-base-foreground/40 cursor-not-allowed"
-                  title="Coming soon"
-                >
-                  <Mail className="h-3 w-3" /> Open in email
-                  <span className="ml-1 rounded bg-white/10 px-1 py-0.5 text-[8px] uppercase tracking-wide">soon</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Relationship arc */}
       {encounters.length > 0 && (
