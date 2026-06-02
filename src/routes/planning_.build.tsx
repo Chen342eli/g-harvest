@@ -18,7 +18,7 @@ import { PlanningTable } from "@/components/planning/PlanningTable";
 import { CoveragePanel } from "@/components/planning/CoveragePanel";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/planning/build")({
+export const Route = createFileRoute("/planning_/build")({
   head: () => ({
     meta: [
       { title: "Build plan — Planning" },
