@@ -8,9 +8,9 @@ import {
   listAllConferencesWithCost,
   removeFromPlan as removeFromPlanFn,
   setPlanItemStatus as setPlanItemStatusFn,
-  updateConferenceCost as updateConferenceCostFn,
   updatePlanConfig as updatePlanConfigFn,
 } from "@/lib/planning.functions";
+
 import type { PlanItemStatus } from "@/lib/planning";
 import { TopNav } from "@/components/TopNav";
 import { PlanHeader } from "@/components/planning/PlanHeader";
@@ -35,7 +35,7 @@ function PlanBuilderPage() {
   const callSetStatus = useServerFn(setPlanItemStatusFn);
   const callRemove = useServerFn(removeFromPlanFn);
   const callUpdateConfig = useServerFn(updatePlanConfigFn);
-  const callUpdateCost = useServerFn(updateConferenceCostFn);
+  
 
   const planQuery = useQuery({ queryKey: ["active-plan"], queryFn: () => fetchPlan() });
   const allQuery = useQuery({ queryKey: ["all-conferences-cost"], queryFn: () => fetchAll() });
@@ -65,17 +65,6 @@ function PlanBuilderPage() {
     onSuccess: () => { invalidate(); toast.success("Plan updated"); },
   });
 
-  const costMutation = useMutation({
-    mutationFn: (v: { conferenceId: string; estimatedCostUsd: number | null }) =>
-      callUpdateCost({
-        data: {
-          conferenceId: v.conferenceId,
-          estimatedCostUsd: v.estimatedCostUsd,
-          costConfidence: v.estimatedCostUsd == null ? null : "estimated",
-        },
-      }),
-    onSuccess: invalidate,
-  });
 
   const addMutation = useMutation({
     mutationFn: (conferenceId: string) =>
