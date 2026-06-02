@@ -1,8 +1,7 @@
 import { useRouterState } from "@tanstack/react-router";
-import { SubNav, CONFERENCE_SUBNAV, LEADS_SUBNAV } from "./SubNav";
+import { SubNav, CONFERENCE_SUBNAV } from "./SubNav";
 
 const CONFERENCE_PATHS = new Set(["/today", "/capture", "/import", "/recap"]);
-const LEADS_PATHS = new Set(["/people", "/follow-ups"]);
 
 export function ContextSubNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -11,9 +10,6 @@ export function ContextSubNav() {
   if (CONFERENCE_PATHS.has(pathname)) {
     items = CONFERENCE_SUBNAV;
     label = "Conference";
-  } else if (LEADS_PATHS.has(pathname)) {
-    items = LEADS_SUBNAV;
-    label = "Leads";
   }
   if (!items) return null;
   return (

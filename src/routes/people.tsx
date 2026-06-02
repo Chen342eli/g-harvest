@@ -12,6 +12,7 @@ import { BadgeList } from "@/components/people/Badges";
 import { cn } from "@/lib/utils";
 import { SALES_TEAM } from "@/lib/conferences";
 import { analyzeRelationship } from "@/lib/relationship-ai.functions";
+import { useBulkAiReads } from "@/lib/use-bulk-ai";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/people")({
@@ -112,6 +113,7 @@ function SignalBadge({ signal, confidence }: { signal?: AiSignal; confidence?: A
 }
 
 function RelationshipsPage() {
+  useBulkAiReads();
   const data = usePeopleData();
   const [search, setSearch] = useState("");
   const [verticalFilter, setVerticalFilter] = useState<EncounterVertical | "all">("all");

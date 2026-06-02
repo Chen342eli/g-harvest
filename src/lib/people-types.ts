@@ -48,6 +48,7 @@ export interface Person {
   aiNudge?: AiNudge;
   aiArcSummary?: string;
   aiGeneratedAt?: string;
+  followUpStatus?: "pending" | "done";
 }
 
 export interface Encounter {
