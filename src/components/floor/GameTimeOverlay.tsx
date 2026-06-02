@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, Copy, Flame, Mail, Search, Sparkles, X, Zap } from "lucide-react";
+import { ArrowRight, Flame, Search, Sparkles, X, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { findMatch, derivePerson, computeBadges } from "@/lib/matching";
-import { BadgeList } from "@/components/people/Badges";
+import { findMatch, derivePerson } from "@/lib/matching";
 import {
   usePeopleData,
   addPerson,
