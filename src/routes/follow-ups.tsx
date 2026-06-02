@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronUp, Copy, Inbox, Mail, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import { ChevronDown, ChevronUp, Inbox, Sparkles } from "lucide-react";
 import { TopNav } from "@/components/TopNav";
-import { usePeopleData, updatePerson } from "@/lib/people-store";
+import { usePeopleData } from "@/lib/people-store";
 import { useBulkAiReads } from "@/lib/use-bulk-ai";
-import type { AiConfidence, AiSignal, Person } from "@/lib/people-types";
+import type { AiConfidence, Person } from "@/lib/people-types";
 import { cn } from "@/lib/utils";
+import { FollowUpRow } from "@/components/follow-ups/FollowUpRow";
 
 export const Route = createFileRoute("/follow-ups")({
   head: () => ({ meta: [{ title: "Follow-ups · Grain Harvest" }] }),
@@ -15,22 +15,6 @@ export const Route = createFileRoute("/follow-ups")({
 
 const CONF_RANK: Record<AiConfidence, number> = { high: 3, medium: 2, low: 1 };
 
-const SIGNAL_STYLE: Record<AiSignal, string> = {
-  "Warming": "bg-temp-hot/15 text-temp-hot border-temp-hot/30",
-  "Steady": "bg-temp-warm/15 text-temp-warm border-temp-warm/30",
-  "Too early": "bg-muted text-muted-foreground border-border",
-  "Tire-kicker": "bg-temp-cold/15 text-temp-cold border-temp-cold/30",
-};
-
-function SignalBadge({ signal, confidence }: { signal: AiSignal; confidence?: AiConfidence }) {
-  return (
-    <span className={cn("inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium", SIGNAL_STYLE[signal])}>
-      <Sparkles className="h-2.5 w-2.5" />
-      {signal}
-      {confidence && <span className="opacity-70">· {confidence}</span>}
-    </span>
-  );
-}
 
 function FollowUpsPage() {
   // Auto-generate AI reads for any person without one cached
