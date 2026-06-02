@@ -367,25 +367,9 @@ export function GameTimeOverlay({ onExit }: Props) {
           </div>
         </div>
       )}
-
-              <button
-                type="button"
-                disabled={!canSave}
-                onClick={save}
-                className={cn(
-                  "w-full rounded-xl py-4 text-base font-semibold transition",
-                  canSave
-                    ? "bg-temp-hot text-temp-hot-foreground hover:opacity-90"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                Save & next
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
+  );
+}
   );
 }
 
