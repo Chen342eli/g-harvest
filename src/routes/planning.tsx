@@ -270,9 +270,18 @@ function PlanningPage() {
               activePlanName={planQuery.data?.plan.name}
             />
           )}
-          {view === "map" && <MapView conferences={filtered} />}
+          {view === "map" && (
+            <MapView
+              conferences={filtered}
+              onOpenInTable={(id) => { setFilters({ ...DEFAULT_FILTERS, ids: [id] }); setViewOverride("table"); }}
+            />
+          )}
           {view === "timeline" && (
-            <TimelineView conferences={filtered} onSetStatus={(id, status) => statusMutation.mutate({ id, status })} />
+            <TimelineView
+              conferences={filtered}
+              onSetStatus={(id, status) => statusMutation.mutate({ id, status })}
+              onOpenInTable={(id) => { setFilters({ ...DEFAULT_FILTERS, ids: [id] }); setViewOverride("table"); }}
+            />
           )}
         </div>
 
