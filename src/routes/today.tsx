@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import type { Temperature } from "@/lib/people-types";
 
 export const Route = createFileRoute("/today")({
-  head: () => ({ meta: [{ title: "Today · Conference Mode" }] }),
+  head: () => ({ meta: [{ title: "Today · Event Mode" }] }),
   component: TodayPage,
 });
 
