@@ -288,6 +288,7 @@ export function TimelineView({ conferences, onSetStatus, onOpenInTable }: Props)
                             bar={bar}
                             top={LANE_PAD_Y + bar.subRow * (ROW_H + ROW_GAP)}
                             onSetStatus={onSetStatus}
+                            onOpenInTable={onOpenInTable}
                           />
                         ))}
                       </div>
