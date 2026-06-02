@@ -1,36 +1,44 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  CalendarCheck,
-  ChevronDown,
-  FileDown,
-  Mail,
-  Sparkles,
-  Upload,
-  Zap,
-} from "lucide-react";
+import { CalendarCheck, ChevronDown } from "lucide-react";
 import { TopNav } from "@/components/TopNav";
 import { listConferences } from "@/lib/conferences.functions";
 import { useSettings, updateSettings } from "@/lib/settings-store";
 import { SALES_TEAM } from "@/lib/conferences";
-import { HotLeadsSidebar } from "@/components/floor/HotLeadsSidebar";
-import { SchedulePanel } from "@/components/floor/SchedulePanel";
 import { GameTimeOverlay } from "@/components/floor/GameTimeOverlay";
+import { BeforePhase } from "@/components/floor/BeforePhase";
+import { DuringPhase } from "@/components/floor/DuringPhase";
+import { AfterPhase } from "@/components/floor/AfterPhase";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/floor")({
   head: () => ({ meta: [{ title: "Floor · Grain Harvest" }] }),
   component: FloorPage,
 });
 
+type Phase = "before" | "during" | "after";
+
+function inferPhase(startDate: string, endDate: string): Phase {
+  const now = Date.now();
+  const s = new Date(startDate).getTime();
+  const e = new Date(endDate).getTime() + 24 * 60 * 60 * 1000 - 1; // include end day
+  if (now < s) return "before";
+  if (now > e) return "after";
+  return "during";
+}
+
 function FloorPage() {
   const fetchConfs = useServerFn(listConferences);
-  const { data: conferences = [] } = useQuery({ queryKey: ["conferences"], queryFn: () => fetchConfs() });
+  const { data: conferences = [] } = useQuery({
+    queryKey: ["conferences"],
+    queryFn: () => fetchConfs(),
+  });
   const settings = useSettings();
   const [gameTime, setGameTime] = useState(false);
+  const [phaseOverride, setPhaseOverride] = useState<Phase | null>(null);
 
-  // Default: pick the next upcoming conference if none selected
   const upcoming = useMemo(() => {
     const now = Date.now();
     return [...conferences]
@@ -39,13 +47,9 @@ function FloorPage() {
   }, [conferences]);
 
   const effectiveActiveId =
-    settings.activeConferenceId ||
-    upcoming[0]?.id ||
-    conferences[0]?.id;
-
+    settings.activeConferenceId || upcoming[0]?.id || conferences[0]?.id;
   const activeConf = conferences.find((c) => c.id === effectiveActiveId);
 
-  // Auto-persist default selection once data loads
   useEffect(() => {
     if (!settings.activeConferenceId && activeConf) {
       updateSettings({
@@ -58,23 +62,21 @@ function FloorPage() {
     }
   }, [settings.activeConferenceId, settings.activeRepId, activeConf]);
 
+  // Reset override when conference changes
+  useEffect(() => {
+    setPhaseOverride(null);
+  }, [effectiveActiveId]);
+
+  const autoPhase: Phase = activeConf
+    ? inferPhase(activeConf.startDate, activeConf.endDate)
+    : "before";
+  const phase: Phase = phaseOverride ?? autoPhase;
+
   const canEnterGameTime = !!activeConf && !!settings.activeRepId;
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav
-        rightSlot={
-          <button
-            type="button"
-            disabled={!canEnterGameTime}
-            onClick={() => setGameTime(true)}
-            className="inline-flex items-center gap-1.5 rounded-md bg-temp-hot px-4 py-1.5 text-xs font-semibold text-temp-hot-foreground transition hover:opacity-90 disabled:opacity-40"
-            title={canEnterGameTime ? "Enter Game Time" : "Pick conference + rep first"}
-          >
-            <Zap className="h-3.5 w-3.5" /> Game Time
-          </button>
-        }
-      />
+      <TopNav />
 
       {/* Conference selector bar */}
       <div className="border-b border-border bg-card">
@@ -112,7 +114,9 @@ function FloorPage() {
           </div>
 
           <span className="text-muted-foreground">·</span>
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">You</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            You
+          </span>
           <select
             value={settings.activeRepId ?? ""}
             onChange={(e) => updateSettings({ activeRepId: e.target.value || undefined })}
@@ -129,12 +133,62 @@ function FloorPage() {
           {activeConf && (
             <span className="text-xs text-muted-foreground">
               {activeConf.city}, {activeConf.country} ·{" "}
-              {new Date(activeConf.startDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+              {new Date(activeConf.startDate).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
               {" – "}
-              {new Date(activeConf.endDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+              {new Date(activeConf.endDate).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
             </span>
           )}
         </div>
+
+        {/* Phase tabs */}
+        {activeConf && (
+          <div className="mx-auto max-w-[1600px] px-6 pb-3">
+            <div className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">
+              {(["before", "during", "after"] as const).map((p) => {
+                const active = p === phase;
+                const isAuto = p === autoPhase;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPhaseOverride(p === autoPhase ? null : p)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
+                      active
+                        ? "bg-background text-foreground shadow"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {p}
+                    {isAuto && (
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-[8px] font-medium normal-case tracking-normal",
+                          active
+                            ? "bg-temp-hot/15 text-temp-hot"
+                            : "bg-muted text-muted-foreground/70",
+                        )}
+                      >
+                        now
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <span className="ml-3 text-[11px] text-muted-foreground">
+              {phase === "before" && "Plan meetings & line up Hot Accounts."}
+              {phase === "during" && "Capture leads as you meet them."}
+              {phase === "after" && "Clean up data & route to Follow-ups."}
+            </span>
+          </div>
+        )}
       </div>
 
       <main className="mx-auto max-w-[1600px] space-y-6 px-6 py-6">
@@ -143,82 +197,27 @@ function FloorPage() {
             <CalendarCheck className="mx-auto h-8 w-8 text-muted-foreground" />
             <p className="mt-3 text-sm font-semibold">No conference selected</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Pick one above to see the schedule and enter Game Time.
+              Pick one above to run the event end-to-end.
             </p>
           </div>
+        ) : phase === "before" ? (
+          <BeforePhase
+            conferenceId={activeConf.id}
+            conferenceStartDate={activeConf.startDate}
+            conferenceEndDate={activeConf.endDate}
+          />
+        ) : phase === "during" ? (
+          <DuringPhase
+            conferenceId={activeConf.id}
+            canEnterGameTime={canEnterGameTime}
+            onEnterGameTime={() => setGameTime(true)}
+          />
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-            <SchedulePanel
-              conferenceId={activeConf.id}
-              conferenceStartDate={activeConf.startDate}
-              conferenceEndDate={activeConf.endDate}
-            />
-            <HotLeadsSidebar />
-          </div>
+          <AfterPhase conferenceId={activeConf.id} />
         )}
-
-        {/* Secondary desk tools */}
-        <section>
-          <div className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-            Desk tools
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <DeskTool
-              to="/import"
-              icon={<Upload className="h-4 w-4" />}
-              title="Import CSV"
-              desc="Bulk-load scanner exports."
-            />
-            <DeskTool
-              to="/capture"
-              icon={<Sparkles className="h-4 w-4" />}
-              title="Detailed capture"
-              desc="Full form with all fields."
-            />
-            <DeskTool
-              to="/recap"
-              icon={<FileDown className="h-4 w-4" />}
-              title="End-of-day recap"
-              desc="Review today's signals."
-            />
-            <DeskTool
-              to="/follow-ups"
-              icon={<Mail className="h-4 w-4" />}
-              title="Follow-up emails"
-              desc="Draft and send next steps."
-            />
-          </div>
-        </section>
       </main>
 
       {gameTime && <GameTimeOverlay onExit={() => setGameTime(false)} />}
     </div>
-  );
-}
-
-function DeskTool({
-  to,
-  icon,
-  title,
-  desc,
-}: {
-  to: string;
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <Link
-      to={to}
-      className="group flex items-start gap-3 rounded-lg border border-border bg-card p-4 transition hover:border-brand-accent/60 hover:bg-muted/40"
-    >
-      <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-md bg-muted text-foreground">
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <div className="text-sm font-medium text-foreground group-hover:text-brand-accent">{title}</div>
-        <div className="text-xs text-muted-foreground">{desc}</div>
-      </div>
-    </Link>
   );
 }
