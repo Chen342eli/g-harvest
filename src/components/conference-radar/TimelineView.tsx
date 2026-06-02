@@ -355,10 +355,12 @@ function BarChip({
   bar,
   top,
   onSetStatus,
+  onOpenInTable,
 }: {
   bar: PlacedBar;
   top: number;
   onSetStatus?: (id: string, status: DecisionStatus) => void;
+  onOpenInTable?: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const c = bar.conference;
