@@ -15,6 +15,11 @@ export function RepAssigner({ assigned, allReps, onToggle }: Props) {
 
   return (
     <div className="flex flex-wrap items-center gap-1">
+      {assigned.length === 0 && (
+        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs italic text-muted-foreground">
+          Not assigned
+        </span>
+      )}
       {assigned.map((rep) => (
         <span
           key={rep}
