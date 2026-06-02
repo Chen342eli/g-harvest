@@ -49,7 +49,7 @@ export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) 
         <div className={cn("mx-auto flex flex-wrap items-center justify-between gap-3 px-6 py-3", maxWidth)}>
           <div className="flex items-center gap-6">
             <Link to="/" className="group flex items-center gap-2.5" aria-label="Grain Harvest — Home">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition group-hover:opacity-90">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-accent text-brand-accent-foreground transition group-hover:opacity-90">
                 <Sprout className="h-4 w-4" />
               </div>
               <span className="text-sm font-semibold tracking-tight text-foreground">Grain Harvest</span>
@@ -67,7 +67,7 @@ export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) 
                     className={cn(
                       "relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition",
                       active
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-brand-base text-brand-base-foreground"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
@@ -78,7 +78,7 @@ export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) 
                         className={cn(
                           "ml-0.5 inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
                           active
-                            ? "bg-primary-foreground text-primary"
+                            ? "bg-brand-base-foreground text-brand-base"
                             : "bg-temp-hot text-temp-hot-foreground",
                         )}
                         aria-label={`${chaseNowCount} urgent follow-ups`}
@@ -101,7 +101,7 @@ export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) 
               className={cn(
                 "inline-flex h-8 w-8 items-center justify-center rounded-md transition",
                 settingsActive
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-brand-base text-brand-base-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
