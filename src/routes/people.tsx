@@ -448,6 +448,8 @@ function AiPanel({ person, encounters }: { person: Person; encounters: Encounter
   const analyze = useServerFn(analyzeRelationship);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nudgeOpen, setNudgeOpen] = useState(false);
+  const ranForRef = useRef<string | null>(null);
 
   const run = async () => {
     setLoading(true);
@@ -490,6 +492,15 @@ function AiPanel({ person, encounters }: { person: Person; encounters: Encounter
     }
   };
 
+  // Auto-generate on open if not cached. Use cached on later opens.
+  useEffect(() => {
+    if (person.aiSignal) return;
+    if (ranForRef.current === person.id) return;
+    ranForRef.current = person.id;
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [person.id]);
+
   const copyNudge = async () => {
     if (!person.aiNudge) return;
     const text = `Subject: ${person.aiNudge.subject}\n\n${person.aiNudge.body}`;
@@ -505,39 +516,19 @@ function AiPanel({ person, encounters }: { person: Person; encounters: Encounter
 
   return (
     <div className="rounded-lg border border-border bg-background p-4 space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">AI Signal</span>
-        </div>
-        {hasRead && (
-          <button
-            type="button"
-            onClick={run}
-            disabled={loading}
-            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50"
-          >
-            <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
-            Regenerate
-          </button>
-        )}
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-3.5 w-3.5 text-primary" />
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">AI Signal</span>
       </div>
 
-      {!hasRead && !loading && !error && (
-        <button
-          type="button"
-          onClick={run}
-          className="w-full rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90"
-        >
-          Generate AI read
-        </button>
+      {loading && !hasRead && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+          Analyzing relationship…
+        </div>
       )}
 
-      {loading && (
-        <div className="text-xs text-muted-foreground">Analyzing relationship…</div>
-      )}
-
-      {error && (
+      {error && !hasRead && (
         <div className="space-y-2">
           <div className="text-xs text-destructive">{error}</div>
           <button
@@ -554,34 +545,57 @@ function AiPanel({ person, encounters }: { person: Person; encounters: Encounter
         <>
           <SignalBadge signal={person.aiSignal} confidence={person.aiConfidence} />
           {person.aiReasoning && (
-            <p className="text-xs text-foreground leading-relaxed">{person.aiReasoning}</p>
+            <p className="text-sm text-foreground leading-relaxed">{person.aiReasoning}</p>
           )}
-          {person.aiArcSummary && (
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Arc summary</div>
-              <p className="text-xs text-muted-foreground leading-relaxed">{person.aiArcSummary}</p>
-            </div>
-          )}
+
           {person.aiNudge && (
-            <div className="rounded-md border border-border bg-muted/30 p-2.5 space-y-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Nudge · email</div>
-                <button
-                  type="button"
-                  onClick={copyNudge}
-                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-background"
-                >
-                  <Copy className="h-3 w-3" />
-                  Copy
-                </button>
-              </div>
-              <div className="text-xs font-medium text-foreground">{person.aiNudge.subject}</div>
-              <div className="whitespace-pre-wrap text-xs text-foreground leading-relaxed">{person.aiNudge.body}</div>
-            </div>
-          )}
-          {person.aiGeneratedAt && (
-            <div className="text-[10px] text-muted-foreground">
-              Generated {new Date(person.aiGeneratedAt).toLocaleString()}
+            <div className="rounded-md border border-border bg-muted/30 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setNudgeOpen((v) => !v)}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted/50 transition"
+              >
+                <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shrink-0">
+                  Suggested follow-up
+                </span>
+                <span className="truncate text-xs text-foreground flex-1">
+                  {person.aiNudge.subject}
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform",
+                    nudgeOpen && "rotate-180",
+                  )}
+                />
+              </button>
+              {nudgeOpen && (
+                <div className="border-t border-border bg-background/50 p-3 space-y-2">
+                  <div className="whitespace-pre-wrap text-xs text-foreground leading-relaxed">
+                    {person.aiNudge.body}
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={copyNudge}
+                      className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] text-foreground hover:bg-muted"
+                    >
+                      <Copy className="h-3 w-3" />
+                      Copy
+                    </button>
+                    <button
+                      type="button"
+                      disabled
+                      title="Coming soon"
+                      className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] text-muted-foreground opacity-60 cursor-not-allowed"
+                    >
+                      <Mail className="h-3 w-3" />
+                      Open in email
+                      <span className="ml-1 rounded bg-muted px-1 py-0.5 text-[9px] uppercase tracking-wide">coming soon</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </>
