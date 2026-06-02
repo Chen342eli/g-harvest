@@ -57,6 +57,16 @@ function isAggregatorPage(hit: SearchHit): boolean {
 
 // Relaxed schema: anything that isn't certain from the page can be null.
 // We will keep the conference anyway and flag it for human review.
+const VERTICAL_ENUM = [
+  "Payments",
+  "Fintech",
+  "Treasury",
+  "Embedded Finance",
+  "Neobanking",
+  "Cross-Border Payments",
+  "Travel Tech",
+] as const;
+
 const ExtractionSchema = z.object({
   name: z.string(),
   startDate: z.string().nullable().describe("ISO date YYYY-MM-DD or null if not stated"),
@@ -66,15 +76,17 @@ const ExtractionSchema = z.object({
   region: z
     .enum(["North America", "Europe", "APAC", "Middle East", "LATAM"])
     .nullable(),
-  vertical: z
-    .enum(["Payments", "Fintech", "Treasury", "Travel", "SaaS", "General Tech"])
-    .nullable(),
+  vertical: z.enum(VERTICAL_ENUM).nullable(),
   estimatedAudienceSize: z.number().int().nonnegative().nullable(),
   tags: z.array(z.string()).max(8).default([]),
   isRelevant: z
     .boolean()
-    .describe("True only if this is a real fintech/payments/treasury/B2B-SaaS/travel-tech conference (not a blog post, list article, past edition, or news)"),
+    .describe("True only if the conference audience includes CFOs, Heads of Payments, Treasury managers, or Product leaders at PSPs, neobanks, marketplaces, embedded-finance providers, cross-border payments, or travel-tech platforms (not a blog post, list article, past edition, or news)"),
   confidence: z.number().int().min(0).max(100),
+});
+
+const AggregatorSchema = z.object({
+  conferences: z.array(ExtractionSchema).max(MAX_AGGREGATOR_ITEMS),
 });
 
 type SearchHit = { url: string; title?: string; description?: string };
