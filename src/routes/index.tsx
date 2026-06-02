@@ -135,31 +135,6 @@ function Dashboard() {
           </section>
         )}
 
-        {lifecycle === "draft" && (
-          <section className="rounded-xl border border-amber-400/60 bg-amber-50 p-5 dark:bg-amber-950/30">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-amber-400/30 text-amber-800 dark:text-amber-200">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground">
-                    {activePlan!.plan.name} is still in draft
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    Finish the wizard and approve the plan to unlock upcoming events here.
-                  </p>
-                </div>
-              </div>
-              <Link
-                to="/planning/build"
-                className="inline-flex items-center gap-1.5 rounded-md bg-brand-base px-4 py-2 text-sm font-medium text-brand-base-foreground hover:opacity-90"
-              >
-                Resume planning <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </section>
-        )}
 
         {lifecycle === "approved" && (
           <section className="rounded-xl border border-border bg-card px-4 py-3">
