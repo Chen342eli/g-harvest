@@ -1,12 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronDown, ChevronRight, X, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, ChevronDown, ChevronRight, Play, X, ExternalLink, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { listAgentRuns, listChangeFlags, listRunCandidates, resolveFlag } from "@/lib/agent.functions";
+import { listAgentRuns, listChangeFlags, listRunCandidates, resolveFlag, runAgentNow } from "@/lib/agent.functions";
 import { TopNav } from "@/components/TopNav";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/agent")({
   head: () => ({ meta: [{ title: "Discovery Agent · Conference Radar" }] }),
@@ -40,6 +42,7 @@ function AgentPage() {
   const fetchRuns = useServerFn(listAgentRuns);
   const fetchFlags = useServerFn(listChangeFlags);
   const resolve = useServerFn(resolveFlag);
+  const triggerRun = useServerFn(runAgentNow);
 
   const { data: runs = [] } = useQuery({ queryKey: ["agentRuns"], queryFn: () => fetchRuns(), refetchInterval: 15_000 });
   const { data: flags = [] } = useQuery({ queryKey: ["changeFlags"], queryFn: () => fetchFlags() });
@@ -51,15 +54,61 @@ function AgentPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["changeFlags"] });
       qc.invalidateQueries({ queryKey: ["conferences"] });
-      toast.success("Flag resolved");
     },
   });
+
+  const runMutation = useMutation({
+    mutationFn: () => triggerRun(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agentRuns"] });
+      qc.invalidateQueries({ queryKey: ["changeFlags"] });
+      qc.invalidateQueries({ queryKey: ["conferences"] });
+      toast.success("Agent run complete");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Agent run failed"),
+  });
+
+  const acceptAllMutation = useMutation({
+    mutationFn: async () => {
+      for (const f of flags) {
+        await resolve({ data: { id: f.id, action: "accept" } });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["changeFlags"] });
+      qc.invalidateQueries({ queryKey: ["conferences"] });
+      toast.success("All pending flags accepted");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to accept all"),
+  });
+
 
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
 
-      <main className="mx-auto grid max-w-[1200px] gap-6 px-6 py-6 lg:grid-cols-[3fr_2fr]">
+      <main className="mx-auto max-w-[1200px] space-y-4 px-6 py-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/planning">
+              <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to Conference Management
+            </Link>
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => runMutation.mutate()}
+            disabled={runMutation.isPending}
+          >
+            {runMutation.isPending ? (
+              <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> Running…</>
+            ) : (
+              <><Play className="mr-1 h-3.5 w-3.5" /> Run agent now</>
+            )}
+          </Button>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
+
         <section className="rounded-lg border border-border bg-card">
           <div className="border-b border-border px-4 py-3">
             <h2 className="text-sm font-semibold text-foreground">Run history</h2>
@@ -104,10 +153,27 @@ function AgentPage() {
         </section>
 
         <section className="rounded-lg border border-border bg-card self-start">
-          <div className="border-b border-border px-4 py-3">
-            <h2 className="text-sm font-semibold text-foreground">Pending change flags</h2>
-            <p className="text-xs text-muted-foreground">Source has changed — review and accept or dismiss.</p>
+          <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Pending change flags</h2>
+              <p className="text-xs text-muted-foreground">Source has changed — review and accept or dismiss.</p>
+            </div>
+            {flags.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => acceptAllMutation.mutate()}
+                disabled={acceptAllMutation.isPending}
+              >
+                {acceptAllMutation.isPending ? (
+                  <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> Accepting…</>
+                ) : (
+                  <><CheckCheck className="mr-1 h-3.5 w-3.5" /> Accept all ({flags.length})</>
+                )}
+              </Button>
+            )}
           </div>
+
           <div className="divide-y divide-border">
             {flags.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">No pending flags.</p>}
             {flags.map((f) => {
@@ -143,6 +209,7 @@ function AgentPage() {
             })}
           </div>
         </section>
+        </div>
       </main>
     </div>
   );
