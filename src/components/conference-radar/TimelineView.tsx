@@ -203,9 +203,11 @@ export function TimelineView({ conferences, onSetStatus }: Props) {
             <div className="min-w-[1100px]">
               {/* Month axis header */}
               <div className="sticky top-0 z-10 flex border-b border-border bg-card/95 backdrop-blur">
-                <div className="w-[180px] shrink-0 border-r border-border px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {groupBy === "rep" ? "Rep" : groupBy === "vertical" ? "Vertical" : groupBy === "region" ? "Region" : groupBy === "tier" ? "Tier" : "Lane"}
-                </div>
+                {groupBy !== "none" && (
+                  <div className="w-[180px] shrink-0 border-r border-border px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {groupBy === "rep" ? "Rep" : groupBy === "vertical" ? "Vertical" : groupBy === "region" ? "Region" : "Tier"}
+                  </div>
+                )}
                 <div className="relative flex-1">
                   <div className="grid grid-cols-12">
                     {MONTHS.map((m, i) => (
@@ -239,17 +241,20 @@ export function TimelineView({ conferences, onSetStatus }: Props) {
                       )}
                     >
                       {/* Sticky left gutter */}
-                      <div
-                        className="flex w-[180px] shrink-0 items-center border-r border-border px-3 text-xs font-medium text-foreground"
-                        style={{ minHeight: lane.height }}
-                      >
-                        <span className="truncate" title={lane.label}>
-                          {lane.label}
-                          <span className="ml-1.5 text-[10px] font-normal tabular-nums text-muted-foreground">
-                            {lane.bars.length}
+                      {groupBy !== "none" && (
+                        <div
+                          className="flex w-[180px] shrink-0 items-center border-r border-border px-3 text-xs font-medium text-foreground"
+                          style={{ minHeight: lane.height }}
+                        >
+                          <span className="truncate" title={lane.label}>
+                            {lane.label}
+                            <span className="ml-1.5 text-[10px] font-normal tabular-nums text-muted-foreground">
+                              {lane.bars.length}
+                            </span>
                           </span>
-                        </span>
-                      </div>
+                        </div>
+                      )}
+
 
                       {/* Track */}
                       <div className="relative flex-1" style={{ height: lane.height }}>
