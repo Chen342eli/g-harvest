@@ -315,7 +315,7 @@ function MapViewClient({ conferences, committedIds, onOpenInTable }: Props) {
     );
     renderMarkers(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conferences]);
+  }, [conferences, committedIds]);
 
   const missing = conferences.filter((c) => !coordsFor(c.city, c.country));
 
