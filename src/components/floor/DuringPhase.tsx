@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { CalendarClock, Flame, User, Zap } from "lucide-react";
 import { usePeopleData } from "@/lib/people-store";
 import { useSchedule } from "@/lib/schedule-store";

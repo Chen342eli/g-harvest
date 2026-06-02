@@ -1,57 +1,32 @@
-# State A → גם מנקה את ה־Supabase
+## Floor polish — Part 2
 
-## מטרה
-כשלוחצים **State A · Clean slate**, מלבד ניקוי ה־localStorage גם נמחקות **כל** השורות מטבלאות הכנסים ב־Supabase, כך שאפשר להריץ את סוכן הגילוי מאפס.
+Two small logic tweaks in the Floor views. No new components, no styling changes beyond the new toggle.
 
-## מה נמחק (hard delete)
-- `plan_items` (תלוי ב־`conferences`)
-- `conference_change_flags` (תלוי ב־`conferences`)
-- `agent_candidates` (תלוי ב־`conferences`, ו־`run_id`)
-- `agent_runs` (היסטוריית ריצות סוכן — כדי להתחיל נקי)
-- `conferences` (הטבלה עצמה)
+### 1. `src/components/floor/DuringPhase.tsx` — broaden + filter "Leads at this event"
 
-**לא נוגעים** ב־`plans` (תכנית השנה נשארת), וב־`do_not_resurrect` (רשימת חסומים נשארת — אם רוצים לאפס גם אותה זה שינוי של שורה אחת).
+- Rename section header from **"My leads at this event"** to **"Leads at this event"**.
+- Change `myLeads` memo:
+  - Filter encounters by `conferenceId` only (drop `e.repId === repId`).
+  - Keep dedupe-by-person + hot/temperature sorting as today.
+  - Each row continues to show person, company/role, note, time, and hot/temp badge.
+  - Add a small muted tag on each row: `entered by {encounter.repId}` (plain text, matches existing `text-[10px] text-muted-foreground` style next to the timestamp).
+- Add a **"Mine only"** toggle in the section header (right side, next to the "{n} captured" counter):
+  - Local `useState<boolean>(false)` named `mineOnly`.
+  - Small button styled like the existing chips (e.g. `text-[10px] uppercase tracking-wide` with a border, toggling `bg-muted`/active state).
+  - When `mineOnly && repId` → also filter encounters by `e.repId === repId` before dedupe.
+  - Counter reflects the filtered count.
+- Empty-state copy unchanged ("Nothing captured yet…").
 
-States B/C לא נוגעים ב־Supabase בכלל — רק ממפים שמות ל־IDs קיימים, כמו היום.
+### 2. `src/components/floor/AfterPhase.tsx` — scope "Needs cleanup" to current rep
 
-## קבצים
+- Read `activeRepId` from `useSettings()` (import already pattern used elsewhere in floor components).
+- In the `eventLeads` memo, build `personIds` from encounters filtered by **both** `e.conferenceId === conferenceId` **and** `e.repId === activeRepId`.
+  - If `activeRepId` is unset, fall back to current behavior (all reps) to avoid an empty screen.
+- Downstream `needsInfo` / `ready` derivations are unchanged — they just operate on the now-scoped list.
+- "Follow-up suggestions" section continues to use the same `eventLeads`, so it is also rep-scoped (matches intent: each rep wraps up their own leads).
 
-### 1. `src/lib/demo-data.functions.ts` (חדש)
-server function `wipeConferences` שמוחק את כל השורות בסדר הנכון:
+### Out of scope
 
-```ts
-import { createServerFn } from "@tanstack/react-start";
-
-export const wipeConferences = createServerFn({ method: "POST" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  // סדר חשוב: ילדים לפני אבות
-  for (const table of ["plan_items", "conference_change_flags", "agent_candidates", "agent_runs", "conferences"] as const) {
-    const { error } = await supabaseAdmin.from(table).delete().not("id", "is", null);
-    if (error) throw new Error(`Failed to wipe ${table}: ${error.message}`);
-  }
-  return { ok: true };
-});
-```
-
-שימוש ב־`supabaseAdmin` כי לטבלאות האלה אין RLS/auth. הטעינה בתוך ה־handler כדי לא לדלוף ל־client bundle (חוק התבנית).
-
-### 2. `src/lib/demo-data.ts` — שינוי ב־`loadDemoState`
-- להפוך את הפונקציה ל־`async`.
-- ב־State A: לקרוא ל־`await wipeConferences()` **לפני** כתיבת ה־localStorage.
-- אם המחיקה נכשלה — לזרוק; settings.tsx יציג toast שגיאה ולא יעשה reload.
-
-### 3. `src/routes/settings.tsx` — שינוי קטן ב־`handleLoadDemo`
-- להמתין ל־`await loadDemoState(...)`.
-- ספינר ממשיך עד שהמחיקה והכתיבה הסתיימו, ואז checkmark + toast + reload (כמו היום).
-- הודעת ה־toast ב־State A: "Demo A loaded — conferences cleared, reloading…".
-
-## איך זה ייראה למשתמש
-1. לחיצה על State A → ספינר (כי המחיקה ב־Supabase לוקחת רגע).
-2. ✓ ירוק + toast.
-3. Reload — הדף Conferences/Planning ריק לגמרי, מוכן להרצת הסוכן.
-
-## גודל השינוי
-~25 שורות סך הכל, קובץ חדש אחד קטן + 3 שורות שינוי בכל אחד מ־`demo-data.ts` ו־`settings.tsx`. עבודה של דקה.
-
-## שאלה אחרונה לפני שאני בונה
-האם למחוק גם את `do_not_resurrect` ב־State A? (אם משאירים — כנסים שדחית בעבר לא יחזרו כשהסוכן ירוץ שוב. אם מוחקים — הסוכן רשאי להציע שוב כל דבר.)
+- No DB / server changes.
+- No changes to encounter shape; `repId` is already on `Encounter`.
+- No restyle of rows beyond adding the `entered by …` tag and the toggle button.
