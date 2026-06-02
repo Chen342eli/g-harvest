@@ -39,6 +39,7 @@ import { TopNav } from "@/components/TopNav";
 import { TierBadge } from "@/components/conference-radar/TierBadge";
 import { TimelineView } from "@/components/conference-radar/TimelineView";
 import { MapView } from "@/components/conference-radar/MapView";
+import { RepAssigner } from "@/components/conference-radar/RepAssigner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
