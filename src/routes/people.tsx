@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronUp, ChevronsUpDown, Copy, RefreshCw, Search, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronUp, ChevronsUpDown, Copy, Mail, Search, Sparkles, X } from "lucide-react";
 import { TopNav } from "@/components/TopNav";
 import { usePeopleData, updatePerson } from "@/lib/people-store";
 import { computeBadges, derivePerson } from "@/lib/matching";
