@@ -19,6 +19,7 @@ import type { EncounterVertical, Person, Temperature } from "@/lib/people-types"
 import { ENCOUNTER_VERTICALS } from "@/lib/people-types";
 import { TempPickerButtons } from "@/components/people/TempControls";
 import { BadgeList } from "@/components/people/Badges";
+import { ActiveConferenceBar } from "@/components/conference-mode/ActiveConferenceBar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -163,6 +164,9 @@ function CapturePage() {
           <TopNav />
         </div>
       </header>
+      <ActiveConferenceBar />
+
+
 
       <main className="mx-auto max-w-[560px] px-4 py-4 sm:py-6">
         {lastSaved && (
