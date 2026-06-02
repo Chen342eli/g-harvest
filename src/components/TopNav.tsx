@@ -1,18 +1,23 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Radar, Calendar, ListTree } from "lucide-react";
+import { Radar, Calendar, ListTree, UserPlus, Users, Upload, Sun, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { to: "/", label: "Catalog", icon: ListTree, exact: true },
   { to: "/planning", label: "Planning", icon: Calendar, exact: false },
   { to: "/agent", label: "Agent Runs", icon: Radar, exact: false },
+  { to: "/capture", label: "Capture", icon: UserPlus, exact: false },
+  { to: "/people", label: "People", icon: Users, exact: false },
+  { to: "/import", label: "Import", icon: Upload, exact: false },
+  { to: "/recap", label: "Recap", icon: Sun, exact: false },
+  { to: "/settings", label: "Settings", icon: Settings, exact: false },
 ] as const;
 
 export function TopNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <nav className="flex items-center gap-1">
+    <nav className="flex flex-wrap items-center gap-1">
       {ITEMS.map(({ to, label, icon: Icon, exact }) => {
         const active = exact ? pathname === to : pathname.startsWith(to);
         return (
