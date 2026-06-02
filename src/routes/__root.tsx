@@ -78,14 +78,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Grain Harvest" },
+      { name: "description", content: "Conference Compass helps B2B fintech sales teams prioritize industry conferences and manage rep coverage." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Grain Harvest" },
+      { property: "og:description", content: "Conference Compass helps B2B fintech sales teams prioritize industry conferences and manage rep coverage." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Grain Harvest" },
+      { name: "twitter:description", content: "Conference Compass helps B2B fintech sales teams prioritize industry conferences and manage rep coverage." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/18b387ce-da85-4ff5-a3e3-d4dedae9af8b/id-preview-21d13a3e--3320fc38-7692-40ab-8dea-979b6ae4883d.lovable.app-1780393692023.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/18b387ce-da85-4ff5-a3e3-d4dedae9af8b/id-preview-21d13a3e--3320fc38-7692-40ab-8dea-979b6ae4883d.lovable.app-1780393692023.png" },
     ],
     links: [
       {
