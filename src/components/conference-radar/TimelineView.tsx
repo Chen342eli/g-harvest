@@ -74,7 +74,7 @@ function pctOf(ts: number) {
   return ((ts - YEAR_START) / YEAR_SPAN) * 100;
 }
 
-export function TimelineView({ conferences, onSetStatus }: Props) {
+export function TimelineView({ conferences, onSetStatus, onOpenInTable }: Props) {
   const [groupBy, setGroupBy] = useState<GroupBy>("none");
 
   const inYear = useMemo(
