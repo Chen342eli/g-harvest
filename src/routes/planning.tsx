@@ -187,7 +187,7 @@ function PlanningPage() {
                 </div>
                 <Button asChild size="sm">
                   <Link to="/planning/build">
-                    <Pencil className="mr-1 h-3.5 w-3.5" /> Build / edit plan
+                    <Pencil className="mr-1 h-3.5 w-3.5" /> Edit plan
                   </Link>
                 </Button>
               </div>
