@@ -5,9 +5,11 @@ import type { Conference, Region, Vertical } from "./conferences";
 import { REGIONS, VERTICALS } from "./conferences";
 import {
   isCommitted,
+  isInPipeline,
   type Plan,
   type PlanItemWithConference,
 } from "./planning";
+
 
 
 export interface GapRecommendation {
