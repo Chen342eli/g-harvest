@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Conference, DecisionStatus, Region, Tier, Vertical } from "@/lib/conferences";
+import type { Conference, Region, Tier, Vertical } from "@/lib/conferences";
 import { isCoverageGap } from "@/lib/conferences";
 import { ConferenceDetail } from "./ConferenceDetail";
 import { cn } from "@/lib/utils";
