@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Table as TableIcon } from "lucide-react";
 import type { Conference, DecisionStatus } from "@/lib/conferences";
 import { isCoverageGap } from "@/lib/conferences";
 import { TierBadge, CoverageGapBadge } from "./TierBadge";
@@ -19,24 +19,29 @@ const audienceFmt = new Intl.NumberFormat("en-US");
 export function ConferenceDetail({
   conference,
   onSetStatus,
+  onOpenInTable,
 }: {
   conference: Conference;
   onSetStatus?: (id: string, status: DecisionStatus) => void;
+  onOpenInTable?: (id: string) => void;
 }) {
   const c = conference;
   const gap = isCoverageGap(c);
   return (
-    <div className="w-[260px] space-y-2 text-sm text-foreground">
+    <div className="w-[280px] space-y-2 text-sm text-foreground">
       <div>
-        <a
-          href={c.sourceUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1 font-semibold text-foreground hover:text-primary hover:underline"
-        >
-          {c.name}
-          <ExternalLink className="h-3.5 w-3.5 opacity-70" />
-        </a>
+        {onOpenInTable ? (
+          <button
+            type="button"
+            onClick={() => onOpenInTable(c.id)}
+            className="inline-flex items-center gap-1 text-left font-semibold text-foreground hover:text-primary hover:underline"
+          >
+            {c.name}
+            <TableIcon className="h-3.5 w-3.5 opacity-70" />
+          </button>
+        ) : (
+          <span className="font-semibold text-foreground">{c.name}</span>
+        )}
         <div className="mt-1 text-xs text-muted-foreground">
           {c.city}, {c.country}
         </div>
