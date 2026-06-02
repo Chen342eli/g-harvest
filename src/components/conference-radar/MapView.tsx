@@ -150,6 +150,8 @@ function MapViewClient({ conferences, onOpenInTable }: Props) {
   const expandedLocationKeysRef = useRef<Set<string>>(new Set());
   const renderMarkersRef = useRef<(fitToData?: boolean) => void>(() => {});
   const LRef = useRef<any>(null);
+  const onOpenInTableRef = useRef(onOpenInTable);
+  onOpenInTableRef.current = onOpenInTable;
 
   useEffect(() => {
     let cancelled = false;
