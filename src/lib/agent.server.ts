@@ -16,11 +16,14 @@ const MAX_CANDIDATES = 50;
 const SCRAPE_TIMEOUT_MS = 20_000;
 
 const SEARCH_QUERIES = [
-  "fintech conferences 2026 site:.com",
-  "payments industry conference 2027",
+  "fintech conferences 2026 2027",
+  "payments industry conference 2026 2027",
   "treasury CFO conference 2026 2027",
-  "B2B SaaS conference 2026 fintech",
-  "travel tech payments conference 2026",
+  "B2B SaaS fintech conference 2026 2027",
+  "travel tech payments conference 2026 2027",
+  "neobank embedded finance conference 2026 2027",
+  "cross-border payments conference 2026 2027",
+  "PSP marketplace payments summit 2026 2027",
 ];
 
 // Relaxed schema: anything that isn't certain from the page can be null.
