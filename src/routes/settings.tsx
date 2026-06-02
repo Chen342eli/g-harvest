@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { TopNav } from "@/components/TopNav";
 import { useSettings, updateSettings } from "@/lib/settings-store";
 import { resetSeed } from "@/lib/people-store";
+import { listConferences } from "@/lib/conferences.functions";
+import { DEMO_STATES, loadDemoState, type DemoState } from "@/lib/demo-data";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
