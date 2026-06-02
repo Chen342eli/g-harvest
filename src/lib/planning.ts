@@ -40,6 +40,8 @@ export function isInPipeline(s: PlanItemStatus): boolean {
   return s === "must_go" || s === "approved" || s === "shortlist";
 }
 
+export type PlanStatus = "draft" | "approved";
+
 export interface Plan {
   id: string;
   name: string;
@@ -47,9 +49,20 @@ export interface Plan {
   annualBudgetUsd: number;
   plannedRepsPerConference: number;
   isActive: boolean;
+  status: PlanStatus;
   createdAt: string;
   updatedAt: string;
   archivedAt: string | null;
+}
+
+/** Lifecycle the rest of the app cares about. */
+export type PlanLifecycle = "none" | "draft" | "approved";
+
+export function getPlanLifecycle(
+  activePlan: { plan: Pick<Plan, "status"> } | null | undefined,
+): PlanLifecycle {
+  if (!activePlan?.plan) return "none";
+  return activePlan.plan.status === "approved" ? "approved" : "draft";
 }
 
 export interface PlanItem {
