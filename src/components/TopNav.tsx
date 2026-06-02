@@ -17,7 +17,7 @@ type Item = { to: string; label: string; icon: LucideIcon; match?: string[]; bad
 
 const MODULES: Item[] = [
   { to: "/planning", label: "Season Planner", icon: CalendarRange, match: ["/agent"] },
-  { to: "/floor", label: "Floor", icon: CalendarCheck, match: ["/today", "/capture", "/import", "/recap"] },
+  { to: "/floor", label: "Event Mode", icon: CalendarCheck, match: ["/today", "/capture", "/import", "/recap"] },
   { to: "/people", label: "People", icon: Users },
   { to: "/follow-ups", label: "Follow-ups", icon: Mail, badge: "follow-ups" },
 ];

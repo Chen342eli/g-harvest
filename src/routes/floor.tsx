@@ -14,7 +14,7 @@ import { AfterPhase } from "@/components/floor/AfterPhase";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/floor")({
-  head: () => ({ meta: [{ title: "Floor · Grain Harvest" }] }),
+  head: () => ({ meta: [{ title: "Event Mode · Grain Harvest" }] }),
   component: FloorPage,
 });
 
