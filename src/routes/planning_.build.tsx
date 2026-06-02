@@ -275,6 +275,36 @@ function WizardFooter({
 
 /* ---------- Step 1 · Anchors ---------- */
 
+type ViewMode = "list" | "timeline" | "map";
+
+function ViewToggle({ value, onChange }: { value: ViewMode; onChange: (v: ViewMode) => void }) {
+  const opts: { id: ViewMode; label: string; Icon: typeof ListIcon }[] = [
+    { id: "list", label: "List", Icon: ListIcon },
+    { id: "timeline", label: "Timeline", Icon: CalendarRange },
+    { id: "map", label: "Map", Icon: MapIcon },
+  ];
+  return (
+    <div className="inline-flex items-center rounded-md border border-border bg-background p-0.5">
+      {opts.map(({ id, label, Icon }) => (
+        <button
+          key={id}
+          type="button"
+          onClick={() => onChange(id)}
+          className={cn(
+            "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
+            value === id
+              ? "bg-brand-base text-brand-base-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          <Icon className="h-3 w-3" />
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Step1Anchors({
   items,
   allConferences,
@@ -303,66 +333,82 @@ function Step1Anchors({
   }, [allConferences]);
 
   const mustGoCount = items.filter((i) => i.planStatus === "must_go").length;
+  const mustGoIds = useMemo(
+    () => new Set(items.filter((i) => i.planStatus === "must_go").map((i) => i.conferenceId)),
+    [items],
+  );
+
+  const [view, setView] = useState<ViewMode>("list");
 
   return (
     <div className="space-y-4">
-      <StepHeader
-        title="Step 1 · Anchors"
-        subtitle="The events you attend every year."
-        kicker={`${mustGoCount} marked must-go`}
-      />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <StepHeader
+          title="Step 1 · Anchors"
+          subtitle="The events you attend every year."
+          kicker={`${mustGoCount} marked must-go`}
+        />
+        <ViewToggle value={view} onChange={setView} />
+      </div>
       <p className="text-sm text-muted-foreground">
         These are your Tier 1 and best-performing past events. One tap locks them as must-go.
       </p>
 
-      <ul className="grid gap-2 sm:grid-cols-2">
-        {anchors.map((c) => {
-          const item = itemByConfId.get(c.id);
-          const isMustGo = item?.planStatus === "must_go";
-          return (
-            <li
-              key={c.id}
-              className={cn(
-                "flex items-start justify-between gap-3 rounded-md border p-3 transition",
-                isMustGo ? "border-violet-300 bg-violet-50/60" : "border-border bg-background hover:bg-muted/40",
-              )}
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <TierBadge tier={c.tier} />
-                  <span className="truncate text-sm font-medium text-foreground">{c.name}</span>
-                </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
-                  {c.city}, {c.country} · {c.vertical} · ICP {c.icpScore}
-                  {(c.subScores?.pastPerformance ?? 0) >= 70 && (
-                    <> · <span className="text-amber-700">★ past {c.subScores.pastPerformance}</span></>
-                  )}
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant={isMustGo ? "secondary" : "default"}
-                onClick={() => onSet(c.id, isMustGo ? "considering" : "must_go")}
-                className="shrink-0"
-              >
-                {isMustGo ? (
-                  <><Check className="mr-1 h-3.5 w-3.5" /> Must-go</>
-                ) : (
-                  <><Star className="mr-1 h-3.5 w-3.5" /> Mark must-go</>
+      {view === "timeline" ? (
+        <TimelineView conferences={anchors} committedIds={mustGoIds} />
+      ) : view === "map" ? (
+        <MapView conferences={anchors} committedIds={mustGoIds} />
+      ) : (
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {anchors.map((c) => {
+            const item = itemByConfId.get(c.id);
+            const isMustGo = item?.planStatus === "must_go";
+            return (
+              <li
+                key={c.id}
+                className={cn(
+                  "flex items-start justify-between gap-3 rounded-md border p-3 transition",
+                  isMustGo ? "border-brand-accent bg-brand-accent/10" : "border-border bg-background hover:bg-muted/40",
                 )}
-              </Button>
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <TierBadge tier={c.tier} />
+                    <span className="truncate text-sm font-medium text-foreground">{c.name}</span>
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    {c.city}, {c.country} · {c.vertical} · ICP {c.icpScore}
+                    {(c.subScores?.pastPerformance ?? 0) >= 70 && (
+                      <> · <span className="text-amber-700">★ past {c.subScores.pastPerformance}</span></>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant={isMustGo ? "secondary" : "default"}
+                  onClick={() => onSet(c.id, isMustGo ? "considering" : "must_go")}
+                  className="shrink-0"
+                >
+                  {isMustGo ? (
+                    <><Check className="mr-1 h-3.5 w-3.5" /> Must-go</>
+                  ) : (
+                    <><Star className="mr-1 h-3.5 w-3.5" /> Mark must-go</>
+                  )}
+                </Button>
+              </li>
+            );
+          })}
+          {anchors.length === 0 && (
+            <li className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground sm:col-span-2">
+              No anchor candidates found.
             </li>
-          );
-        })}
-        {anchors.length === 0 && (
-          <li className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground sm:col-span-2">
-            No anchor candidates found.
-          </li>
-        )}
-      </ul>
+          )}
+        </ul>
+      )}
     </div>
   );
 }
+
 
 /* ---------- Step 2 · Coverage ---------- */
 
