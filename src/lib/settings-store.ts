@@ -9,6 +9,7 @@ export interface Settings {
   resendApiKey?: string;
   resendFromEmail?: string;
   recapToEmail?: string;
+  floorPhaseOverride?: "before" | "during" | "after" | null;
 }
 
 const DEFAULT: Settings = {};

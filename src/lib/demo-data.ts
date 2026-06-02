@@ -747,7 +747,7 @@ function buildSnapshot(state: DemoState, amsConfId: string, amsConfName: string)
     return {
       people: { people: [], encounters: [] },
       schedule: [],
-      hotAccounts: [...HOT_ACCOUNTS],
+      hotAccounts: [],
       activeConferenceId: undefined,
       activeConferenceName: undefined,
       activeRepId: REPS.maya,
@@ -829,11 +829,14 @@ export function loadDemoState(state: DemoState, conferences: Conference[]) {
   } catch {
     prevSettings = {};
   }
+  const phaseOverride =
+    state === "A" ? null : state === "B" ? "before" : "after";
   const nextSettings = {
     ...prevSettings,
     activeConferenceId: snap.activeConferenceId,
     activeConferenceName: snap.activeConferenceName,
     activeRepId: snap.activeRepId,
+    floorPhaseOverride: phaseOverride,
   };
   window.localStorage.setItem(K_SETTINGS, JSON.stringify(nextSettings));
 }

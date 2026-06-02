@@ -37,7 +37,9 @@ function FloorPage() {
   });
   const settings = useSettings();
   const [gameTime, setGameTime] = useState(false);
-  const [phaseOverride, setPhaseOverride] = useState<Phase | null>(null);
+  const [phaseOverride, setPhaseOverride] = useState<Phase | null>(
+    (settings.floorPhaseOverride ?? null) as Phase | null,
+  );
 
   const upcoming = useMemo(() => {
     const now = Date.now();
