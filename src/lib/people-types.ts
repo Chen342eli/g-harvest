@@ -22,6 +22,15 @@ export const ENCOUNTER_VERTICALS: EncounterVertical[] = [
 export const ICP_VERTICALS: EncounterVertical[] = ["Payments", "Fintech", "Treasury"];
 export const MEDIUM_VERTICALS: EncounterVertical[] = ["Travel", "SaaS", "Marketplace"];
 
+export type AiSignal = "Warming" | "Tire-kicker" | "Steady" | "Too early";
+export type AiConfidence = "low" | "medium" | "high";
+
+export interface AiNudge {
+  channel: "email";
+  subject: string;
+  body: string;
+}
+
 export interface Person {
   id: string;
   fullName: string;
@@ -33,6 +42,12 @@ export interface Person {
   currentVertical?: EncounterVertical;
   createdAt: string;
   createdByRepId: string;
+  aiSignal?: AiSignal;
+  aiConfidence?: AiConfidence;
+  aiReasoning?: string;
+  aiNudge?: AiNudge;
+  aiArcSummary?: string;
+  aiGeneratedAt?: string;
 }
 
 export interface Encounter {
