@@ -336,12 +336,14 @@ function ExportButton({ conferences }: { conferences: Conference[] }) {
       type="button"
       onClick={exportCsv}
       disabled={conferences.length === 0}
-      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+      title="Export CSV"
+      aria-label="Export CSV"
+      className="inline-flex items-center justify-center rounded-md border border-border bg-card p-2 text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <Download className="h-3.5 w-3.5" />
-      Export CSV
+      <Download className="h-4 w-4" />
     </button>
   );
+
 }
 
 function Stat({ label, value, accent }: { label: string; value: number; accent?: string }) {
