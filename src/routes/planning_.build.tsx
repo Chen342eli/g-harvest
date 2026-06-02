@@ -150,7 +150,7 @@ function PlanBuilderPage() {
                   allConferences={allConferences}
                   planYear={plan.year}
                   onAdd={(conferenceId) => statusMutation.mutate({ conferenceId, planStatus: "approved" })}
-                  onRemove={(conferenceId) => statusMutation.mutate({ conferenceId, planStatus: "passed" })}
+                  onRemove={(conferenceId: string) => statusMutation.mutate({ conferenceId, planStatus: "dropped" })}
                 />
               )}
               {step === 3 && (
