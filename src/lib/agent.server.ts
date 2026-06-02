@@ -16,11 +16,14 @@ const MAX_CANDIDATES = 50;
 const SCRAPE_TIMEOUT_MS = 20_000;
 
 const SEARCH_QUERIES = [
-  "fintech conferences 2026 site:.com",
-  "payments industry conference 2027",
+  "fintech conferences 2026 2027",
+  "payments industry conference 2026 2027",
   "treasury CFO conference 2026 2027",
-  "B2B SaaS conference 2026 fintech",
-  "travel tech payments conference 2026",
+  "B2B SaaS fintech conference 2026 2027",
+  "travel tech payments conference 2026 2027",
+  "neobank embedded finance conference 2026 2027",
+  "cross-border payments conference 2026 2027",
+  "PSP marketplace payments summit 2026 2027",
 ];
 
 // Relaxed schema: anything that isn't certain from the page can be null.
@@ -238,9 +241,11 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             `  "confidence": integer 0-100\n` +
             `}\n\n` +
             `Rules:\n` +
-            `- Set isRelevant=false ONLY if this is clearly NOT a real conference (e.g. blog post, list article, news, past edition with no future date).\n` +
-            `- If the page IS a real upcoming fintech/payments/treasury/B2B-SaaS/travel-tech conference, set isRelevant=true even if some details are missing.\n` +
-            `- Use null for any field you cannot determine with confidence. Do NOT invent dates, cities, or audience sizes.\n\n` +
+            `- Set isRelevant=true if the conference audience includes CFOs, Heads of Payments, Treasury managers, or Product leaders at companies that move money internationally (PSPs, neobanks, marketplaces, travel platforms, embedded finance providers, cross-border payments, fintech infrastructure).\n` +
+            `- Set isRelevant=false if the primary audience is developers/engineers, academics/researchers, or general enterprise IT — even if "fintech" or "payments" appears on the page.\n` +
+            `- Also set isRelevant=false if this is clearly NOT a real upcoming conference (blog post, list article, news, past edition with no future date).\n` +
+            `- Use null for any field you cannot determine with confidence. Do NOT invent dates, cities, or audience sizes. Audience size is optional — leave null if unknown.\n` +
+            `- confidence is 0-100 reflecting how sure you are about isRelevant + the extracted details together.\n\n` +
             `URL: ${hit.url}\n` +
             `Title: ${hit.title ?? ""}\n` +
             `Snippet: ${hit.description ?? ""}\n\n` +
@@ -377,6 +382,10 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           tags: parsed.tags,
         });
 
+        // Low confidence → keep off the main board, route to review queue.
+        const lowConfidence = (parsed.confidence ?? 0) < 60;
+        const initialStatus = lowConfidence ? "Needs Review" : "Considering";
+
         const { data: inserted, error: insErr } = await supabaseAdmin
           .from("conferences")
           .insert({
@@ -393,6 +402,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             ...scoring,
             provenance: "ai_added",
             confidence: parsed.confidence,
+            status: initialStatus,
           })
           .select("id")
           .single();
@@ -403,13 +413,17 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           continue;
         }
 
-        // If anything was missing, raise a needs_review flag so a human can fill it in.
-        if (missing.length && inserted?.id) {
+        // Raise a needs_review flag for missing fields OR low confidence.
+        const reviewReasons: string[] = [];
+        if (missing.length) reviewReasons.push(`missing: ${missing.join(", ")}`);
+        if (lowConfidence) reviewReasons.push(`low confidence (${parsed.confidence})`);
+
+        if (reviewReasons.length && inserted?.id) {
           await supabaseAdmin.from("conference_change_flags").insert({
             conference_id: inserted.id,
             field: "needs_review",
             old_value: null as never,
-            new_value: { missing } as never,
+            new_value: { missing, confidence: parsed.confidence, lowConfidence } as never,
             source_url: hit.url,
           });
           flagged += 1;
@@ -418,7 +432,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             runId,
             hit,
             decision: "added",
-            reason: `Added with needs_review flag — missing: ${missing.join(", ")}`,
+            reason: `Added with needs_review flag — ${reviewReasons.join("; ")}`,
             extracted: parsed,
             conferenceId: inserted.id,
           });
