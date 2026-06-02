@@ -24,6 +24,10 @@ import { TierBadge } from "@/components/conference-radar/TierBadge";
 import { updateSettings } from "@/lib/settings-store";
 import { cn } from "@/lib/utils";
 import type { Conference } from "@/lib/conferences";
+// Logo for the currently featured event. Swap this import when the next-up event changes.
+import eventLogo from "@/assets/event-logo.png.asset.json";
+
+const EVENT_LOGO_URL: string | null = eventLogo.url;
 
 export const Route = createFileRoute("/")({
   head: () => ({
