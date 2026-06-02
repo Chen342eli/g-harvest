@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlanningRouteImport } from './routes/planning'
+import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicAgentRunRouteImport } from './routes/api/public/agent/run'
@@ -17,6 +18,11 @@ import { Route as ApiPublicAgentRunRouteImport } from './routes/api/public/agent
 const PlanningRoute = PlanningRouteImport.update({
   id: '/planning',
   path: '/planning',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptureRoute = CaptureRouteImport.update({
+  id: '/capture',
+  path: '/capture',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentRoute = AgentRouteImport.update({
@@ -38,12 +44,14 @@ const ApiPublicAgentRunRoute = ApiPublicAgentRunRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
+  '/capture': typeof CaptureRoute
   '/planning': typeof PlanningRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
+  '/capture': typeof CaptureRoute
   '/planning': typeof PlanningRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
@@ -51,20 +59,28 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agent': typeof AgentRoute
+  '/capture': typeof CaptureRoute
   '/planning': typeof PlanningRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/agent' | '/planning' | '/api/public/agent/run'
+  fullPaths: '/' | '/agent' | '/capture' | '/planning' | '/api/public/agent/run'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agent' | '/planning' | '/api/public/agent/run'
-  id: '__root__' | '/' | '/agent' | '/planning' | '/api/public/agent/run'
+  to: '/' | '/agent' | '/capture' | '/planning' | '/api/public/agent/run'
+  id:
+    | '__root__'
+    | '/'
+    | '/agent'
+    | '/capture'
+    | '/planning'
+    | '/api/public/agent/run'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentRoute: typeof AgentRoute
+  CaptureRoute: typeof CaptureRoute
   PlanningRoute: typeof PlanningRoute
   ApiPublicAgentRunRoute: typeof ApiPublicAgentRunRoute
 }
@@ -76,6 +92,13 @@ declare module '@tanstack/react-router' {
       path: '/planning'
       fullPath: '/planning'
       preLoaderRoute: typeof PlanningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capture': {
+      id: '/capture'
+      path: '/capture'
+      fullPath: '/capture'
+      preLoaderRoute: typeof CaptureRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agent': {
@@ -105,9 +128,20 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentRoute: AgentRoute,
+  CaptureRoute: CaptureRoute,
   PlanningRoute: PlanningRoute,
   ApiPublicAgentRunRoute: ApiPublicAgentRunRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
