@@ -88,23 +88,20 @@ export function HotLeadsSidebar() {
             const last = d.encounters[d.encounters.length - 1];
             return (
               <li key={p.id} className="px-4 py-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-foreground">
-                      {p.currentCompany}
-                    </div>
-                    <div className="truncate text-xs text-muted-foreground">
-                      {p.fullName}
-                      {p.currentRole ? ` · ${p.currentRole}` : ""}
-                    </div>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-temp-hot px-1.5 py-0.5 text-[10px] font-medium text-temp-hot-foreground">
-                    🔥
+                <div className="mb-1.5">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-temp-hot/40 bg-temp-hot/10 px-2.5 py-1 text-sm font-semibold text-foreground">
+                    <Flame className="h-3.5 w-3.5 text-temp-hot" />
+                    {p.currentCompany}
                   </span>
                 </div>
+                <div className="truncate text-xs text-muted-foreground">
+                  {p.fullName}
+                  {p.currentRole ? ` · ${p.currentRole}` : ""}
+                </div>
                 {last && (
-                  <div className="mt-1 text-[11px] text-muted-foreground">
-                    {last.conferenceName} · {d.encounterCount}×
+                  <div className="mt-0.5 text-[11px] text-muted-foreground">
+                    {last.conferenceName}
+                    {d.encounterCount > 1 ? ` · ${d.encounterCount}×` : ""}
                   </div>
                 )}
               </li>
