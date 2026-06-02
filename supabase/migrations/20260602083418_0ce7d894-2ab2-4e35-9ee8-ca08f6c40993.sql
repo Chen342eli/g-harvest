@@ -1,0 +1,1 @@
+UPDATE public.plan_items SET plan_status = 'approved' WHERE plan_id = '59fa2403-f1f9-452c-9305-67941a4744cb' AND conference_id IN (SELECT conference_id FROM public.plan_items WHERE plan_id = '59fa2403-f1f9-452c-9305-67941a4744cb' ORDER BY created_at LIMIT 5);
