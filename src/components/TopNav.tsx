@@ -1,7 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Calendar,
+  CalendarCheck,
+  CalendarRange,
   Home,
+  Inbox,
   ListTree,
   Radar,
   Settings,
@@ -17,17 +19,25 @@ type Item = { to: string; label: string; icon: LucideIcon; exact?: boolean };
 
 const HOME: Item = { to: "/", label: "Home", icon: Home, exact: true };
 
-const CONFERENCES: Item[] = [
+// 1. Planning (before)
+const PLANNING: Item[] = [
   { to: "/catalog", label: "Catalog", icon: ListTree },
-  { to: "/planning", label: "Planning", icon: Calendar },
+  { to: "/planning", label: "Plan", icon: CalendarRange },
   { to: "/agent", label: "Agent", icon: Radar },
 ];
 
-const PEOPLE: Item[] = [
+// 2. Conference Mode (during)
+const CONFERENCE: Item[] = [
+  { to: "/today", label: "Today", icon: CalendarCheck },
   { to: "/capture", label: "Capture", icon: UserPlus },
-  { to: "/people", label: "People", icon: Users },
   { to: "/import", label: "Import", icon: Upload },
   { to: "/recap", label: "Recap", icon: Sun },
+];
+
+// 3. Leads (after + cross-conference)
+const LEADS: Item[] = [
+  { to: "/people", label: "People", icon: Users },
+  { to: "/follow-ups", label: "Follow-ups", icon: Inbox },
 ];
 
 const META: Item[] = [{ to: "/settings", label: "Settings", icon: Settings }];
@@ -40,12 +50,16 @@ export function TopNav() {
   return (
     <nav className="flex flex-wrap items-center gap-1">
       <NavItem item={HOME} active={isActive(HOME)} />
-      <Sep label="Conferences" />
-      {CONFERENCES.map((it) => (
+      <Sep label="Planning" />
+      {PLANNING.map((it) => (
         <NavItem key={it.to} item={it} active={isActive(it)} />
       ))}
-      <Sep label="People" />
-      {PEOPLE.map((it) => (
+      <Sep label="Conference Mode" />
+      {CONFERENCE.map((it) => (
+        <NavItem key={it.to} item={it} active={isActive(it)} />
+      ))}
+      <Sep label="Leads" />
+      {LEADS.map((it) => (
         <NavItem key={it.to} item={it} active={isActive(it)} />
       ))}
       <Sep />
