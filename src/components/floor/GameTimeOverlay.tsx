@@ -399,51 +399,247 @@ export function GameTimeOverlay({ onExit }: Props) {
   );
 }
 
-function ExistingPersonSummary({ personId }: { personId: string }) {
+// Identity sub-line under the person's name in the briefing header
+function PersonIdentitySub({ personId }: { personId: string }) {
   const data = usePeopleData();
   const person = data.people.find((p) => p.id === personId);
   if (!person) return null;
-  const derived = derivePerson(person, data.encounters);
-  const badges = computeBadges(person, data.encounters);
-  const encounters = derived.encounters;
-  const last = encounters[encounters.length - 1];
+  const sub = [person.currentRole, person.currentCompany ? `@ ${person.currentCompany}` : null]
+    .filter(Boolean)
+    .join(" ");
+  if (!sub) return null;
+  return <p className="text-sm font-medium text-brand-base-foreground/60">{sub}</p>;
+}
+
+// Game Time briefing — AI signal hero, suggested follow-up, badges, relationship arc.
+// Auto-generates the AI read on open if not cached. Uses cached on later opens.
+function PersonBriefing({ personId }: { personId: string }) {
+  const data = usePeopleData();
+  const person = data.people.find((p) => p.id === personId);
+  const analyze = useServerFn(analyzeRelationship);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [nudgeOpen, setNudgeOpen] = useState(false);
+  const ranForRef = useRef<string | null>(null);
+
+  const derived = useMemo(
+    () => (person ? derivePerson(person, data.encounters) : null),
+    [person, data.encounters],
+  );
+  const badges = useMemo(
+    () => (person ? computeBadges(person, data.encounters) : []),
+    [person, data.encounters],
+  );
+  const encounters = derived?.encounters ?? [];
+
+  useEffect(() => {
+    if (!person) return;
+    if (person.aiSignal) return;
+    if (encounters.length === 0) return; // nothing to analyze yet
+    if (ranForRef.current === person.id) return;
+    ranForRef.current = person.id;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const payload = {
+          person: {
+            fullName: person.fullName,
+            nameVariations: person.nameVariations,
+            linkedInUrl: person.linkedInUrl ?? null,
+            currentRole: person.currentRole ?? null,
+            currentCompany: person.currentCompany ?? null,
+            currentVertical: person.currentVertical ?? null,
+          },
+          encounters: encounters.map((e) => ({
+            date: e.timestamp.slice(0, 10),
+            conferenceName: e.conferenceName,
+            repName: e.repId,
+            temperature: e.temperature,
+            roleAtTime: e.roleAtTime ?? null,
+            companyAtTime: e.companyAtTime ?? null,
+            note: e.note ?? null,
+          })),
+        };
+        const out = await analyze({ data: payload });
+        updatePerson(person.id, {
+          aiSignal: out.signal,
+          aiConfidence: out.confidence,
+          aiReasoning: out.reasoning,
+          aiNudge: out.nudge,
+          aiArcSummary: out.arcSummary,
+          aiGeneratedAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to analyze");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [person, encounters, analyze]);
+
+  if (!person) return null;
+
+  const tempColor = (t: Temperature) =>
+    t === "hot" ? "bg-temp-hot shadow-[0_0_8px_var(--temp-hot)]"
+      : t === "warm" ? "bg-temp-warm shadow-[0_0_8px_var(--temp-warm)]"
+      : "bg-temp-cold";
+
+  const signalTone =
+    person.aiSignal === "Warming"
+      ? "border-temp-hot/40 from-temp-hot/20 text-temp-hot"
+      : person.aiSignal === "Steady"
+      ? "border-temp-warm/40 from-temp-warm/20 text-temp-warm"
+      : person.aiSignal === "Tire-kicker"
+      ? "border-temp-cold/40 from-temp-cold/20 text-temp-cold"
+      : "border-white/15 from-white/10 text-brand-base-foreground/70";
+
+  const copyNudge = async () => {
+    if (!person.aiNudge) return;
+    try {
+      await navigator.clipboard.writeText(`Subject: ${person.aiNudge.subject}\n\n${person.aiNudge.body}`);
+      toast.success("Nudge copied");
+    } catch {
+      toast.error("Could not copy");
+    }
+  };
 
   return (
-    <div className="space-y-3 rounded-xl border border-border bg-background p-4">
-      <div className="rounded-lg border border-dashed border-brand-accent/40 bg-brand-accent/5 p-3">
-        <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-brand-accent">
-          <Sparkles className="h-3 w-3" /> AI relationship read
+    <div className="px-6 pb-4 pt-2 space-y-4">
+
+      {/* Badges */}
+      {badges.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          <BadgeList badges={badges} />
         </div>
-        <p className="text-xs leading-relaxed text-foreground">
-          {encounters.length === 0
-            ? "First time meeting — no prior context yet."
-            : `${encounters.length} prior encounter${encounters.length > 1 ? "s" : ""}${
-                last ? `. Last seen at ${last.conferenceName} (${last.temperature}) by ${last.repId}` : ""
-              }. ${person.currentRole ?? ""}${person.currentCompany ? ` @ ${person.currentCompany}` : ""}.`}
-        </p>
+      )}
+
+      {/* AI Signal hero */}
+      <div className={cn(
+        "relative overflow-hidden rounded-2xl border bg-gradient-to-br to-transparent p-5",
+        signalTone,
+      )}>
+        <div className="relative z-10">
+          <div className="mb-2 flex items-center gap-2">
+            <span className={cn(
+              "h-2 w-2 rounded-full",
+              person.aiSignal === "Warming" ? "bg-temp-hot animate-pulse" : "bg-current opacity-60",
+            )} />
+            <span className="text-[11px] font-black uppercase tracking-[0.15em]">
+              {loading && !person.aiSignal
+                ? "Analyzing…"
+                : person.aiSignal
+                ? `Signal: ${person.aiSignal}${person.aiConfidence ? ` · ${person.aiConfidence} confidence` : ""}`
+                : encounters.length === 0
+                ? "First meeting · no signal yet"
+                : "No signal yet"}
+            </span>
+          </div>
+          {person.aiReasoning ? (
+            <p className="text-[15px] font-semibold leading-snug text-brand-base-foreground">
+              {person.aiReasoning}
+            </p>
+          ) : loading ? (
+            <div className="space-y-2">
+              <div className="h-3 w-full rounded bg-white/10 animate-pulse" />
+              <div className="h-3 w-3/4 rounded bg-white/10 animate-pulse" />
+            </div>
+          ) : error ? (
+            <p className="text-xs text-temp-hot/80">{error}</p>
+          ) : (
+            <p className="text-xs text-brand-base-foreground/50">
+              {encounters.length === 0
+                ? "Log this encounter to start building context."
+                : "Generating relationship read…"}
+            </p>
+          )}
+        </div>
+        <Zap className="pointer-events-none absolute -right-3 -bottom-3 h-24 w-24 opacity-10" />
       </div>
 
-      {badges.length > 0 && <BadgeList badges={badges} />}
+      {/* Suggested follow-up */}
+      {person.aiNudge && (
+        <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setNudgeOpen((v) => !v)}
+            className="flex w-full items-center justify-between p-4 text-left hover:bg-white/[0.07] transition"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="rounded-lg bg-brand-accent/15 p-2 shrink-0">
+                <Mail className="h-4 w-4 text-brand-accent" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-brand-base-foreground/40">
+                  Suggested follow-up
+                </p>
+                <p className="truncate text-sm font-medium text-brand-base-foreground/90">
+                  {person.aiNudge.subject}
+                </p>
+              </div>
+            </div>
+            <span className="ml-3 text-[10px] text-brand-base-foreground/40">
+              {nudgeOpen ? "Hide" : "Open"}
+            </span>
+          </button>
+          {nudgeOpen && (
+            <div className="border-t border-white/10 bg-black/20 p-4 space-y-3">
+              <p className="whitespace-pre-wrap text-xs leading-relaxed text-brand-base-foreground/80">
+                {person.aiNudge.body}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={copyNudge}
+                  className="inline-flex items-center gap-1 rounded-md bg-brand-accent px-2.5 py-1.5 text-[10px] font-bold text-brand-accent-foreground hover:opacity-90"
+                >
+                  <Copy className="h-3 w-3" /> Copy
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2.5 py-1.5 text-[10px] font-bold text-brand-base-foreground/40 cursor-not-allowed"
+                  title="Coming soon"
+                >
+                  <Mail className="h-3 w-3" /> Open in email
+                  <span className="ml-1 rounded bg-white/10 px-1 py-0.5 text-[8px] uppercase tracking-wide">soon</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
+      {/* Relationship arc */}
       {encounters.length > 0 && (
-        <div>
-          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Arc
-          </div>
-          <ol className="space-y-1.5">
-            {encounters.slice(-3).reverse().map((e) => (
-              <li key={e.id} className="flex items-start gap-2 text-xs">
-                <TempDot t={e.temperature} />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-foreground">
-                    <span className="font-medium">{e.conferenceName}</span>
-                    <span className="text-muted-foreground"> · {new Date(e.timestamp).toLocaleDateString()}</span>
-                  </div>
-                  {e.note && <div className="truncate italic text-muted-foreground">"{e.note}"</div>}
+        <div className="space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-brand-base-foreground/40">
+            Relationship arc
+          </p>
+          <div className="space-y-3">
+            {encounters.slice(-3).reverse().map((e, idx, arr) => (
+              <div key={e.id} className="flex gap-3">
+                <div className="flex flex-col items-center pt-1">
+                  <span className={cn("h-2.5 w-2.5 rounded-full", tempColor(e.temperature))} />
+                  {idx < arr.length - 1 && <span className="my-1 w-px flex-1 bg-white/10" />}
                 </div>
-              </li>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xs font-bold text-brand-base-foreground/90">
+                      {e.conferenceName}
+                    </span>
+                    <span className="font-mono text-[10px] italic text-brand-base-foreground/40">
+                      {new Date(e.timestamp).toLocaleDateString(undefined, { month: "numeric", day: "numeric" })}
+                    </span>
+                    <span className="text-[10px] text-brand-base-foreground/40">· {e.repId}</span>
+                  </div>
+                  {e.note && (
+                    <p className="text-xs italic text-brand-base-foreground/50">"{e.note}"</p>
+                  )}
+                </div>
+              </div>
             ))}
-          </ol>
+          </div>
         </div>
       )}
     </div>
