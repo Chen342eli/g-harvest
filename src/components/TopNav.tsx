@@ -20,10 +20,10 @@ const MODULES: Item[] = [
     match: ["/catalog", "/agent"],
   },
   {
-    to: "/today",
-    label: "Conference Mode",
+    to: "/floor",
+    label: "Floor",
     icon: CalendarCheck,
-    match: ["/capture", "/import", "/recap"],
+    match: ["/today", "/capture", "/import", "/recap"],
   },
   {
     to: "/people",

@@ -16,6 +16,7 @@ import { Route as PlanningRouteImport } from './routes/planning'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as FollowUpsRouteImport } from './routes/follow-ups'
+import { Route as FloorRouteImport } from './routes/floor'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as AgentRouteImport } from './routes/agent'
@@ -58,6 +59,11 @@ const FollowUpsRoute = FollowUpsRouteImport.update({
   path: '/follow-ups',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FloorRoute = FloorRouteImport.update({
+  id: '/floor',
+  path: '/floor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogRoute = CatalogRouteImport.update({
   id: '/catalog',
   path: '/catalog',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
   '/catalog': typeof CatalogRoute
+  '/floor': typeof FloorRoute
   '/follow-ups': typeof FollowUpsRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
   '/catalog': typeof CatalogRoute
+  '/floor': typeof FloorRoute
   '/follow-ups': typeof FollowUpsRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/agent': typeof AgentRoute
   '/capture': typeof CaptureRoute
   '/catalog': typeof CatalogRoute
+  '/floor': typeof FloorRoute
   '/follow-ups': typeof FollowUpsRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/agent'
     | '/capture'
     | '/catalog'
+    | '/floor'
     | '/follow-ups'
     | '/import'
     | '/people'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/agent'
     | '/capture'
     | '/catalog'
+    | '/floor'
     | '/follow-ups'
     | '/import'
     | '/people'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/agent'
     | '/capture'
     | '/catalog'
+    | '/floor'
     | '/follow-ups'
     | '/import'
     | '/people'
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   AgentRoute: typeof AgentRoute
   CaptureRoute: typeof CaptureRoute
   CatalogRoute: typeof CatalogRoute
+  FloorRoute: typeof FloorRoute
   FollowUpsRoute: typeof FollowUpsRoute
   ImportRoute: typeof ImportRoute
   PeopleRoute: typeof PeopleRoute
@@ -247,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: '/follow-ups'
       fullPath: '/follow-ups'
       preLoaderRoute: typeof FollowUpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/floor': {
+      id: '/floor'
+      path: '/floor'
+      fullPath: '/floor'
+      preLoaderRoute: typeof FloorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalog': {
@@ -311,6 +331,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentRoute: AgentRoute,
   CaptureRoute: CaptureRoute,
   CatalogRoute: CatalogRoute,
+  FloorRoute: FloorRoute,
   FollowUpsRoute: FollowUpsRoute,
   ImportRoute: ImportRoute,
   PeopleRoute: PeopleRoute,
