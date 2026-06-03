@@ -330,6 +330,20 @@ function Step1Anchors({
   );
 
   const [view, setView] = useState<ViewMode>("list");
+  const [query, setQuery] = useState("");
+
+  const filteredAnchors = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return anchors;
+    return anchors.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.city.toLowerCase().includes(q) ||
+        c.country.toLowerCase().includes(q) ||
+        c.vertical.toLowerCase().includes(q) ||
+        c.region.toLowerCase().includes(q),
+    );
+  }, [anchors, query]);
 
   return (
     <div className="space-y-4">
@@ -344,6 +358,16 @@ function Step1Anchors({
       <p className="text-sm text-muted-foreground">
         These are your Tier 1 and best-performing past events. One tap locks them as must-go.
       </p>
+
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search anchors by name, city, country, vertical…"
+        className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      />
+
+
 
       {view === "timeline" ? (
         <TimelineView conferences={anchors} committedIds={mustGoIds} />
