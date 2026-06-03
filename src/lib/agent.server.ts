@@ -103,6 +103,10 @@ const ExtractionSchema = z.object({
   vertical: z.enum(VERTICAL_ENUM).nullable(),
   estimatedAudienceSize: z.number().int().nonnegative().nullable(),
   tags: z.array(z.string()).max(8).default([]),
+  officialUrl: z
+    .string()
+    .nullable()
+    .describe("The conference's OWN official website (e.g. https://money2020.com). NOT an aggregator/calendar/blog. Null if not clearly stated on the page."),
   isRelevant: z
     .boolean()
     .describe("True only if the conference audience includes CFOs, Heads of Payments, Treasury managers, or Product leaders at PSPs, neobanks, marketplaces, embedded-finance providers, cross-border payments, or travel-tech platforms (not a blog post, list article, past edition, or news)"),
