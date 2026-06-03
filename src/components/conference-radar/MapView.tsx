@@ -243,7 +243,7 @@ function MapViewClient({ conferences, committedIds, onOpenInTable }: Props) {
     const byLocation = new Map<string, { base: [number, number]; items: Conference[] }>();
 
     conferences.forEach((c) => {
-      const base = coordsFor(c.city, c.country);
+      const base = getCoords(c);
       if (!base) return;
       const key = locationKey(c);
       const current = byLocation.get(key);
