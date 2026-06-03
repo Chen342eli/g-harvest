@@ -79,6 +79,34 @@ function isAggregatorPage(hit: SearchHit): boolean {
   return AGGREGATOR_TITLE_HINTS.some((h) => haystack.includes(h));
 }
 
+/** Known aggregator/calendar/blog domains that must NEVER be saved as
+ *  a conference's officialUrl. Match by suffix to cover subdomains. */
+const AGGREGATOR_DOMAINS = [
+  "fintechlabs.com",
+  "paytech.events",
+  "fintechprofile.com",
+  "vendelux.com",
+  "ozoneapi.com",
+  "spreedly.com",
+  "loanpro.io",
+  "softwaremill.com",
+  "fintechgrowthinsider.com",
+  "thepaypers.com",
+  "medium.com",
+  "linkedin.com",
+  "substack.com",
+  "reddit.com",
+];
+
+function isAggregatorDomain(rawUrl: string): boolean {
+  try {
+    const host = new URL(rawUrl).host.toLowerCase().replace(/^www\./, "");
+    return AGGREGATOR_DOMAINS.some((d) => host === d || host.endsWith("." + d));
+  } catch {
+    return true;
+  }
+}
+
 // Relaxed schema: anything that isn't certain from the page can be null.
 // We will keep the conference anyway and flag it for human review.
 const VERTICAL_ENUM = [
