@@ -370,12 +370,12 @@ function Step1Anchors({
 
 
       {view === "timeline" ? (
-        <TimelineView conferences={anchors} committedIds={mustGoIds} />
+        <TimelineView conferences={filteredAnchors} committedIds={mustGoIds} />
       ) : view === "map" ? (
-        <MapView conferences={anchors} committedIds={mustGoIds} />
+        <MapView conferences={filteredAnchors} committedIds={mustGoIds} />
       ) : (
         <ul className="grid gap-2 sm:grid-cols-2">
-          {anchors.map((c) => {
+          {filteredAnchors.map((c) => {
             const item = itemByConfId.get(c.id);
             const isMustGo = item?.planStatus === "must_go";
             return (
@@ -413,11 +413,12 @@ function Step1Anchors({
               </li>
             );
           })}
-          {anchors.length === 0 && (
+          {filteredAnchors.length === 0 && (
             <li className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground sm:col-span-2">
-              No anchor candidates found.
+              {query ? "No matches." : "No anchor candidates found."}
             </li>
           )}
+
         </ul>
       )}
     </div>
