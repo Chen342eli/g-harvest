@@ -198,11 +198,11 @@ export function AddTouchpointDialog() {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded-md border border-transparent bg-foreground px-2.5 py-1.5 text-xs font-semibold text-background hover:opacity-90"
-          title="Add a person or log a new touchpoint"
+          className="inline-flex h-[68px] items-center gap-2 rounded-md border border-transparent bg-foreground px-5 text-sm font-semibold text-background transition hover:opacity-90"
+          title="Log a new touchpoint or create a lead"
         >
-          <Plus className="h-3.5 w-3.5" />
-          Add person / touchpoint
+          <Plus className="h-4 w-4" />
+          Add touchpoint
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">

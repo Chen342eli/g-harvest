@@ -216,11 +216,12 @@ function RelationshipsPage() {
               <span className="text-muted-foreground"> of {enriched.length}</span>
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-stretch gap-2">
             <AddTouchpointDialog />
-            <span className="mx-1 h-4 w-px bg-border" aria-hidden />
-            <HubSpotImportButton existing={data.people} />
-            <HubSpotExportButton people={data.people} encounters={data.encounters} />
+            <div className="flex flex-col gap-1.5">
+              <HubSpotImportButton existing={data.people} />
+              <HubSpotExportButton people={data.people} encounters={data.encounters} />
+            </div>
           </div>
         </div>
       </div>
@@ -647,10 +648,10 @@ function HubSpotExportButton({
           ? "No prioritized leads to export yet"
           : `Export ${queueCount} prioritized lead${queueCount === 1 ? "" : "s"} (Tire-kickers excluded)`
       }
-      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40"
+      className="inline-flex h-[30px] min-w-[170px] items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-40"
     >
-      <Download className="h-3.5 w-3.5" />
-      Export to HubSpot (CSV)
+      <Download className="h-3 w-3" />
+      <span className="flex-1 text-left">Export to HubSpot</span>
       {queueCount > 0 && (
         <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
           {queueCount}
@@ -706,10 +707,10 @@ function HubSpotImportButton({ existing }: { existing: Person[] }) {
         disabled={busy}
         onClick={() => inputRef.current?.click()}
         title="Import a HubSpot contacts CSV export"
-        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40"
+        className="inline-flex h-[30px] min-w-[170px] items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-40"
       >
-        <Upload className="h-3.5 w-3.5" />
-        {busy ? "Importing…" : "Import from HubSpot"}
+        <Upload className="h-3 w-3" />
+        <span className="flex-1 text-left">{busy ? "Importing…" : "Import from HubSpot"}</span>
       </button>
     </>
   );
