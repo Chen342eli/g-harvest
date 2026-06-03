@@ -638,6 +638,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
               `  "vertical": ${verticalEnumStr} | null,\n` +
               `  "estimatedAudienceSize": integer | null,\n` +
               `  "tags": string[] (max 8),\n` +
+              `  "officialUrl": string | null,\n` +
               `  "isRelevant": boolean,\n` +
               `  "confidence": integer 0-100\n` +
               `}\n\n` +
