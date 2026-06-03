@@ -26,7 +26,7 @@ function HelpPage() {
       <TopNav />
 
       <main className="mx-auto max-w-[1200px] px-6 py-8">
-        <header className="mb-6 text-center">
+        <header className="mb-6">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">FAQ &amp; Docs</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Answers to common questions and the technical reference for how Grain Harvest works.
