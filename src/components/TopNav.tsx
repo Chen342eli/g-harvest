@@ -43,6 +43,7 @@ export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) 
   };
 
   const settingsActive = pathname === "/settings" || pathname.startsWith("/settings/");
+  const helpActive = pathname === "/help" || pathname.startsWith("/help/");
 
   return (
     <>
