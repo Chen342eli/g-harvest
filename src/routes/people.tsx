@@ -707,10 +707,10 @@ function HubSpotImportButton({ existing }: { existing: Person[] }) {
         disabled={busy}
         onClick={() => inputRef.current?.click()}
         title="Import a HubSpot contacts CSV export"
-        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40"
+        className="inline-flex h-[30px] min-w-[170px] items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-40"
       >
-        <Upload className="h-3.5 w-3.5" />
-        {busy ? "Importing…" : "Import from HubSpot"}
+        <Upload className="h-3 w-3" />
+        <span className="flex-1 text-left">{busy ? "Importing…" : "Import from HubSpot"}</span>
       </button>
     </>
   );
