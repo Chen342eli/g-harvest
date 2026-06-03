@@ -59,9 +59,12 @@ export interface Plan {
 export type PlanLifecycle = "none" | "draft" | "approved";
 
 export function getPlanLifecycle(
-  activePlan: { plan: Pick<Plan, "status"> } | null | undefined,
+  activePlan: { plan: Pick<Plan, "status">; items?: unknown[] } | null | undefined,
 ): PlanLifecycle {
   if (!activePlan?.plan) return "none";
+  // An empty plan (no items at all) is treated as "no plan" for UX purposes,
+  // even if a Plan row exists with status=approved.
+  if (Array.isArray(activePlan.items) && activePlan.items.length === 0) return "none";
   return activePlan.plan.status === "approved" ? "approved" : "draft";
 }
 
