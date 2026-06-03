@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronUp, ChevronsUpDown, Copy, Download, Mail, Search, Sparkles, X } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronUp, ChevronsUpDown, Copy, Download, Mail, Search, Sparkles, Upload, X } from "lucide-react";
 import { downloadHubSpotCsv, buildHubSpotQueue } from "@/lib/hubspot-export";
+import { parseHubSpotCsv } from "@/lib/hubspot-import";
 import { TopNav } from "@/components/TopNav";
-import { usePeopleData, updatePerson } from "@/lib/people-store";
+import { usePeopleData, updatePerson, addPeople } from "@/lib/people-store";
 import { computeBadges, derivePerson } from "@/lib/matching";
 import type { Temperature, EncounterVertical, Encounter, Person, AiSignal, AiConfidence } from "@/lib/people-types";
 import { ENCOUNTER_VERTICALS } from "@/lib/people-types";
