@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronDown, FileText, HelpCircle } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { TopNav } from "@/components/TopNav";
 import { cn } from "@/lib/utils";
 import { DOC_TOPICS, FAQ_GROUPS } from "@/lib/help-content";
@@ -32,7 +33,6 @@ function HelpPage() {
           </p>
         </header>
 
-        {/* Tabs */}
         <div
           role="tablist"
           aria-label="Help sections"
@@ -90,16 +90,11 @@ function TabButton({
 
 function FaqPanel() {
   return (
-    <section
-      role="tabpanel"
-      id="panel-faq"
-      aria-labelledby="tab-faq"
-      className="space-y-8"
-    >
+    <section role="tabpanel" id="panel-faq" aria-labelledby="tab-faq" className="space-y-8">
       {FAQ_GROUPS.map((group) => (
-        <div key={group.heading} className="space-y-2">
+        <div key={group.title} className="space-y-2">
           <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-            {group.heading}
+            {group.title}
           </h2>
           <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
             {group.items.map((item, idx) => (
@@ -150,7 +145,6 @@ function DocsPanel() {
       aria-labelledby="tab-docs"
       className="grid gap-6 md:grid-cols-[240px_minmax(0,1fr)]"
     >
-      {/* Mobile dropdown */}
       <div className="md:hidden">
         <label className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Topic
@@ -168,9 +162,11 @@ function DocsPanel() {
         </select>
       </div>
 
-      {/* Desktop sidebar */}
       <aside className="hidden md:block">
-        <nav aria-label="Technical docs topics" className="sticky top-20 space-y-1 rounded-lg border border-border bg-card p-2">
+        <nav
+          aria-label="Technical docs topics"
+          className="sticky top-20 space-y-1 rounded-lg border border-border bg-card p-2"
+        >
           {DOC_TOPICS.map((t) => {
             const on = t.id === activeId;
             return (
@@ -193,39 +189,63 @@ function DocsPanel() {
         </nav>
       </aside>
 
-      {/* Content */}
       <article className="rounded-lg border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">
-          {active.title}
-        </h2>
-        <div className="space-y-6">
-          {active.sections.map((s, i) => (
-            <div key={i} className="space-y-2">
-              {s.heading && (
-                <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {s.heading}
-                </h3>
-              )}
-              {s.body && (
-                <p className="text-sm leading-relaxed text-foreground">{s.body}</p>
-              )}
-              {s.bullets && s.bullets.length > 0 && (
-                <ul className="ml-4 list-disc space-y-1.5 text-sm leading-relaxed text-foreground marker:text-muted-foreground">
-                  {s.bullets.map((b, bi) => (
-                    <li key={bi}>
-                      {b.label && <span className="font-semibold">{b.label}:</span>}{" "}
-                      <span className="text-muted-foreground">{b.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {s.outro && (
-                <p className="text-sm leading-relaxed text-muted-foreground">{s.outro}</p>
-              )}
-            </div>
-          ))}
-        </div>
+        <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">{active.title}</h2>
+        <DocMarkdown body={active.body} />
       </article>
     </section>
+  );
+}
+
+function DocMarkdown({ body }: { body: string }) {
+  return (
+    <div className="text-sm leading-relaxed text-foreground">
+      <ReactMarkdown
+        components={{
+          h1: ({ children }) => (
+            <h2 className="mt-6 mb-2 text-base font-semibold tracking-tight text-foreground">{children}</h2>
+          ),
+          h2: ({ children }) => (
+            <h3 className="mt-6 mb-2 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+              {children}
+            </h3>
+          ),
+          h3: ({ children }) => (
+            <h4 className="mt-4 mb-1.5 text-sm font-semibold text-foreground">{children}</h4>
+          ),
+          p: ({ children }) => <p className="my-3 text-foreground/90">{children}</p>,
+          ul: ({ children }) => (
+            <ul className="my-3 ml-5 list-disc space-y-1.5 marker:text-muted-foreground">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="my-3 ml-5 list-decimal space-y-1.5 marker:text-muted-foreground">{children}</ol>
+          ),
+          li: ({ children }) => <li className="text-foreground/90">{children}</li>,
+          strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+          a: ({ children, href }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              className="text-brand-accent underline underline-offset-2 hover:opacity-80"
+            >
+              {children}
+            </a>
+          ),
+          code: ({ children }) => (
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12.5px] text-foreground">
+              {children}
+            </code>
+          ),
+          pre: ({ children }) => (
+            <pre className="my-4 overflow-x-auto rounded-md border border-border bg-muted/40 p-4 font-mono text-[12.5px] leading-relaxed text-foreground whitespace-pre">
+              {children}
+            </pre>
+          ),
+        }}
+      >
+        {body}
+      </ReactMarkdown>
+    </div>
   );
 }
