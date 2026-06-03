@@ -200,16 +200,27 @@ function RelationshipsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav
-        rightSlot={
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span>
-              <span className="font-semibold tabular-nums text-foreground">{sorted.length}</span> of {enriched.length} people
+      <TopNav />
+
+      {/* Sub-toolbar: counts + HubSpot import/export, mirrors ContextSubNav strip */}
+      <div className="border-b border-border bg-background">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-6 py-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              People
             </span>
+            <span className="text-border">·</span>
+            <span>
+              <span className="font-semibold tabular-nums text-foreground">{sorted.length}</span>
+              <span className="text-muted-foreground"> of {enriched.length}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <HubSpotImportButton existing={data.people} />
             <HubSpotExportButton people={data.people} encounters={data.encounters} />
           </div>
-        }
-      />
+        </div>
+      </div>
 
       <main className="mx-auto max-w-[1600px] px-6 py-6 relative">
         <section className="rounded-lg border border-border bg-card overflow-hidden">
