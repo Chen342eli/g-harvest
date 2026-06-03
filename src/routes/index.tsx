@@ -71,7 +71,10 @@ function Dashboard() {
       ),
     [activePlan],
   );
-  const lifecycle = getPlanLifecycle(activePlan);
+  // Treat an empty plan (no items at all) as "no plan" for dashboard UX,
+  // even if a Plan row exists in the DB with status=approved.
+  const hasAnyItems = (activePlan?.items?.length ?? 0) > 0;
+  const lifecycle = hasAnyItems ? getPlanLifecycle(activePlan) : "none";
   const planApproved = lifecycle === "approved";
 
   const upcoming = useMemo(() => {
