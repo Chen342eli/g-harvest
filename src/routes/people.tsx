@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronUp, ChevronsUpDown, Copy, Download, Mail, Search, Sparkles, X } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronUp, ChevronsUpDown, Copy, Download, Mail, Search, Sparkles, Upload, X } from "lucide-react";
 import { downloadHubSpotCsv, buildHubSpotQueue } from "@/lib/hubspot-export";
+import { parseHubSpotCsv } from "@/lib/hubspot-import";
 import { TopNav } from "@/components/TopNav";
-import { usePeopleData, updatePerson } from "@/lib/people-store";
+import { usePeopleData, updatePerson, addPeople } from "@/lib/people-store";
 import { computeBadges, derivePerson } from "@/lib/matching";
 import type { Temperature, EncounterVertical, Encounter, Person, AiSignal, AiConfidence } from "@/lib/people-types";
 import { ENCOUNTER_VERTICALS } from "@/lib/people-types";
@@ -199,16 +200,27 @@ function RelationshipsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav
-        rightSlot={
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span>
-              <span className="font-semibold tabular-nums text-foreground">{sorted.length}</span> of {enriched.length} people
+      <TopNav />
+
+      {/* Sub-toolbar: counts + HubSpot import/export, mirrors ContextSubNav strip */}
+      <div className="border-b border-border bg-background">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-6 py-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              People
             </span>
+            <span className="text-border">·</span>
+            <span>
+              <span className="font-semibold tabular-nums text-foreground">{sorted.length}</span>
+              <span className="text-muted-foreground"> of {enriched.length}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <HubSpotImportButton existing={data.people} />
             <HubSpotExportButton people={data.people} encounters={data.encounters} />
           </div>
-        }
-      />
+        </div>
+      </div>
 
       <main className="mx-auto max-w-[1600px] px-6 py-6 relative">
         <section className="rounded-lg border border-border bg-card overflow-hidden">
@@ -642,5 +654,60 @@ function HubSpotExportButton({
         </span>
       )}
     </button>
+  );
+}
+
+function HubSpotImportButton({ existing }: { existing: Person[] }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  const onFile = async (file: File) => {
+    setBusy(true);
+    try {
+      const text = await file.text();
+      const result = parseHubSpotCsv(text, existing);
+      if (result.people.length > 0) addPeople(result.people);
+      if (result.total === 0) {
+        toast.error("No rows found in the CSV.");
+      } else {
+        toast.success(`Imported ${result.added} contact${result.added === 1 ? "" : "s"}`, {
+          description:
+            result.skipped > 0
+              ? `${result.skipped} skipped (duplicate or missing name).`
+              : `From HubSpot CSV (${result.total} rows).`,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not parse the CSV file.");
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".csv,text/csv"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onFile(f);
+        }}
+      />
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+        title="Import a HubSpot contacts CSV export"
+        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40"
+      >
+        <Upload className="h-3.5 w-3.5" />
+        {busy ? "Importing…" : "Import from HubSpot"}
+      </button>
+    </>
   );
 }
