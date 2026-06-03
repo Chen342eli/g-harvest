@@ -17,6 +17,7 @@ export function AfterPhase({ conferenceId }: Props) {
   const data = usePeopleData();
   const settings = useSettings();
   const activeRepId = settings.activeRepId;
+  const [editTarget, setEditTarget] = useState<{ personId: string; encounterId: string | null } | null>(null);
 
   const { needsInfo, followUps } = useMemo(() => {
     const personIds = new Set(
