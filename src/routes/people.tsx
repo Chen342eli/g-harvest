@@ -216,6 +216,8 @@ function RelationshipsPage() {
             </span>
           </div>
           <div className="flex items-center gap-1.5">
+            <AddTouchpointDialog />
+            <span className="mx-1 h-4 w-px bg-border" aria-hidden />
             <HubSpotImportButton existing={data.people} />
             <HubSpotExportButton people={data.people} encounters={data.encounters} />
           </div>
