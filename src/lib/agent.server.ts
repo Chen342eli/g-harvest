@@ -36,6 +36,29 @@ const SEARCH_QUERIES = [
   "cross-border payments conference 2026 2027",
 ];
 
+/**
+ * Stable, curated calendar pages that always run BEFORE search queries.
+ * These give the agent a deterministic backbone, so re-runs converge.
+ */
+const ANCHOR_SOURCES: SearchHit[] = [
+  {
+    url: "https://www.fintechprofile.com/fintech-event-calendar-2026/",
+    title: "Fintech Event Calendar 2026",
+    description: "Curated calendar of fintech conferences 2026",
+  },
+  {
+    url: "https://paytech.events/events/",
+    title: "Paytech Events Calendar",
+    description: "Curated payments and fintech events",
+  },
+  {
+    url: "https://thepaypers.com/payments/expert-views/2026-fintech-and-payments-events-calendar",
+    title: "2026 Fintech and Payments Events Calendar",
+    description: "Curated 2026 events calendar from The Paypers",
+  },
+];
+const ANCHOR_URL_KEYS = new Set(ANCHOR_SOURCES.map((s) => normalizeUrl(s.url)));
+
 const AGGREGATOR_TITLE_HINTS = [
   "calendar",
   "top conferences",
@@ -51,6 +74,7 @@ const AGGREGATOR_TITLE_HINTS = [
 ];
 
 function isAggregatorPage(hit: SearchHit): boolean {
+  if (ANCHOR_URL_KEYS.has(normalizeUrl(hit.url))) return true;
   const haystack = `${hit.title ?? ""} ${hit.description ?? ""}`.toLowerCase();
   return AGGREGATOR_TITLE_HINTS.some((h) => haystack.includes(h));
 }
@@ -128,15 +152,43 @@ function normalizeUrl(u: string): string {
  *  - all punctuation; collapses whitespace; lowercases.
  */
 function normalizeConfName(raw: string): string {
-  let s = raw.toLowerCase();
-  // strip subtitle separators
+  let s = (raw ?? "").toLowerCase();
+  // strip subtitle separators (keep brand head before |, :, dash variants)
   s = s.split(/[|:]| - | – | — /)[0];
-  // strip 4-digit years
-  s = s.replace(/\b(19|20)\d{2}\b/g, " ");
-  // remove punctuation
+  // strip standalone 4-digit year tokens (space-bounded only — preserves "Money 20/20")
+  s = s.replace(/(^|\s)(20[2-9]\d)(?=\s|$)/g, "$1");
+  // punctuation -> spaces
   s = s.replace(/[^a-z0-9\s]/g, " ");
-  // collapse whitespace
+  // glue letter+space+digit ("Money 20" -> "Money20")
+  s = s.replace(/([a-z])\s+(\d)/g, "$1$2");
+  // glue digit+space+digit ("20 20" -> "2020"), repeat to handle long runs
+  while (/\d\s+\d/.test(s)) s = s.replace(/(\d)\s+(\d)/g, "$1$2");
   s = s.replace(/\s+/g, " ").trim();
+  return s;
+}
+
+/** Completeness score for picking the better record when two results refer to the same conference. */
+function scoreExtraction(p: {
+  audience: number;
+  city: string;
+  country: string;
+  startDate: string;
+  endDate: string;
+  sourceUrl: string;
+}): number {
+  let s = 0;
+  if (p.audience > 0) s += 2;
+  if (p.city && p.city !== "Unknown") s += 1;
+  if (p.country && p.country !== "Unknown") s += 1;
+  if (p.endDate && p.endDate !== p.startDate) s += 1;
+  try {
+    const host = new URL(p.sourceUrl).host.toLowerCase();
+    const bloggy = /(blog|medium\.com|linkedin\.com|substack\.com|reddit\.com)/.test(host);
+    const anchor = ANCHOR_URL_KEYS.has(normalizeUrl(p.sourceUrl));
+    if (!bloggy && !anchor) s += 2; // official domain wins over aggregator/blog
+  } catch {
+    /* noop */
+  }
   return s;
 }
 
@@ -176,6 +228,7 @@ async function verifyConferenceDates(args: {
   try {
     const res = await generateText({
       model,
+      temperature: 0,
       prompt:
         `You previously extracted a conference but the dates were missing or had an unreasonable year.\n` +
         `Re-read the page below and find ONLY the dates of the next edition of "${name}".\n` +
@@ -287,9 +340,15 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
     const gateway = createLovableAiGatewayProvider(lovableKey);
     const model = gateway("google/gemini-2.5-flash");
 
-    // 1) Search
+    // 1) Search — start with anchor calendar pages, then add web search hits.
     const candidates: SearchHit[] = [];
     const seenUrls = new Set<string>();
+    for (const anchor of ANCHOR_SOURCES) {
+      const key = normalizeUrl(anchor.url);
+      if (seenUrls.has(key)) continue;
+      seenUrls.add(key);
+      candidates.push(anchor);
+    }
     for (const q of SEARCH_QUERIES) {
       if (candidates.length >= MAX_CANDIDATES) break;
       try {
@@ -322,13 +381,39 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
     const existingByKey = new Map<string, ExistingRow>();
     const existingList: ExistingRow[] = [];
     for (const e of existing ?? []) {
-      const k = `${e.name.toLowerCase()}|${new Date(e.start_date).getUTCFullYear()}|${e.city.toLowerCase()}`;
+      const k = `${normalizeConfName(e.name)}|${new Date(e.start_date).getUTCFullYear()}|${e.city.toLowerCase().trim()}`;
       existingByKey.set(k, e);
       existingList.push(e);
     }
     // First-ever agent run on an empty catalog: skip needs_review flags so the
     // initial bulk import doesn't drown the user in pending change flags.
     const isFirstRun = existingList.length === 0;
+
+    // Track rows inserted during THIS run so within-run duplicates can merge
+    // (keep the more complete record) rather than create change flags.
+    const insertedThisRun = new Map<string, { score: number; fromAggregator: boolean }>();
+
+    /** Preflight DB dedup: check if a search hit obviously matches an existing
+     *  conference based on title alone — saves a Firecrawl scrape and avoids
+     *  re-extracting the same conference. Skips aggregator/anchor pages. */
+    function preflightDbDuplicate(hit: SearchHit): ExistingRow | null {
+      if (isAggregatorPage(hit)) return null;
+      const text = `${hit.title ?? ""} ${hit.description ?? ""}`;
+      const yearMatch = text.match(/\b(20[2-9]\d)\b/);
+      if (!yearMatch) return null;
+      const candYear = parseInt(yearMatch[1], 10);
+      const titleNorm = normalizeConfName(hit.title ?? "");
+      if (titleNorm.length < 4) return null;
+      for (const e of existingList) {
+        if (new Date(e.start_date).getUTCFullYear() !== candYear) continue;
+        const en = normalizeConfName(e.name);
+        if (en.length < 4) continue;
+        if (titleNorm === en || titleNorm.includes(en) || en.includes(titleNorm)) {
+          return e;
+        }
+      }
+      return null;
+    }
 
     /** Fuzzy lookup: normalized name + year, with city-as-wildcard when either side is "Unknown",
      *  plus a date+country fallback (overlap within ±2 days). */
@@ -387,6 +472,21 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
         break;
       }
       try {
+        // Preflight DB dedup: skip the scrape entirely if the title clearly
+        // matches an existing conference (same name + year).
+        const preflightDupe = preflightDbDuplicate(hit);
+        if (preflightDupe) {
+          skipped++;
+          await logCandidate({
+            runId,
+            hit,
+            decision: "skipped",
+            reason: `Preflight DB dedup: title matches existing "${preflightDupe.name}" (scrape skipped)`,
+            conferenceId: preflightDupe.id,
+          });
+          continue;
+        }
+
         const markdown = await scrapeMarkdown(firecrawl, hit.url);
 
         const pageContext = markdown
@@ -409,6 +509,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           // Aggregator/list page — ask for an ARRAY of conferences.
           const aggResult = await generateText({
             model,
+            temperature: 0,
             prompt:
               `The page below appears to be a LIST/CALENDAR of multiple conferences. Extract every distinct conference you can identify.\n` +
               `Respond with ONLY a single JSON object (no markdown, no code fences) of the shape:\n` +
@@ -464,6 +565,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
         } else {
           const result = await generateText({
             model,
+            temperature: 0,
             prompt:
               `Extract structured data about a single industry conference from the page below.\n` +
               `Respond with ONLY a single JSON object (no markdown, no code fences, no commentary) matching this exact shape:\n` +
@@ -600,7 +702,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           const audience = parsed.estimatedAudienceSize ?? 0;
           const dedupYear = year;
 
-          const dedupKey = `${parsed.name.toLowerCase()}|${dedupYear}|${city.toLowerCase()}`;
+          const dedupKey = `${normalizeConfName(parsed.name)}|${dedupYear}|${city.toLowerCase().trim()}`;
 
           if (blockedKeys.has(dedupKey)) {
             skipped++;
@@ -612,6 +714,41 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             existingByKey.get(dedupKey) ??
             findExistingFuzzy(parsed.name, dedupYear, city, country, startDate, endDate);
           if (dupe) {
+            // Within-run merge: if this dupe was inserted earlier in THIS run,
+            // keep the more complete record instead of creating a change flag.
+            const insertedMeta = insertedThisRun.get(dupe.id);
+            if (insertedMeta) {
+              const newScore = scoreExtraction({ audience, city, country, startDate, endDate, sourceUrl: hit.url });
+              const preferNew =
+                newScore > insertedMeta.score ||
+                (newScore === insertedMeta.score && insertedMeta.fromAggregator && !aggregator);
+              if (preferNew) {
+                const newScoring = computeScoring({ vertical, region, audienceSize: audience, tags: parsed.tags });
+                await supabaseAdmin
+                  .from("conferences")
+                  .update({
+                    name: parsed.name,
+                    start_date: startDate,
+                    end_date: endDate,
+                    city,
+                    country,
+                    region,
+                    vertical,
+                    estimated_audience_size: audience,
+                    tags: parsed.tags,
+                    source_url: hit.url,
+                    ...newScoring,
+                  })
+                  .eq("id", dupe.id);
+                insertedThisRun.set(dupe.id, { score: newScore, fromAggregator: aggregator });
+                await logCandidate({ runId, hit, decision: "added", reason: "Within-run merge: replaced earlier record with more complete data", extracted: parsed, conferenceId: dupe.id });
+              } else {
+                skipped++;
+                await logCandidate({ runId, hit, decision: "skipped", reason: "Within-run duplicate; earlier record was more complete", extracted: parsed, conferenceId: dupe.id });
+              }
+              continue;
+            }
+
             const changes: { field: string; old: unknown; next: unknown }[] = [];
             if (parsed.startDate && dupe.start_date !== parsed.startDate)
               changes.push({ field: "start_date", old: dupe.start_date, next: parsed.startDate });
@@ -695,6 +832,10 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             };
             existingByKey.set(dedupKey, newRow);
             existingList.push(newRow);
+            insertedThisRun.set(inserted.id, {
+              score: scoreExtraction({ audience, city, country, startDate, endDate, sourceUrl: hit.url }),
+              fromAggregator: aggregator,
+            });
           }
 
           const reviewReasons: string[] = [];
