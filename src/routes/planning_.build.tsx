@@ -110,7 +110,15 @@ function PlanBuilderPage() {
   const loading = planQuery.isLoading || allQuery.isLoading;
   const plan = planQuery.data?.plan;
   const items = planQuery.data?.items ?? [];
-  const allConferences = allQuery.data ?? [];
+  const allConferencesRaw = allQuery.data ?? [];
+  const allConferences = useMemo(
+    () =>
+      plan
+        ? allConferencesRaw.filter((c) => (c.startDate ?? "").startsWith(String(plan.year)))
+        : allConferencesRaw,
+    [allConferencesRaw, plan],
+  );
+
 
   const onApprove = () => approveMutation.mutate();
 
@@ -322,6 +330,20 @@ function Step1Anchors({
   );
 
   const [view, setView] = useState<ViewMode>("list");
+  const [query, setQuery] = useState("");
+
+  const filteredAnchors = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return anchors;
+    return anchors.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.city.toLowerCase().includes(q) ||
+        c.country.toLowerCase().includes(q) ||
+        c.vertical.toLowerCase().includes(q) ||
+        c.region.toLowerCase().includes(q),
+    );
+  }, [anchors, query]);
 
   return (
     <div className="space-y-4">
@@ -337,13 +359,23 @@ function Step1Anchors({
         These are your Tier 1 and best-performing past events. One tap locks them as must-go.
       </p>
 
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search anchors by name, city, country, vertical…"
+        className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      />
+
+
+
       {view === "timeline" ? (
-        <TimelineView conferences={anchors} committedIds={mustGoIds} />
+        <TimelineView conferences={filteredAnchors} committedIds={mustGoIds} />
       ) : view === "map" ? (
-        <MapView conferences={anchors} committedIds={mustGoIds} />
+        <MapView conferences={filteredAnchors} committedIds={mustGoIds} />
       ) : (
         <ul className="grid gap-2 sm:grid-cols-2">
-          {anchors.map((c) => {
+          {filteredAnchors.map((c) => {
             const item = itemByConfId.get(c.id);
             const isMustGo = item?.planStatus === "must_go";
             return (
@@ -381,11 +413,12 @@ function Step1Anchors({
               </li>
             );
           })}
-          {anchors.length === 0 && (
+          {filteredAnchors.length === 0 && (
             <li className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground sm:col-span-2">
-              No anchor candidates found.
+              {query ? "No matches." : "No anchor candidates found."}
             </li>
           )}
+
         </ul>
       )}
     </div>
