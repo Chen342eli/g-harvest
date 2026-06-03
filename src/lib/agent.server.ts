@@ -701,7 +701,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           if (missing.length) reviewReasons.push(`missing: ${missing.join(", ")}`);
           if (lowConfidence) reviewReasons.push(`low confidence (${parsed.confidence})`);
 
-          if (reviewReasons.length && inserted?.id) {
+          if (reviewReasons.length && inserted?.id && !isFirstRun) {
             await supabaseAdmin.from("conference_change_flags").insert({
               conference_id: inserted.id,
               field: "needs_review",
