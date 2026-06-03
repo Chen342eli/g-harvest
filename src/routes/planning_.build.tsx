@@ -637,29 +637,8 @@ function Step2Coverage({
                     );
                   })}
                 </div>
-
-                          className={cn(
-                            "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
-                            browseLayout === l
-                              ? "bg-brand-base text-brand-base-foreground"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                          )}
-                        >
-                          <Icon className="h-3 w-3" />
-                          {l === "table" ? "Table" : "Cards"}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <input
-                    type="search"
-                    value={browseQuery}
-                    onChange={(e) => setBrowseQuery(e.target.value)}
-                    placeholder="Search name, city, vertical…"
-                    className="h-8 w-56 rounded-md border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
               </div>
+
               {browseable.length === 0 ? (
                 <p className="rounded-md border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
                   No matching conferences.
