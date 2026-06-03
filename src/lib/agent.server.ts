@@ -340,9 +340,15 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
     const gateway = createLovableAiGatewayProvider(lovableKey);
     const model = gateway("google/gemini-2.5-flash");
 
-    // 1) Search
+    // 1) Search — start with anchor calendar pages, then add web search hits.
     const candidates: SearchHit[] = [];
     const seenUrls = new Set<string>();
+    for (const anchor of ANCHOR_SOURCES) {
+      const key = normalizeUrl(anchor.url);
+      if (seenUrls.has(key)) continue;
+      seenUrls.add(key);
+      candidates.push(anchor);
+    }
     for (const q of SEARCH_QUERIES) {
       if (candidates.length >= MAX_CANDIDATES) break;
       try {
@@ -375,13 +381,39 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
     const existingByKey = new Map<string, ExistingRow>();
     const existingList: ExistingRow[] = [];
     for (const e of existing ?? []) {
-      const k = `${e.name.toLowerCase()}|${new Date(e.start_date).getUTCFullYear()}|${e.city.toLowerCase()}`;
+      const k = `${normalizeConfName(e.name)}|${new Date(e.start_date).getUTCFullYear()}|${e.city.toLowerCase().trim()}`;
       existingByKey.set(k, e);
       existingList.push(e);
     }
     // First-ever agent run on an empty catalog: skip needs_review flags so the
     // initial bulk import doesn't drown the user in pending change flags.
     const isFirstRun = existingList.length === 0;
+
+    // Track rows inserted during THIS run so within-run duplicates can merge
+    // (keep the more complete record) rather than create change flags.
+    const insertedThisRun = new Map<string, { score: number; fromAggregator: boolean }>();
+
+    /** Preflight DB dedup: check if a search hit obviously matches an existing
+     *  conference based on title alone — saves a Firecrawl scrape and avoids
+     *  re-extracting the same conference. Skips aggregator/anchor pages. */
+    function preflightDbDuplicate(hit: SearchHit): ExistingRow | null {
+      if (isAggregatorPage(hit)) return null;
+      const text = `${hit.title ?? ""} ${hit.description ?? ""}`;
+      const yearMatch = text.match(/\b(20[2-9]\d)\b/);
+      if (!yearMatch) return null;
+      const candYear = parseInt(yearMatch[1], 10);
+      const titleNorm = normalizeConfName(hit.title ?? "");
+      if (titleNorm.length < 4) return null;
+      for (const e of existingList) {
+        if (new Date(e.start_date).getUTCFullYear() !== candYear) continue;
+        const en = normalizeConfName(e.name);
+        if (en.length < 4) continue;
+        if (titleNorm === en || titleNorm.includes(en) || en.includes(titleNorm)) {
+          return e;
+        }
+      }
+      return null;
+    }
 
     /** Fuzzy lookup: normalized name + year, with city-as-wildcard when either side is "Unknown",
      *  plus a date+country fallback (overlap within ±2 days). */
