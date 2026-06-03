@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   CalendarCheck,
   CalendarRange,
+  HelpCircle,
   Mail,
   Settings,
   Sprout,
