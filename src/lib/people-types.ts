@@ -60,6 +60,7 @@ export interface Encounter {
   timestamp: string;
   temperature: Temperature;
   vertical?: EncounterVertical;
+  title?: string; // short meeting title (e.g. "Coffee on treasury workflow")
   note?: string;
   companyAtTime?: string;
   roleAtTime?: string;

@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight, Sparkles, Upload } from "lucide-react";
+import { AlertTriangle, Pencil, Sparkles, Upload } from "lucide-react";
 import { usePeopleData } from "@/lib/people-store";
 import { useSettings } from "@/lib/settings-store";
 import { useBulkAiReads } from "@/lib/use-bulk-ai";
 import { FollowUpRow } from "@/components/follow-ups/FollowUpRow";
+import { AddTouchpointDialog } from "@/components/people/AddTouchpointDialog";
 
 interface Props {
   conferenceId: string;
@@ -16,6 +17,7 @@ export function AfterPhase({ conferenceId }: Props) {
   const data = usePeopleData();
   const settings = useSettings();
   const activeRepId = settings.activeRepId;
+  const [editTarget, setEditTarget] = useState<{ personId: string; encounterId: string | null } | null>(null);
 
   const { needsInfo, followUps } = useMemo(() => {
     const personIds = new Set(
@@ -33,14 +35,16 @@ export function AfterPhase({ conferenceId }: Props) {
       .map((p) => {
         const missing: string[] = [];
         if (!p.linkedInUrl) missing.push("LinkedIn");
-        if (!p.currentRole) missing.push("role");
+        if (!p.currentRole) missing.push("title");
         const personEncs = data.encounters.filter(
           (e) => e.personId === p.id && e.conferenceId === conferenceId,
         );
         if (!personEncs.some((e) => e.note && e.note.trim().length > 0)) {
           missing.push("note");
         }
-        return { person: p, missing };
+        // Latest encounter for this conference — the one Edit will open
+        const latestEnc = personEncs[personEncs.length - 1];
+        return { person: p, missing, encounterId: latestEnc?.id };
       })
       .filter((l) => l.missing.length > 0);
 
@@ -80,7 +84,7 @@ export function AfterPhase({ conferenceId }: Props) {
             </p>
           ) : (
             <ul className="divide-y divide-border rounded-xl border border-border bg-card">
-              {needsInfo.map(({ person, missing }) => (
+              {needsInfo.map(({ person, missing, encounterId }) => (
                 <li key={person.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-foreground">{person.fullName}</div>
@@ -91,17 +95,22 @@ export function AfterPhase({ conferenceId }: Props) {
                       Missing: {missing.join(", ")}
                     </div>
                   </div>
-                  <Link
-                    to="/people"
-                    className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-accent hover:underline"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditTarget({ personId: person.id, encounterId: encounterId ?? null })
+                    }
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground transition hover:border-foreground/30 hover:bg-muted"
+                    title="Add the missing details for this touchpoint"
                   >
-                    Edit <ArrowRight className="h-3 w-3" />
-                  </Link>
+                    <Pencil className="h-3 w-3" /> Edit
+                  </button>
                 </li>
               ))}
             </ul>
           )}
         </section>
+
 
         {/* Follow-up suggestions — same rows as the Follow-ups inbox */}
         <section className="space-y-2">
@@ -126,6 +135,18 @@ export function AfterPhase({ conferenceId }: Props) {
           )}
         </section>
       </div>
+
+      {editTarget && (
+        <AddTouchpointDialog
+          open
+          onOpenChange={(o) => {
+            if (!o) setEditTarget(null);
+          }}
+          initialPersonId={editTarget.personId}
+          initialEncounterId={editTarget.encounterId ?? undefined}
+          hideTrigger
+        />
+      )}
     </div>
   );
 }
