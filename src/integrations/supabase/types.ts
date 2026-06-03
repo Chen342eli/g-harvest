@@ -172,6 +172,7 @@ export type Database = {
           icp_score: number
           id: string
           name: string
+          official_url: string | null
           provenance: Database["public"]["Enums"]["conf_provenance"]
           region: string
           source_url: string
@@ -204,6 +205,7 @@ export type Database = {
           icp_score?: number
           id?: string
           name: string
+          official_url?: string | null
           provenance?: Database["public"]["Enums"]["conf_provenance"]
           region: string
           source_url: string
@@ -236,6 +238,7 @@ export type Database = {
           icp_score?: number
           id?: string
           name?: string
+          official_url?: string | null
           provenance?: Database["public"]["Enums"]["conf_provenance"]
           region?: string
           source_url?: string

@@ -1,0 +1,1 @@
+ALTER TABLE public.conferences ADD COLUMN official_url text;
