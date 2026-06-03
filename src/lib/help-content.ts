@@ -13,7 +13,7 @@ type DocTopic = { id: string; title: string; body: string };
 
 export const FAQ_GROUPS: FaqGroup[] = [
   {
-    title: "The AI interpretation engine",
+    title: "Lead Intelligence",
     items: [
       {
         q: `How does the relationship AI actually work? What does it see?`,
@@ -28,16 +28,16 @@ export const FAQ_GROUPS: FaqGroup[] = [
         a: `Three guardrails. First, the structural facts it reasons over — returning count, cross-rep, moved-to-ICP — are computed deterministically in code, so the model interprets real facts, it does not invent them. Second, it must cite the specific evidence in its reasoning, so a wrong verdict is visible and a rep can override it. Third, and most important: it is a suggestion, not an action. A wrong "Warming" costs one friendly email; a wrong "Tire-kicker" just deprioritizes someone we can recover. The human stays in the loop by design — which is also why it never auto-sends.`,
       },
       {
-        q: `The confidence score — is that just the model rating itself?`,
-        a: `Raw model self-confidence is noisy, fair point. We anchor it to evidence volume and consistency: a single hot encounter is Warming/low; three consistent cold ones is Tire-kicker/high. So confidence tracks how much trajectory there is to read, not the model's mood — and we surface it precisely so a rep treats a low-confidence read as a hint, not a verdict.`,
+        q: `How do you handle the same person met by two reps, name variations, and job changes?`,
+        a: `Identity is handled by Lead Intelligence — a lookup, not a judgment, so it is deterministic code, not AI. The anchor is the LinkedIn URL, because names and especially emails change exactly when it matters most — on a job move. Same LinkedIn collapses "Dan" and "Daniel" into one record; a promotion between events updates that same record instead of creating a duplicate; and when two reps capture the same person, we flag it cross-rep — surfacing that nobody on the team knew they were both working the same contact.`,
       },
       {
-        q: `What model, and why?`,
-        a: `Google's Gemini, through Lovable's AI gateway. The work is high-volume, low-latency classification-plus-drafting rather than deep reasoning, so a fast, low-cost Gemini tier fits — we run it once per person and cache the result, so it stays fast and cheap. The key lives in a server environment variable, never in client code; nothing sensitive is hardcoded, which is the substance of the brief's API-key constraint.`,
+        q: `Why LinkedIn and not email as the identity anchor?`,
+        a: `Email is the least stable identifier for a B2B contact — it breaks the moment someone changes jobs, which is the single most important event we are trying to detect. LinkedIn URLs are stable across job changes, which is exactly when we most need to keep the thread connected.`,
       },
       {
-        q: `Why cache it instead of running live?`,
-        a: `Cost and speed. We make one call per person and store the result on the record; re-analysis only needs to happen when a new encounter is added, so there is no reason to re-hit the model every time someone opens a card. It also makes the demo instant.`,
+        q: `What about people with no LinkedIn?`,
+        a: `No LinkedIn falls back to fuzzy name matching — normalized names, a nickname table, a similarity score, with a company match as a tiebreaker — and crucially it returns a graded confidence ("probable," "possible"), not a silent merge. High thresholds plus the company signal keep false merges rare, and because matches are graded rather than forced, an uncertain one can be reviewed rather than auto-merged. Lead Intelligence is tuned to under-merge rather than over-merge — a missed link is recoverable, a wrong merge corrupts two records.`,
       },
     ],
   },
@@ -80,27 +80,6 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         q: `Past performance starts at a neutral 50 — doesn't that distort new conferences?`,
         a: `It is deliberately neutral so a brand-new event is not punished for having no history — it competes on the other four factors until we learn. As we accumulate real outcomes, that 10% becomes evidence-based and the ranking gets sharper. It is an honest "we don't know yet" rather than a fake zero or a fake high.`,
-      },
-    ],
-  },
-  {
-    title: "Lead Intelligence — matching & identity",
-    items: [
-      {
-        q: `How do you handle name variations, job changes, and the same person met by two reps?`,
-        a: `Identity is handled by Lead Intelligence — a lookup, not a judgment, so it is deterministic code, not AI. The anchor is the LinkedIn URL, because names and especially emails change exactly when it matters most — on a job move. Same LinkedIn collapses "Dan" and "Daniel" into one record; a promotion between events updates that same record instead of creating a duplicate; and when two reps capture the same person, we flag it cross-rep — surfacing that nobody on the team knew they were both working the same contact.`,
-      },
-      {
-        q: `Why LinkedIn and not email as the key?`,
-        a: `Email is the least stable identifier for a B2B contact — it breaks the moment someone changes jobs, which is the single most important event we are trying to detect. LinkedIn URLs are stable across job changes, which is exactly when we most need to keep the thread connected.`,
-      },
-      {
-        q: `What about people with no LinkedIn? And how do you avoid merging two different people?`,
-        a: `No LinkedIn falls back to fuzzy name matching — normalized names, a nickname table, a similarity score, with a company match as a tiebreaker — and crucially it returns a graded confidence ("probable," "possible"), not a silent merge. High thresholds plus the company signal keep false merges rare, and because matches are graded rather than forced, an uncertain one can be reviewed rather than auto-merged. Lead Intelligence is tuned to under-merge rather than over-merge — a missed link is recoverable, a wrong merge corrupts two records.`,
-      },
-      {
-        q: `How did you pick the similarity thresholds?`,
-        a: `They are conservative on purpose: a near-exact name plus the same company is treated as probable; a strong name alone is a weaker "probable"; anything below stays "possible" and reviewable. The principle is that the cost of a wrong merge is much higher than the cost of a missed one, so the bar to auto-link is high.`,
       },
     ],
   },
