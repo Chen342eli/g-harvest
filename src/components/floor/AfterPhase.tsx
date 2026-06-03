@@ -135,6 +135,18 @@ export function AfterPhase({ conferenceId }: Props) {
           )}
         </section>
       </div>
+
+      {editTarget && (
+        <AddTouchpointDialog
+          open
+          onOpenChange={(o) => {
+            if (!o) setEditTarget(null);
+          }}
+          initialPersonId={editTarget.personId}
+          initialEncounterId={editTarget.encounterId ?? undefined}
+          hideTrigger
+        />
+      )}
     </div>
   );
 }
