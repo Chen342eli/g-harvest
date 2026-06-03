@@ -702,7 +702,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           const audience = parsed.estimatedAudienceSize ?? 0;
           const dedupYear = year;
 
-          const dedupKey = `${parsed.name.toLowerCase()}|${dedupYear}|${city.toLowerCase()}`;
+          const dedupKey = `${normalizeConfName(parsed.name)}|${dedupYear}|${city.toLowerCase().trim()}`;
 
           if (blockedKeys.has(dedupKey)) {
             skipped++;
@@ -714,6 +714,41 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             existingByKey.get(dedupKey) ??
             findExistingFuzzy(parsed.name, dedupYear, city, country, startDate, endDate);
           if (dupe) {
+            // Within-run merge: if this dupe was inserted earlier in THIS run,
+            // keep the more complete record instead of creating a change flag.
+            const insertedMeta = insertedThisRun.get(dupe.id);
+            if (insertedMeta) {
+              const newScore = scoreExtraction({ audience, city, country, startDate, endDate, sourceUrl: hit.url });
+              const preferNew =
+                newScore > insertedMeta.score ||
+                (newScore === insertedMeta.score && insertedMeta.fromAggregator && !aggregator);
+              if (preferNew) {
+                const newScoring = computeScoring({ vertical, region, audienceSize: audience, tags: parsed.tags });
+                await supabaseAdmin
+                  .from("conferences")
+                  .update({
+                    name: parsed.name,
+                    start_date: startDate,
+                    end_date: endDate,
+                    city,
+                    country,
+                    region,
+                    vertical,
+                    estimated_audience_size: audience,
+                    tags: parsed.tags,
+                    source_url: hit.url,
+                    ...newScoring,
+                  })
+                  .eq("id", dupe.id);
+                insertedThisRun.set(dupe.id, { score: newScore, fromAggregator: aggregator });
+                await logCandidate({ runId, hit, decision: "added", reason: "Within-run merge: replaced earlier record with more complete data", extracted: parsed, conferenceId: dupe.id });
+              } else {
+                skipped++;
+                await logCandidate({ runId, hit, decision: "skipped", reason: "Within-run duplicate; earlier record was more complete", extracted: parsed, conferenceId: dupe.id });
+              }
+              continue;
+            }
+
             const changes: { field: string; old: unknown; next: unknown }[] = [];
             if (parsed.startDate && dupe.start_date !== parsed.startDate)
               changes.push({ field: "start_date", old: dupe.start_date, next: parsed.startDate });
