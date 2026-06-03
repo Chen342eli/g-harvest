@@ -110,7 +110,15 @@ function PlanBuilderPage() {
   const loading = planQuery.isLoading || allQuery.isLoading;
   const plan = planQuery.data?.plan;
   const items = planQuery.data?.items ?? [];
-  const allConferences = allQuery.data ?? [];
+  const allConferencesRaw = allQuery.data ?? [];
+  const allConferences = useMemo(
+    () =>
+      plan
+        ? allConferencesRaw.filter((c) => (c.startDate ?? "").startsWith(String(plan.year)))
+        : allConferencesRaw,
+    [allConferencesRaw, plan],
+  );
+
 
   const onApprove = () => approveMutation.mutate();
 
