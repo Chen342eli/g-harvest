@@ -656,3 +656,58 @@ function HubSpotExportButton({
     </button>
   );
 }
+
+function HubSpotImportButton({ existing }: { existing: Person[] }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  const onFile = async (file: File) => {
+    setBusy(true);
+    try {
+      const text = await file.text();
+      const result = parseHubSpotCsv(text, existing);
+      if (result.people.length > 0) addPeople(result.people);
+      if (result.total === 0) {
+        toast.error("No rows found in the CSV.");
+      } else {
+        toast.success(`Imported ${result.added} contact${result.added === 1 ? "" : "s"}`, {
+          description:
+            result.skipped > 0
+              ? `${result.skipped} skipped (duplicate or missing name).`
+              : `From HubSpot CSV (${result.total} rows).`,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not parse the CSV file.");
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".csv,text/csv"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onFile(f);
+        }}
+      />
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+        title="Import a HubSpot contacts CSV export"
+        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40"
+      >
+        <Upload className="h-3.5 w-3.5" />
+        {busy ? "Importing…" : "Import from HubSpot"}
+      </button>
+    </>
+  );
+}
