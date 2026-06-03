@@ -851,6 +851,14 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           const lowConfidence = (parsed.confidence ?? 0) < 60;
           const initialStatus = lowConfidence ? "Needs Review" : "Considering";
 
+          // Resolve the conference's own website (separate from source_url).
+          const officialUrl = await resolveOfficialUrl(
+            firecrawl,
+            parsed.name,
+            year,
+            parsed.officialUrl ?? null,
+          );
+
           const { data: inserted, error: insErr } = await supabaseAdmin
             .from("conferences")
             .insert({
@@ -864,6 +872,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
               estimated_audience_size: audience,
               tags: parsed.tags,
               source_url: hit.url,
+              official_url: officialUrl,
               ...scoring,
               provenance: "ai_added",
               confidence: parsed.confidence,
