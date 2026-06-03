@@ -472,6 +472,21 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
         break;
       }
       try {
+        // Preflight DB dedup: skip the scrape entirely if the title clearly
+        // matches an existing conference (same name + year).
+        const preflightDupe = preflightDbDuplicate(hit);
+        if (preflightDupe) {
+          skipped++;
+          await logCandidate({
+            runId,
+            hit,
+            decision: "skipped",
+            reason: `Preflight DB dedup: title matches existing "${preflightDupe.name}" (scrape skipped)`,
+            conferenceId: preflightDupe.id,
+          });
+          continue;
+        }
+
         const markdown = await scrapeMarkdown(firecrawl, hit.url);
 
         const pageContext = markdown
