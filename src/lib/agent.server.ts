@@ -36,6 +36,29 @@ const SEARCH_QUERIES = [
   "cross-border payments conference 2026 2027",
 ];
 
+/**
+ * Stable, curated calendar pages that always run BEFORE search queries.
+ * These give the agent a deterministic backbone, so re-runs converge.
+ */
+const ANCHOR_SOURCES: SearchHit[] = [
+  {
+    url: "https://www.fintechprofile.com/fintech-event-calendar-2026/",
+    title: "Fintech Event Calendar 2026",
+    description: "Curated calendar of fintech conferences 2026",
+  },
+  {
+    url: "https://paytech.events/events/",
+    title: "Paytech Events Calendar",
+    description: "Curated payments and fintech events",
+  },
+  {
+    url: "https://thepaypers.com/payments/expert-views/2026-fintech-and-payments-events-calendar",
+    title: "2026 Fintech and Payments Events Calendar",
+    description: "Curated 2026 events calendar from The Paypers",
+  },
+];
+const ANCHOR_URL_KEYS = new Set(ANCHOR_SOURCES.map((s) => normalizeUrl(s.url)));
+
 const AGGREGATOR_TITLE_HINTS = [
   "calendar",
   "top conferences",
@@ -51,6 +74,7 @@ const AGGREGATOR_TITLE_HINTS = [
 ];
 
 function isAggregatorPage(hit: SearchHit): boolean {
+  if (ANCHOR_URL_KEYS.has(normalizeUrl(hit.url))) return true;
   const haystack = `${hit.title ?? ""} ${hit.description ?? ""}`.toLowerCase();
   return AGGREGATOR_TITLE_HINTS.some((h) => haystack.includes(h));
 }
