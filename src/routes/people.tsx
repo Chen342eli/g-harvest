@@ -268,7 +268,7 @@ function RelationshipsPage() {
           </div>
 
           {/* Table header */}
-          <div className="hidden grid-cols-[130px_minmax(0,2fr)_minmax(0,2fr)_110px_70px_90px_90px_minmax(0,1.4fr)] gap-3 border-b border-border bg-muted/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
+          <div className="hidden grid-cols-[130px_minmax(0,2fr)_minmax(0,2fr)_110px_70px_90px_110px] gap-3 border-b border-border bg-muted/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
             <SortHeader label="Signal" k="signal" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
             <SortHeader label="Person" k="person" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
             <SortHeader label="Role @ Company" k="role" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
@@ -276,8 +276,8 @@ function RelationshipsPage() {
             <SortHeader label="Met" k="met" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
             <SortHeader label="Last seen" k="lastSeen" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
             <SortHeader label="Trend" k="trend" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
-            <span>Badges</span>
           </div>
+
 
           <ul className="max-h-[72vh] divide-y divide-border overflow-auto">
             {sorted.length === 0 && (
@@ -289,7 +289,7 @@ function RelationshipsPage() {
                   type="button"
                   onClick={() => setSelectedId(person.id)}
                   className={cn(
-                    "grid w-full grid-cols-1 gap-1 px-3 py-2.5 text-left transition hover:bg-muted/40 lg:grid-cols-[130px_minmax(0,2fr)_minmax(0,2fr)_110px_70px_90px_90px_minmax(0,1.4fr)] lg:items-center lg:gap-3",
+                    "grid w-full grid-cols-1 gap-1 px-3 py-2.5 text-left transition hover:bg-muted/40 lg:grid-cols-[130px_minmax(0,2fr)_minmax(0,2fr)_110px_70px_90px_110px] lg:items-center lg:gap-3",
                     selectedId === person.id && "bg-muted/60",
                   )}
                 >
@@ -297,7 +297,10 @@ function RelationshipsPage() {
                     <SignalBadge signal={person.aiSignal} confidence={person.aiConfidence} />
                   </div>
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-foreground">{person.fullName}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-sm font-medium text-foreground">{person.fullName}</span>
+                      {latestTemp && <span className="lg:hidden"><TempDot t={latestTemp} /></span>}
+                    </div>
                     <div className="truncate text-[11px] text-muted-foreground lg:hidden">
                       {person.currentRole ?? "—"}{person.currentCompany ? ` @ ${person.currentCompany}` : ""}
                     </div>
@@ -322,14 +325,12 @@ function RelationshipsPage() {
                     {fmtDate(derived.lastSeenAt)}
                   </div>
                   <div className="hidden items-center gap-1.5 lg:flex">
+                    {latestTemp && <TempDot t={latestTemp} />}
                     <TrendArrow trend={trend} />
                     <TempSparkline encs={derived.encounters} />
                   </div>
-                  <div className="flex flex-wrap items-center gap-1">
-                    {latestTemp && <TempDot t={latestTemp} />}
-                    <BadgeList badges={badges} />
-                  </div>
                 </button>
+
               </li>
             ))}
           </ul>
