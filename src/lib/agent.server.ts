@@ -344,6 +344,32 @@ async function scrapeMarkdown(firecrawl: Firecrawl, url: string): Promise<string
   }
 }
 
+/**
+ * Resolve the official website for a conference.
+ *  1. If Gemini extracted an officialUrl and it's not an aggregator domain → keep it.
+ *  2. Otherwise run a Firecrawl search ("{name} {year} official website", limit 2)
+ *     and return the first non-aggregator result.
+ *  3. If both fail → return null (caller flags `needs_url_review`).
+ */
+async function resolveOfficialUrl(
+  firecrawl: Firecrawl,
+  name: string,
+  year: number,
+  extracted: string | null,
+): Promise<string | null> {
+  if (extracted && !isAggregatorDomain(extracted)) return extracted;
+  try {
+    const res = await firecrawl.search(`${name} ${year} official website`, { limit: 2 });
+    for (const hit of normalizeHits(res)) {
+      if (hit.url && !isAggregatorDomain(hit.url)) return hit.url;
+    }
+  } catch (e) {
+    console.error("officialUrl fallback search failed for", name, e);
+  }
+  return null;
+}
+
+
 export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<AgentRunResult> {
   const fcKey = process.env.FIRECRAWL_API_KEY;
   const lovableKey = process.env.LOVABLE_API_KEY;
