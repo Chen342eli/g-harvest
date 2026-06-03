@@ -832,6 +832,10 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
             };
             existingByKey.set(dedupKey, newRow);
             existingList.push(newRow);
+            insertedThisRun.set(inserted.id, {
+              score: scoreExtraction({ audience, city, country, startDate, endDate, sourceUrl: hit.url }),
+              fromAggregator: aggregator,
+            });
           }
 
           const reviewReasons: string[] = [];
