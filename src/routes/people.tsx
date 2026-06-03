@@ -11,6 +11,7 @@ import type { Temperature, EncounterVertical, Encounter, Person, AiSignal, AiCon
 import { ENCOUNTER_VERTICALS } from "@/lib/people-types";
 import { TempDot } from "@/components/people/TempControls";
 import { BadgeList } from "@/components/people/Badges";
+import { AddTouchpointDialog } from "@/components/people/AddTouchpointDialog";
 import { cn } from "@/lib/utils";
 import { SALES_TEAM } from "@/lib/conferences";
 import { analyzeRelationship } from "@/lib/relationship-ai.functions";
