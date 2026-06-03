@@ -57,6 +57,12 @@ export function addPerson(p: Person) {
   commit({ ...cur, people: [...cur.people, p] });
 }
 
+export function addPeople(ps: Person[]) {
+  if (ps.length === 0) return;
+  const cur = getSnapshot();
+  commit({ ...cur, people: [...cur.people, ...ps] });
+}
+
 export function updatePerson(id: string, patch: Partial<Person>) {
   const cur = getSnapshot();
   commit({
