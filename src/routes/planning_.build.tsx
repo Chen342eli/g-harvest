@@ -353,19 +353,21 @@ function Step1Anchors({
           subtitle="The events you attend every year."
           kicker={`${mustGoCount} marked must-go`}
         />
-        <ViewToggle value={view} onChange={setView} />
+        <div className="flex items-center gap-2">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search…"
+            className="h-8 w-56 rounded-md border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <ViewToggle value={view} onChange={setView} />
+        </div>
       </div>
       <p className="text-sm text-muted-foreground">
         These are your Tier 1 and best-performing past events. One tap locks them as must-go.
       </p>
 
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search anchors by name, city, country, vertical…"
-        className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      />
 
 
 
@@ -522,8 +524,18 @@ function Step2Coverage({
           subtitle="Fill region & ICP-vertical gaps — and add anything else worth attending."
           kicker={`${recs.length} gap${recs.length === 1 ? "" : "s"} to address`}
         />
-        <ViewToggle value={view} onChange={setView} />
+        <div className="flex items-center gap-2">
+          <input
+            type="search"
+            value={browseQuery}
+            onChange={(e) => setBrowseQuery(e.target.value)}
+            placeholder="Search…"
+            className="h-8 w-56 rounded-md border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <ViewToggle value={view} onChange={setView} />
+        </div>
       </div>
+
 
       {/* Compact coverage chips — verticals + regions in one strip */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-border bg-background px-3 py-2 text-xs">
@@ -604,37 +616,29 @@ function Step2Coverage({
             <div className="rounded-md border border-border bg-background p-3">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold text-foreground">Add any conference</h3>
-                <div className="flex items-center gap-2">
-                  <div className="inline-flex items-center rounded-md border border-border bg-background p-0.5">
-                    {(["table", "cards"] as const).map((l) => {
-                      const Icon = l === "table" ? ListIcon : LayoutGrid;
-                      return (
-                        <button
-                          key={l}
-                          type="button"
-                          onClick={() => setBrowseLayout(l)}
-                          className={cn(
-                            "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
-                            browseLayout === l
-                              ? "bg-brand-base text-brand-base-foreground"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                          )}
-                        >
-                          <Icon className="h-3 w-3" />
-                          {l === "table" ? "Table" : "Cards"}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <input
-                    type="search"
-                    value={browseQuery}
-                    onChange={(e) => setBrowseQuery(e.target.value)}
-                    placeholder="Search name, city, vertical…"
-                    className="h-8 w-56 rounded-md border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
+                <div className="inline-flex items-center rounded-md border border-border bg-background p-0.5">
+                  {(["table", "cards"] as const).map((l) => {
+                    const Icon = l === "table" ? ListIcon : LayoutGrid;
+                    return (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => setBrowseLayout(l)}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
+                          browseLayout === l
+                            ? "bg-brand-base text-brand-base-foreground"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        )}
+                      >
+                        <Icon className="h-3 w-3" />
+                        {l === "table" ? "Table" : "Cards"}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
               {browseable.length === 0 ? (
                 <p className="rounded-md border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
                   No matching conferences.
