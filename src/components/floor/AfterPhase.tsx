@@ -34,14 +34,16 @@ export function AfterPhase({ conferenceId }: Props) {
       .map((p) => {
         const missing: string[] = [];
         if (!p.linkedInUrl) missing.push("LinkedIn");
-        if (!p.currentRole) missing.push("role");
+        if (!p.currentRole) missing.push("title");
         const personEncs = data.encounters.filter(
           (e) => e.personId === p.id && e.conferenceId === conferenceId,
         );
         if (!personEncs.some((e) => e.note && e.note.trim().length > 0)) {
           missing.push("note");
         }
-        return { person: p, missing };
+        // Latest encounter for this conference — the one Edit will open
+        const latestEnc = personEncs[personEncs.length - 1];
+        return { person: p, missing, encounterId: latestEnc?.id };
       })
       .filter((l) => l.missing.length > 0);
 
