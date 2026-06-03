@@ -302,83 +302,125 @@ Fields: id, personId, conferenceId, conferenceName (snapshot), repId, timestamp,
 The same file also exports DECISION_MAKER_KEYWORDS, isDecisionMakerRole, isIcpVertical, and ICP_VERTICALS = ["Payments","Fintech","Treasury"].`,
   },
   {
-    id: "scoring",
-    title: "Scoring engine",
-    body: `Defined in src/lib/conferences.ts.
+    id: "discovery-agent",
+    title: "Conference Discovery Agent",
+    body: `The Discovery Agent automatically finds and adds relevant fintech conferences to the radar. It runs on first load, then weekly. Manual "Run now" is always available.
 
-## Weights
-- verticalFit 0.40
-- decisionMakerPresence 0.25
-- audienceQuality 0.15
-- accessibility 0.10
-- pastPerformance 0.10
+## Architecture
+- Scheduler: pg_cron (weekly, Mon 06:00 UTC) → POST /api/public/agent/run
+- Search: Firecrawl (web search + page scraping)
+- Extraction: Gemini 2.5 Flash via Lovable AI Gateway, temperature: 0
+- Storage: Supabase (conferences + agent_runs + do_not_resurrect)
 
-computeScore(subScores) sums the weighted sub-scores to a rounded integer. tierFromScore(score): 70+ = Tier 1, 40+ = Tier 2, otherwise Tier 3. Both helpers are re-exported from src/lib/scoring.ts.
+## How a run works
+1. **Search** — 8 targeted queries + 3 fixed anchor URLs, always fetched for a stable backbone. Verticals: Payments, Treasury, Cross-Border, Embedded Finance, Neobanking. Regions: NA, EU, ME, APAC.
+2. **Scrape** — Firecrawl returns clean markdown for each candidate URL.
+3. **Extract** — Gemini extracts: name, dates, city, country, region, vertical, audienceSize, sourceUrl, officialUrl, isRelevant, confidence.
+4. **Dedup & Filter** — Preflight DB check by (name+year+city) before scraping. Within-run: keep the record with more complete data. Filters: year, region, vertical, do-not-resurrect list. Audience size is NOT a filter — the rep decides.
+5. **Save** — Inserted with provenance='ai_added'. Scoring runs on insert.
 
-## Deriving sub-scores for AI-discovered conferences
-src/lib/scoring.ts computeScoring() derives each sub-score deterministically from the extracted fields:
-- verticalFit — per-vertical lookup (Cross-Border Payments 95; Payments / Treasury 90; …).
-- audienceQuality — bucketed by size (10k+ → 85, … under 500 → 45).
-- accessibility — Europe 85, NA 80, ME 72, APAC 58, LATAM 55.
-- decisionMakerPresence — keyword heuristic on tags (CFO / treasurer / VP push it up).
-- pastPerformance — currently fixed at 50 (HubSpot backfill is planned).
+## Key design decisions
+- **Anti-hallucination**: every conference requires a verifiable source URL.
+- **Two-URL system**: sourceUrl (where found) + officialUrl (conference's own site, resolved via fallback search, rejecting aggregator domains).
+- **Human edits protected**: agent never overwrites existing DB rows. Changes detected → conference_change_flag for human review.
+- **Do-not-resurrect**: deleted conferences are tombstoned by (name, year).
 
-## Tooltip
-src/components/conference-radar/ScoreCell.tsx renders the breakdown with a Radix Tooltip: one row per sub-score showing weight (%), a progress bar, and the value, behind a button showing the rounded total.`,
+## Built vs planned
+✅ Weekly cron + manual trigger
+✅ Firecrawl search + scrape
+✅ Gemini extraction (temperature: 0)
+✅ Anchor source URLs
+✅ officialUrl resolution + aggregator rejection
+✅ Two-level dedup (preflight + within-run)
+✅ Human-edit protection + change flags
+✅ Do-not-resurrect tombstone
+✅ Auto-scoring on insert
+✅ Agent run dashboard (last run, counts, Run now button)
+🔜 Weekly digest email
+🔜 HubSpot past-performance backfill`,
   },
   {
     id: "lead-intelligence",
     title: "Lead Intelligence",
-    body: `All identity, dedup, and fuzzy logic lives in src/lib/matching.ts. It is deterministic by design — auditable, not a black box.
+    body: `The AI interpretation engine in the People module. Answers: who is worth chasing, and what do I say? Works in three sequential layers — deterministic identity, deterministic badges, then AI signal. The AI is used only for judgment, never for identity or counting.
 
-## Match strategy (findMatch)
-1. LinkedIn URL is the strongest anchor. If both sides have a normalized linkedInUrl that matches, the result is "confident" and short-circuits.
-2. Otherwise compute a fuzzy name similarity against fullName and every entry in nameVariations, keeping the best score.
-3. Skip candidates scoring under 0.75. Add a +0.20 boost when normalized companies match.
-4. Tiers: score 0.95+ with company match → "probable" (Name + company match); 0.85+ → "probable" (Strong name match); otherwise "possible"; no candidate → "none".
+## Layer 1 — Identity & dedup (deterministic)
+Primary anchor: LinkedIn URL. Fallback: name + company. Fuzzy matching: normalize (lowercase, nickname dictionary: dan→daniel, mike→michael, bob→robert…) → Levenshtein token similarity → +0.20 company boost → confidence tier.
 
-## Normalization
-- Name: lowercase, strip non-letters, then map through a nickname dictionary (dan/danny → daniel, mike → michael, bob/rob → robert, …).
-- Company: lowercase + strip non-alphanumerics.
-- Token similarity: 1 − (Levenshtein / max length), averaged across best per-token matches.
+Tiers: 0.95+ with company = Probable · 0.85+ = Probable · below threshold = Possible / None.
 
-## Name variants
-When a matched person is seen under a new spelling, AddTouchpointDialog calls addNameVariation(personId, variant) so future searches recognise it.
+Never silent-merge — system proposes, rep decides. Name variations saved for future recognition. Limitation: without LinkedIn, relies on name+company only. Clearbit/Apollo enrichment planned.
 
-## Badges (computeBadges)
-returning (2+ encounters), cross-rep (2+ distinct reps), decision-maker (role matches keywords), icp-vertical (vertical in ICP set), moved-to-icp (latest encounter vertical is ICP and prior wasn't — a buying signal).
+## Layer 2 — Badges (deterministic, IF/THEN rules)
+- **Returning ×N** — encounter count > 1
+- **Cross-rep** — distinct rep count > 1
+- **Decision-maker** — title contains CFO / VP / Head of / Director / Chief
+- **ICP vertical** — company or conference vertical matches ICP set
+- **Moved to ICP** — latest encounter vertical is ICP, prior wasn't
+
+Badges refresh on every encounter save and feed into the AI as inputs.
+
+## Layer 3 — Lead Intelligence Signal (AI)
+Input: person profile + full encounter history + badges + conference verticals. Core instruction: interpret trajectory, don't count. Weight structural signals (role change, ICP company move) over rep temperature ratings.
+
+Outputs:
+- **Signal**: Warming / Steady / Too early / Tire-kicker
+- **Confidence**: Low / Medium / High
+- **Reasoning**: plain-language explanation
+- **Arc Summary**: narrative of relationship over time
+- **Nudge**: draft follow-up email tailored to signal
+
+Cached server-side per person. Re-runs only on new encounter, not on every page view. Keys injected server-side, never client.
+
+## Design intent — interpretation beats counting
+**Sarah Chen**: 2 meetings, moved Treasury Analyst → Head of Treasury at payments company → Warming/high. Structural ICP move.
+
+**Marcus Webb**: 3 meetings, always Independent Consultant, no change → Tire-kicker/high. More touchpoints, lower priority.
 
 ## Built vs planned
-Built: normalization + nickname map, LinkedIn anchor, fuzzy name + company boost, name variations, badges, confidence tiers, dialog-driven match flow.
-Planned: Clearbit/Apollo enrichment (measure ICP fit instead of inferring it), live HubSpot sync for cross-system identity, server-side persistence of the matching index (currently localStorage).`,
+✅ Fuzzy matching + nickname dictionary
+✅ LinkedIn anchor (when present)
+✅ Name variations
+✅ All 5 badges
+✅ Signal + confidence + reasoning + nudge + arc summary
+✅ Server-side caching
+🔜 Clearbit/Apollo company enrichment
+🔜 Live HubSpot identity sync`,
   },
   {
-    id: "views",
-    title: "The three conference views",
-    body: `All three are hosted under src/routes/planning.tsx and read the same conference list (SEED_CONFERENCES, augmented by agent results). Filter/sort state and the selected detail row are owned by the route, so switching views preserves the user's query.
+    id: "scoring",
+    title: "Scoring Engine",
+    body: `A deterministic weighted formula (0–100) assigning every conference an ICP-fit score and Tier. Not an AI model. Owned by Sales Ops, not editable by reps. Thesis: depth of ICP fit over crowd size.
 
-## Table (ConferenceTable.tsx)
-shadcn Table primitive. Columns: name, tier, score (ScoreCell), dates, location, vertical, audience, assigned reps (RepAssigner), status (StatusChip). Row click opens ConferenceDetail.
+## Formula
+Score = (verticalFit × 0.40) + (decisionMakerPresence × 0.25) + (audienceQuality × 0.15) + (accessibility × 0.10) + (pastPerformance × 0.10)
 
-## Map (MapView.tsx)
-Leaflet inside a ClientOnly wrapper (SSR-safe). Leaflet + markercluster CSS/JS are injected at runtime from unpkg (no bundled import). Renders an OSM tile layer and a markerClusterGroup (maxClusterRadius 40). Pin colour comes from Tier; popups include an "Open in table" button; coverage gaps get a visual flag.
+## Sub-score derivation
+- **verticalFit (40%)** — lookup table: Cross-Border Payments 95 · Payments/Treasury 90 · Embedded Finance 85 · Neobanking 80 · Travel Tech 75 · General Tech 55. Source: conference description.
+- **decisionMakerPresence (25%)** — keyword heuristic on tags/description (CFO / treasurer / VP push score up). Source: speaker/audience profile. Reliability: low — estimated proxy.
+- **audienceQuality (15%)** — size buckets: 10k+ → 85 · 5k–10k → 75 · 1k–5k → 65 · 500–1k → 55 · under 500 → 45 · unknown → neutral default.
+- **accessibility (10%)** — region lookup: Europe 85 · NA 80 · ME 72 · APAC 58. Source: location. Reliability: high.
+- **pastPerformance (10%)** — fixed at 50 (neutral) until HubSpot backfill.
 
-## Timeline (TimelineView.tsx)
-Chronological list grouped by month with date-fns, reusing ScoreCell and TierBadge so the visual language stays consistent across views.`,
-  },
-  {
-    id: "ai",
-    title: "AI: discovery agent & Relationship-AI",
-    body: `The AI is used for judgment and content, never for identity matching (that is deterministic — see Lead Intelligence).
+## Tiers
+- ≥70 → **Tier 1** (green) — must attend
+- 40–69 → **Tier 2** (orange) — worth considering
+- <40 → **Tier 3** (gray) — likely skip
 
-## Discovery agent (src/lib/agent.server.ts)
-Firecrawl scrapes/searches for conferences, then Gemini (via the Lovable AI Gateway) extracts structured fields. Each run does per-run dedup, resolves sourceUrl/officialUrl, rejects aggregator domains, and sets a needs_url_review flag where the source is uncertain. Crucially, in-run dedup only — existing rows in the database are never overwritten, so human edits are protected. Exposed at the public route /api/public/agent/run.
+**Important**: unknown audience size ≠ low score. Null field = neutral default applied. Rep sees the empty field as a signal to verify.
 
-## Relationship-AI (src/lib/relationship-ai.functions.ts)
-Gemini drafts a follow-up nudge, an arc summary, and a signal (Warming / Tire-kicker / Steady / Too early) with a confidence level — all derived from a person's encounter history.
+Tooltip shows full breakdown: weight % + progress bar + value per sub-score + "managed by Sales Ops" note. Scoring runs automatically on every conference save (manual, agent, or edit).
 
-## Governance
-AI adds, never overwrites. Provenance is tracked via sourceUrl. Keys (Firecrawl, AI Gateway) are injected server-side and never exposed to client code.`,
+## Built vs planned
+✅ Weighted formula (all 5 sub-scores)
+✅ Per-vertical lookup table
+✅ Audience size buckets
+✅ Region accessibility lookup
+✅ Decision-maker keyword heuristic
+✅ Tooltip breakdown
+✅ Auto-score on agent insert
+✅ Neutral default for unknown audience size
+🔜 Past performance backfill from HubSpot`,
   },
   {
     id: "design",
