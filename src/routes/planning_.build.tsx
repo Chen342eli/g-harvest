@@ -616,15 +616,28 @@ function Step2Coverage({
             <div className="rounded-md border border-border bg-background p-3">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold text-foreground">Add any conference</h3>
-                <div className="flex items-center gap-2">
-                  <div className="inline-flex items-center rounded-md border border-border bg-background p-0.5">
-                    {(["table", "cards"] as const).map((l) => {
-                      const Icon = l === "table" ? ListIcon : LayoutGrid;
-                      return (
-                        <button
-                          key={l}
-                          type="button"
-                          onClick={() => setBrowseLayout(l)}
+                <div className="inline-flex items-center rounded-md border border-border bg-background p-0.5">
+                  {(["table", "cards"] as const).map((l) => {
+                    const Icon = l === "table" ? ListIcon : LayoutGrid;
+                    return (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => setBrowseLayout(l)}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
+                          browseLayout === l
+                            ? "bg-brand-base text-brand-base-foreground"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        )}
+                      >
+                        <Icon className="h-3 w-3" />
+                        {l === "table" ? "Table" : "Cards"}
+                      </button>
+                    );
+                  })}
+                </div>
+
                           className={cn(
                             "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
                             browseLayout === l
