@@ -152,15 +152,43 @@ function normalizeUrl(u: string): string {
  *  - all punctuation; collapses whitespace; lowercases.
  */
 function normalizeConfName(raw: string): string {
-  let s = raw.toLowerCase();
-  // strip subtitle separators
+  let s = (raw ?? "").toLowerCase();
+  // strip subtitle separators (keep brand head before |, :, dash variants)
   s = s.split(/[|:]| - | – | — /)[0];
-  // strip 4-digit years
-  s = s.replace(/\b(19|20)\d{2}\b/g, " ");
-  // remove punctuation
+  // strip standalone 4-digit year tokens (space-bounded only — preserves "Money 20/20")
+  s = s.replace(/(^|\s)(20[2-9]\d)(?=\s|$)/g, "$1");
+  // punctuation -> spaces
   s = s.replace(/[^a-z0-9\s]/g, " ");
-  // collapse whitespace
+  // glue letter+space+digit ("Money 20" -> "Money20")
+  s = s.replace(/([a-z])\s+(\d)/g, "$1$2");
+  // glue digit+space+digit ("20 20" -> "2020"), repeat to handle long runs
+  while (/\d\s+\d/.test(s)) s = s.replace(/(\d)\s+(\d)/g, "$1$2");
   s = s.replace(/\s+/g, " ").trim();
+  return s;
+}
+
+/** Completeness score for picking the better record when two results refer to the same conference. */
+function scoreExtraction(p: {
+  audience: number;
+  city: string;
+  country: string;
+  startDate: string;
+  endDate: string;
+  sourceUrl: string;
+}): number {
+  let s = 0;
+  if (p.audience > 0) s += 2;
+  if (p.city && p.city !== "Unknown") s += 1;
+  if (p.country && p.country !== "Unknown") s += 1;
+  if (p.endDate && p.endDate !== p.startDate) s += 1;
+  try {
+    const host = new URL(p.sourceUrl).host.toLowerCase();
+    const bloggy = /(blog|medium\.com|linkedin\.com|substack\.com|reddit\.com)/.test(host);
+    const anchor = ANCHOR_URL_KEYS.has(normalizeUrl(p.sourceUrl));
+    if (!bloggy && !anchor) s += 2; // official domain wins over aggregator/blog
+  } catch {
+    /* noop */
+  }
   return s;
 }
 
