@@ -785,6 +785,10 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
                 (newScore === insertedMeta.score && insertedMeta.fromAggregator && !aggregator);
               if (preferNew) {
                 const newScoring = computeScoring({ vertical, region, audienceSize: audience, tags: parsed.tags });
+                const mergedOfficial =
+                  parsed.officialUrl && !isAggregatorDomain(parsed.officialUrl)
+                    ? parsed.officialUrl
+                    : undefined;
                 await supabaseAdmin
                   .from("conferences")
                   .update({
@@ -798,6 +802,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
                     estimated_audience_size: audience,
                     tags: parsed.tags,
                     source_url: hit.url,
+                    ...(mergedOfficial !== undefined ? { official_url: mergedOfficial } : {}),
                     ...newScoring,
                   })
                   .eq("id", dupe.id);
