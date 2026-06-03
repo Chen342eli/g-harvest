@@ -216,11 +216,12 @@ function RelationshipsPage() {
               <span className="text-muted-foreground"> of {enriched.length}</span>
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-stretch gap-2">
             <AddTouchpointDialog />
-            <span className="mx-1 h-4 w-px bg-border" aria-hidden />
-            <HubSpotImportButton existing={data.people} />
-            <HubSpotExportButton people={data.people} encounters={data.encounters} />
+            <div className="flex flex-col gap-1.5">
+              <HubSpotImportButton existing={data.people} />
+              <HubSpotExportButton people={data.people} encounters={data.encounters} />
+            </div>
           </div>
         </div>
       </div>
