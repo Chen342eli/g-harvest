@@ -39,6 +39,7 @@ export function rowToConference(r: ConferenceRow): Conference & { provenance: "v
     estimatedAudienceSize: r.estimated_audience_size,
     tags: r.tags ?? [],
     sourceUrl: r.source_url,
+    officialUrl: r.official_url ?? null,
     subScores: {
       verticalFit: r.sub_vertical_fit,
       decisionMakerPresence: r.sub_decision_maker_presence,
