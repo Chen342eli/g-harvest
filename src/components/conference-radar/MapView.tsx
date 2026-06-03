@@ -140,6 +140,15 @@ function MapViewClient({ conferences, committedIds, onOpenInTable }: Props) {
   const LRef = useRef<any>(null);
   const onOpenInTableRef = useRef(onOpenInTable);
   onOpenInTableRef.current = onOpenInTable;
+  const [resolved, setResolved] = useState<Record<string, [number, number]>>({});
+  const resolvedRef = useRef(resolved);
+  resolvedRef.current = resolved;
+
+  const getCoords = (c: Conference): [number, number] | null => {
+    const seeded = coordsFor(c.city, c.country);
+    if (seeded) return seeded;
+    return resolvedRef.current[locationKey(c)] ?? null;
+  };
 
   useEffect(() => {
     let cancelled = false;
