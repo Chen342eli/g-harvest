@@ -50,6 +50,53 @@ function SettingsPage() {
       <main className="mx-auto max-w-[680px] space-y-6 px-6 py-6">
         <section className="rounded-lg border border-border bg-card p-4 space-y-3">
           <div>
+            <h2 className="text-sm font-semibold">Snapshot this browser</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Downloads a JSON file with everything stored locally in this browser
+              (people, encounters, hot accounts, schedule, settings, demo bootstrap flag).
+              Send it back and it can be embedded as the new default that every visitor
+              to the published link will see.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const keys = [
+                "grain-radar.people.v2",
+                "grain-radar.people.v2.seeded",
+                "grain-harvest.hot-accounts.v1",
+                "grain-harvest.hot-accounts.v1.seeded",
+                "grain-harvest.schedule.v1",
+                "grain-radar.settings.v1",
+                "grain-radar.demo-bootstrap.v1",
+              ];
+              const dump: Record<string, string | null> = {};
+              for (const k of keys) dump[k] = window.localStorage.getItem(k);
+              // include any other grain-* keys we may have missed
+              for (let i = 0; i < window.localStorage.length; i++) {
+                const k = window.localStorage.key(i);
+                if (!k) continue;
+                if ((k.startsWith("grain-") || k.startsWith("grain.")) && !(k in dump)) {
+                  dump[k] = window.localStorage.getItem(k);
+                }
+              }
+              const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `grain-snapshot-${new Date().toISOString().slice(0, 10)}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+              toast.success("Snapshot downloaded");
+            }}
+            className="rounded-md border border-border bg-background px-3 py-1.5 text-xs"
+          >
+            Export snapshot (JSON)
+          </button>
+        </section>
+
+        <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div>
             <h2 className="text-sm font-semibold">Demo data</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               Force-overwrites all local people, encounters, hot accounts, schedule and the active
