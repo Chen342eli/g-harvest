@@ -76,6 +76,14 @@ export function addEncounter(e: Encounter) {
   commit({ ...cur, encounters: [...cur.encounters, e] });
 }
 
+export function updateEncounter(id: string, patch: Partial<Encounter>) {
+  const cur = getSnapshot();
+  commit({
+    ...cur,
+    encounters: cur.encounters.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+  });
+}
+
 export function addNameVariation(personId: string, variation: string) {
   const cur = getSnapshot();
   commit({
