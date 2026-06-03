@@ -558,7 +558,8 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           `- Set isRelevant=false if the primary audience is developers/engineers, academics/researchers, or general enterprise IT — even if "fintech" or "payments" appears on the page.\n` +
           `- Also set isRelevant=false if this is NOT a real upcoming conference (blog post, news, past edition with no future date).\n` +
           `- Use null for any field you cannot determine with confidence. Do NOT invent dates, cities, or audience sizes.\n` +
-          `- confidence is 0-100 reflecting how sure you are about isRelevant + the extracted details together.\n`;
+          `- confidence is 0-100 reflecting how sure you are about isRelevant + the extracted details together.\n` +
+          `- officialUrl: the conference's OWN website (e.g. money2020.com, sibos.com). NEVER an aggregator/calendar/blog (fintechprofile.com, paytech.events, thepaypers.com, vendelux.com, medium.com, linkedin.com, etc.). Null if not clearly present on the page.\n`;
 
         const aggregator = isAggregatorPage(hit);
         let parsedList: z.infer<typeof ExtractionSchema>[] = [];
