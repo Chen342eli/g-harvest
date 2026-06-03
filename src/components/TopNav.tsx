@@ -101,13 +101,15 @@ export function TopNav({ rightSlot, maxWidth = "max-w-[1600px]" }: TopNavProps) 
               aria-label="Help & docs"
               title="Help & docs"
               className={cn(
-                "inline-flex h-8 w-8 items-center justify-center rounded-md transition",
+                "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-semibold transition",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                 helpActive
-                  ? "bg-brand-base text-brand-base-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ? "border-brand-accent bg-brand-accent text-brand-accent-foreground"
+                  : "border-brand-accent/30 bg-brand-accent/10 text-brand-accent hover:bg-brand-accent/20 hover:border-brand-accent/50",
               )}
             >
-              <HelpCircle className="h-4 w-4" />
+              <HelpCircle className="h-3.5 w-3.5" />
+              Docs
             </Link>
             <Link
               to="/settings"
