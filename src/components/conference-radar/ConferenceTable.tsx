@@ -103,15 +103,28 @@ export function ConferenceTable({ conferences, onToggleRep, onUpdateConference, 
                 <tr key={c.id} className="group border-b border-border last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 align-top">
                     <a
-                      href={c.sourceUrl}
+                      href={c.officialUrl ?? c.sourceUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-1.5 font-medium text-foreground hover:text-primary hover:underline"
-                      title="Visit site"
+                      title={c.officialUrl ?? c.sourceUrl}
                     >
                       {c.name}
                       <ExternalLink className="h-3.5 w-3.5 opacity-70" />
                     </a>
+                    {c.officialUrl && c.sourceUrl && c.officialUrl !== c.sourceUrl && (
+                      <div className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                        found via{" "}
+                        <a
+                          href={c.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline hover:text-foreground"
+                        >
+                          {(() => { try { return new URL(c.sourceUrl).host; } catch { return c.sourceUrl; } })()}
+                        </a>
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 align-top text-muted-foreground whitespace-nowrap">
                     {formatDateRange(c.startDate, c.endDate)}

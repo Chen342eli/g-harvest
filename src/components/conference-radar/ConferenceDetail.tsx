@@ -71,12 +71,12 @@ export function ConferenceDetail({
         <dd className="text-foreground">
           {c.assignedReps.length ? c.assignedReps.join(", ") : <span className="text-muted-foreground">Unassigned</span>}
         </dd>
-        {c.sourceUrl && (
+        {(c.officialUrl ?? c.sourceUrl) && (
           <>
             <dt className="text-muted-foreground">Website</dt>
             <dd className="truncate">
               <a
-                href={c.sourceUrl}
+                href={c.officialUrl ?? c.sourceUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-primary hover:underline"
@@ -84,6 +84,21 @@ export function ConferenceDetail({
                 Open <ExternalLink className="h-3 w-3" />
               </a>
             </dd>
+            {c.officialUrl && c.sourceUrl && c.officialUrl !== c.sourceUrl && (
+              <>
+                <dt className="text-muted-foreground">Found via</dt>
+                <dd className="truncate">
+                  <a
+                    href={c.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-muted-foreground hover:underline"
+                  >
+                    {(() => { try { return new URL(c.sourceUrl).host; } catch { return c.sourceUrl; } })()}
+                  </a>
+                </dd>
+              </>
+            )}
           </>
         )}
       </dl>

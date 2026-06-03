@@ -79,6 +79,34 @@ function isAggregatorPage(hit: SearchHit): boolean {
   return AGGREGATOR_TITLE_HINTS.some((h) => haystack.includes(h));
 }
 
+/** Known aggregator/calendar/blog domains that must NEVER be saved as
+ *  a conference's officialUrl. Match by suffix to cover subdomains. */
+const AGGREGATOR_DOMAINS = [
+  "fintechlabs.com",
+  "paytech.events",
+  "fintechprofile.com",
+  "vendelux.com",
+  "ozoneapi.com",
+  "spreedly.com",
+  "loanpro.io",
+  "softwaremill.com",
+  "fintechgrowthinsider.com",
+  "thepaypers.com",
+  "medium.com",
+  "linkedin.com",
+  "substack.com",
+  "reddit.com",
+];
+
+function isAggregatorDomain(rawUrl: string): boolean {
+  try {
+    const host = new URL(rawUrl).host.toLowerCase().replace(/^www\./, "");
+    return AGGREGATOR_DOMAINS.some((d) => host === d || host.endsWith("." + d));
+  } catch {
+    return true;
+  }
+}
+
 // Relaxed schema: anything that isn't certain from the page can be null.
 // We will keep the conference anyway and flag it for human review.
 const VERTICAL_ENUM = [
@@ -103,6 +131,10 @@ const ExtractionSchema = z.object({
   vertical: z.enum(VERTICAL_ENUM).nullable(),
   estimatedAudienceSize: z.number().int().nonnegative().nullable(),
   tags: z.array(z.string()).max(8).default([]),
+  officialUrl: z
+    .string()
+    .nullable()
+    .describe("The conference's OWN official website (e.g. https://money2020.com). NOT an aggregator/calendar/blog. Null if not clearly stated on the page."),
   isRelevant: z
     .boolean()
     .describe("True only if the conference audience includes CFOs, Heads of Payments, Treasury managers, or Product leaders at PSPs, neobanks, marketplaces, embedded-finance providers, cross-border payments, or travel-tech platforms (not a blog post, list article, past edition, or news)"),
@@ -312,6 +344,32 @@ async function scrapeMarkdown(firecrawl: Firecrawl, url: string): Promise<string
   }
 }
 
+/**
+ * Resolve the official website for a conference.
+ *  1. If Gemini extracted an officialUrl and it's not an aggregator domain → keep it.
+ *  2. Otherwise run a Firecrawl search ("{name} {year} official website", limit 2)
+ *     and return the first non-aggregator result.
+ *  3. If both fail → return null (caller flags `needs_url_review`).
+ */
+async function resolveOfficialUrl(
+  firecrawl: Firecrawl,
+  name: string,
+  year: number,
+  extracted: string | null,
+): Promise<string | null> {
+  if (extracted && !isAggregatorDomain(extracted)) return extracted;
+  try {
+    const res = await firecrawl.search(`${name} ${year} official website`, { limit: 2 });
+    for (const hit of normalizeHits(res)) {
+      if (hit.url && !isAggregatorDomain(hit.url)) return hit.url;
+    }
+  } catch (e) {
+    console.error("officialUrl fallback search failed for", name, e);
+  }
+  return null;
+}
+
+
 export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<AgentRunResult> {
   const fcKey = process.env.FIRECRAWL_API_KEY;
   const lovableKey = process.env.LOVABLE_API_KEY;
@@ -500,7 +558,8 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           `- Set isRelevant=false if the primary audience is developers/engineers, academics/researchers, or general enterprise IT — even if "fintech" or "payments" appears on the page.\n` +
           `- Also set isRelevant=false if this is NOT a real upcoming conference (blog post, news, past edition with no future date).\n` +
           `- Use null for any field you cannot determine with confidence. Do NOT invent dates, cities, or audience sizes.\n` +
-          `- confidence is 0-100 reflecting how sure you are about isRelevant + the extracted details together.\n`;
+          `- confidence is 0-100 reflecting how sure you are about isRelevant + the extracted details together.\n` +
+          `- officialUrl: the conference's OWN website (e.g. money2020.com, sibos.com). NEVER an aggregator/calendar/blog (fintechprofile.com, paytech.events, thepaypers.com, vendelux.com, medium.com, linkedin.com, etc.). Null if not clearly present on the page.\n`;
 
         const aggregator = isAggregatorPage(hit);
         let parsedList: z.infer<typeof ExtractionSchema>[] = [];
@@ -525,6 +584,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
               `  "vertical": ${verticalEnumStr} | null,\n` +
               `  "estimatedAudienceSize": integer | null,\n` +
               `  "tags": string[] (max 8),\n` +
+              `  "officialUrl": string | null,\n` +
               `  "isRelevant": boolean,\n` +
               `  "confidence": integer 0-100\n` +
               `}\n` +
@@ -579,6 +639,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
               `  "vertical": ${verticalEnumStr} | null,\n` +
               `  "estimatedAudienceSize": integer | null,\n` +
               `  "tags": string[] (max 8),\n` +
+              `  "officialUrl": string | null,\n` +
               `  "isRelevant": boolean,\n` +
               `  "confidence": integer 0-100\n` +
               `}\n\n` +
@@ -724,6 +785,10 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
                 (newScore === insertedMeta.score && insertedMeta.fromAggregator && !aggregator);
               if (preferNew) {
                 const newScoring = computeScoring({ vertical, region, audienceSize: audience, tags: parsed.tags });
+                const mergedOfficial =
+                  parsed.officialUrl && !isAggregatorDomain(parsed.officialUrl)
+                    ? parsed.officialUrl
+                    : undefined;
                 await supabaseAdmin
                   .from("conferences")
                   .update({
@@ -737,6 +802,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
                     estimated_audience_size: audience,
                     tags: parsed.tags,
                     source_url: hit.url,
+                    ...(mergedOfficial !== undefined ? { official_url: mergedOfficial } : {}),
                     ...newScoring,
                   })
                   .eq("id", dupe.id);
@@ -790,6 +856,14 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           const lowConfidence = (parsed.confidence ?? 0) < 60;
           const initialStatus = lowConfidence ? "Needs Review" : "Considering";
 
+          // Resolve the conference's own website (separate from source_url).
+          const officialUrl = await resolveOfficialUrl(
+            firecrawl,
+            parsed.name,
+            year,
+            parsed.officialUrl ?? null,
+          );
+
           const { data: inserted, error: insErr } = await supabaseAdmin
             .from("conferences")
             .insert({
@@ -803,6 +877,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
               estimated_audience_size: audience,
               tags: parsed.tags,
               source_url: hit.url,
+              official_url: officialUrl,
               ...scoring,
               provenance: "ai_added",
               confidence: parsed.confidence,
@@ -841,6 +916,20 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           const reviewReasons: string[] = [];
           if (missing.length) reviewReasons.push(`missing: ${missing.join(", ")}`);
           if (lowConfidence) reviewReasons.push(`low confidence (${parsed.confidence})`);
+          if (!officialUrl) reviewReasons.push("needs_url_review (no official website resolved)");
+
+          // Always flag missing official URL — even on the first run — so the
+          // user knows which records lack a clickable destination link.
+          if (!officialUrl && inserted?.id) {
+            await supabaseAdmin.from("conference_change_flags").insert({
+              conference_id: inserted.id,
+              field: "needs_url_review",
+              old_value: null as never,
+              new_value: { reason: "officialUrl could not be resolved" } as never,
+              source_url: hit.url,
+            });
+            flagged += 1;
+          }
 
           if (reviewReasons.length && inserted?.id && !isFirstRun) {
             await supabaseAdmin.from("conference_change_flags").insert({

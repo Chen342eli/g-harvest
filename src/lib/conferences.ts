@@ -58,6 +58,7 @@ export interface Conference {
   estimatedAudienceSize: number;
   tags: string[];
   sourceUrl: string;
+  officialUrl?: string | null;
   subScores: SubScores;
   icpScore: number;
   tier: Tier;
