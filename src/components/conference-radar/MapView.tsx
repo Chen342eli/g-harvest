@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import type { Conference, Tier } from "@/lib/conferences";
 import { isCoverageGap } from "@/lib/conferences";
-import { coordsFor } from "@/lib/cityCoords";
+import { coordsFor, geocodeCity } from "@/lib/cityCoords";
 
 const TIER_COLOR: Record<Tier, string> = {
   "Tier 1": "#10b981",
