@@ -524,8 +524,18 @@ function Step2Coverage({
           subtitle="Fill region & ICP-vertical gaps — and add anything else worth attending."
           kicker={`${recs.length} gap${recs.length === 1 ? "" : "s"} to address`}
         />
-        <ViewToggle value={view} onChange={setView} />
+        <div className="flex items-center gap-2">
+          <input
+            type="search"
+            value={browseQuery}
+            onChange={(e) => setBrowseQuery(e.target.value)}
+            placeholder="Search…"
+            className="h-8 w-56 rounded-md border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <ViewToggle value={view} onChange={setView} />
+        </div>
       </div>
+
 
       {/* Compact coverage chips — verticals + regions in one strip */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-border bg-background px-3 py-2 text-xs">
