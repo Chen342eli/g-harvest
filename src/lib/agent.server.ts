@@ -326,6 +326,9 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
       existingByKey.set(k, e);
       existingList.push(e);
     }
+    // First-ever agent run on an empty catalog: skip needs_review flags so the
+    // initial bulk import doesn't drown the user in pending change flags.
+    const isFirstRun = existingList.length === 0;
 
     /** Fuzzy lookup: normalized name + year, with city-as-wildcard when either side is "Unknown",
      *  plus a date+country fallback (overlap within ±2 days). */
