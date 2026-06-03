@@ -26,24 +26,26 @@ function HelpPage() {
       <TopNav />
 
       <main className="mx-auto max-w-[1200px] px-6 py-8">
-        <header className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Help &amp; docs</h1>
+        <header className="mb-6 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">FAQ &amp; Docs</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Answers to common questions and the technical reference for how Grain Harvest works.
           </p>
         </header>
 
-        <div
-          role="tablist"
-          aria-label="Help sections"
-          className="mb-6 inline-flex rounded-md border border-border bg-card p-1"
-        >
-          <TabButton active={tab === "faq"} onClick={() => setTab("faq")} controls="panel-faq" id="tab-faq">
-            <HelpCircle className="h-3.5 w-3.5" /> FAQ
-          </TabButton>
-          <TabButton active={tab === "docs"} onClick={() => setTab("docs")} controls="panel-docs" id="tab-docs">
-            <FileText className="h-3.5 w-3.5" /> Technical docs
-          </TabButton>
+        <div className="mb-6 flex justify-center">
+          <div
+            role="tablist"
+            aria-label="Help sections"
+            className="inline-flex rounded-md border border-border bg-card p-1"
+          >
+            <TabButton active={tab === "faq"} onClick={() => setTab("faq")} controls="panel-faq" id="tab-faq">
+              <HelpCircle className="h-3.5 w-3.5" /> FAQ
+            </TabButton>
+            <TabButton active={tab === "docs"} onClick={() => setTab("docs")} controls="panel-docs" id="tab-docs">
+              <FileText className="h-3.5 w-3.5" /> Technical docs
+            </TabButton>
+          </div>
         </div>
 
         {tab === "faq" ? <FaqPanel /> : <DocsPanel />}
