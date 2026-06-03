@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight, Pencil, Sparkles, Upload } from "lucide-react";
+import { AlertTriangle, Pencil, Sparkles, Upload } from "lucide-react";
 import { usePeopleData } from "@/lib/people-store";
 import { useSettings } from "@/lib/settings-store";
 import { useBulkAiReads } from "@/lib/use-bulk-ai";
