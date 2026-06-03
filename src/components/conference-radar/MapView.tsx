@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import type { Conference, Tier } from "@/lib/conferences";
 import { isCoverageGap } from "@/lib/conferences";
-import { coordsFor } from "@/lib/cityCoords";
+import { coordsFor, geocodeCity } from "@/lib/cityCoords";
 
 const TIER_COLOR: Record<Tier, string> = {
   "Tier 1": "#10b981",
@@ -140,6 +140,15 @@ function MapViewClient({ conferences, committedIds, onOpenInTable }: Props) {
   const LRef = useRef<any>(null);
   const onOpenInTableRef = useRef(onOpenInTable);
   onOpenInTableRef.current = onOpenInTable;
+  const [resolved, setResolved] = useState<Record<string, [number, number]>>({});
+  const resolvedRef = useRef(resolved);
+  resolvedRef.current = resolved;
+
+  const getCoords = (c: Conference): [number, number] | null => {
+    const seeded = coordsFor(c.city, c.country);
+    if (seeded) return seeded;
+    return resolvedRef.current[locationKey(c)] ?? null;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -234,7 +243,7 @@ function MapViewClient({ conferences, committedIds, onOpenInTable }: Props) {
     const byLocation = new Map<string, { base: [number, number]; items: Conference[] }>();
 
     conferences.forEach((c) => {
-      const base = coordsFor(c.city, c.country);
+      const base = getCoords(c);
       if (!base) return;
       const key = locationKey(c);
       const current = byLocation.get(key);
@@ -317,7 +326,31 @@ function MapViewClient({ conferences, committedIds, onOpenInTable }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conferences, committedIds]);
 
-  const missing = conferences.filter((c) => !coordsFor(c.city, c.country));
+  useEffect(() => {
+    let cancelled = false;
+    const missing = conferences.filter((c) => !getCoords(c));
+    const seen = new Set<string>();
+    missing.forEach((c) => {
+      const key = locationKey(c);
+      if (seen.has(key)) return;
+      seen.add(key);
+      geocodeCity(c.city, c.country).then((coords) => {
+        if (cancelled || !coords) return;
+        setResolved((prev) => (prev[key] ? prev : { ...prev, [key]: coords }));
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conferences]);
+
+  useEffect(() => {
+    renderMarkers(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolved]);
+
+  const missing = conferences.filter((c) => !getCoords(c));
 
   return (
     <div className="space-y-2">
