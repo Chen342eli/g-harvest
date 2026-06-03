@@ -83,7 +83,7 @@ export function AfterPhase({ conferenceId }: Props) {
             </p>
           ) : (
             <ul className="divide-y divide-border rounded-xl border border-border bg-card">
-              {needsInfo.map(({ person, missing }) => (
+              {needsInfo.map(({ person, missing, encounterId }) => (
                 <li key={person.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-foreground">{person.fullName}</div>
@@ -94,17 +94,22 @@ export function AfterPhase({ conferenceId }: Props) {
                       Missing: {missing.join(", ")}
                     </div>
                   </div>
-                  <Link
-                    to="/people"
-                    className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-accent hover:underline"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditTarget({ personId: person.id, encounterId: encounterId ?? null })
+                    }
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground transition hover:border-foreground/30 hover:bg-muted"
+                    title="Add the missing details for this touchpoint"
                   >
-                    Edit <ArrowRight className="h-3 w-3" />
-                  </Link>
+                    <Pencil className="h-3 w-3" /> Edit
+                  </button>
                 </li>
               ))}
             </ul>
           )}
         </section>
+
 
         {/* Follow-up suggestions — same rows as the Follow-ups inbox */}
         <section className="space-y-2">
