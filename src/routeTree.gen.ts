@@ -15,6 +15,7 @@ import { Route as RecapRouteImport } from './routes/recap'
 import { Route as PlanningRouteImport } from './routes/planning'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as HelpRouteImport } from './routes/help'
 import { Route as FollowUpsRouteImport } from './routes/follow-ups'
 import { Route as FloorRouteImport } from './routes/floor'
 import { Route as CaptureRouteImport } from './routes/capture'
@@ -51,6 +52,11 @@ const PeopleRoute = PeopleRouteImport.update({
 const ImportRoute = ImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FollowUpsRoute = FollowUpsRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/capture': typeof CaptureRoute
   '/floor': typeof FloorRoute
   '/follow-ups': typeof FollowUpsRoute
+  '/help': typeof HelpRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/capture': typeof CaptureRoute
   '/floor': typeof FloorRoute
   '/follow-ups': typeof FollowUpsRoute
+  '/help': typeof HelpRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/capture': typeof CaptureRoute
   '/floor': typeof FloorRoute
   '/follow-ups': typeof FollowUpsRoute
+  '/help': typeof HelpRoute
   '/import': typeof ImportRoute
   '/people': typeof PeopleRoute
   '/planning': typeof PlanningRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/capture'
     | '/floor'
     | '/follow-ups'
+    | '/help'
     | '/import'
     | '/people'
     | '/planning'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/capture'
     | '/floor'
     | '/follow-ups'
+    | '/help'
     | '/import'
     | '/people'
     | '/planning'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/capture'
     | '/floor'
     | '/follow-ups'
+    | '/help'
     | '/import'
     | '/people'
     | '/planning'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   CaptureRoute: typeof CaptureRoute
   FloorRoute: typeof FloorRoute
   FollowUpsRoute: typeof FollowUpsRoute
+  HelpRoute: typeof HelpRoute
   ImportRoute: typeof ImportRoute
   PeopleRoute: typeof PeopleRoute
   PlanningRoute: typeof PlanningRoute
@@ -241,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/follow-ups': {
@@ -301,6 +321,7 @@ const rootRouteChildren: RootRouteChildren = {
   CaptureRoute: CaptureRoute,
   FloorRoute: FloorRoute,
   FollowUpsRoute: FollowUpsRoute,
+  HelpRoute: HelpRoute,
   ImportRoute: ImportRoute,
   PeopleRoute: PeopleRoute,
   PlanningRoute: PlanningRoute,
@@ -313,3 +334,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
