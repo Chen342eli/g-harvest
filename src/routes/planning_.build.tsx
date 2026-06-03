@@ -353,19 +353,21 @@ function Step1Anchors({
           subtitle="The events you attend every year."
           kicker={`${mustGoCount} marked must-go`}
         />
-        <ViewToggle value={view} onChange={setView} />
+        <div className="flex items-center gap-2">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search…"
+            className="h-8 w-56 rounded-md border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <ViewToggle value={view} onChange={setView} />
+        </div>
       </div>
       <p className="text-sm text-muted-foreground">
         These are your Tier 1 and best-performing past events. One tap locks them as must-go.
       </p>
 
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search anchors by name, city, country, vertical…"
-        className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      />
 
 
 
