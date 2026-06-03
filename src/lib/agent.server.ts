@@ -462,6 +462,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           // Aggregator/list page — ask for an ARRAY of conferences.
           const aggResult = await generateText({
             model,
+            temperature: 0,
             prompt:
               `The page below appears to be a LIST/CALENDAR of multiple conferences. Extract every distinct conference you can identify.\n` +
               `Respond with ONLY a single JSON object (no markdown, no code fences) of the shape:\n` +
