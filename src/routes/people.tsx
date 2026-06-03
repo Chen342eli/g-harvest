@@ -650,8 +650,8 @@ function HubSpotExportButton({
       }
       className="inline-flex h-[30px] min-w-[170px] items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-40"
     >
-      <Download className="h-3.5 w-3.5" />
-      Export to HubSpot (CSV)
+      <Download className="h-3 w-3" />
+      <span className="flex-1 text-left">Export to HubSpot</span>
       {queueCount > 0 && (
         <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
           {queueCount}
