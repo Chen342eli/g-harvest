@@ -518,6 +518,7 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
         } else {
           const result = await generateText({
             model,
+            temperature: 0,
             prompt:
               `Extract structured data about a single industry conference from the page below.\n` +
               `Respond with ONLY a single JSON object (no markdown, no code fences, no commentary) matching this exact shape:\n` +
