@@ -228,6 +228,7 @@ async function verifyConferenceDates(args: {
   try {
     const res = await generateText({
       model,
+      temperature: 0,
       prompt:
         `You previously extracted a conference but the dates were missing or had an unreasonable year.\n` +
         `Re-read the page below and find ONLY the dates of the next edition of "${name}".\n` +
