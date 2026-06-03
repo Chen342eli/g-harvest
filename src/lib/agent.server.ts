@@ -911,6 +911,20 @@ export async function runDiscoveryAgent(trigger: "manual" | "cron"): Promise<Age
           const reviewReasons: string[] = [];
           if (missing.length) reviewReasons.push(`missing: ${missing.join(", ")}`);
           if (lowConfidence) reviewReasons.push(`low confidence (${parsed.confidence})`);
+          if (!officialUrl) reviewReasons.push("needs_url_review (no official website resolved)");
+
+          // Always flag missing official URL — even on the first run — so the
+          // user knows which records lack a clickable destination link.
+          if (!officialUrl && inserted?.id) {
+            await supabaseAdmin.from("conference_change_flags").insert({
+              conference_id: inserted.id,
+              field: "needs_url_review",
+              old_value: null as never,
+              new_value: { reason: "officialUrl could not be resolved" } as never,
+              source_url: hit.url,
+            });
+            flagged += 1;
+          }
 
           if (reviewReasons.length && inserted?.id && !isFirstRun) {
             await supabaseAdmin.from("conference_change_flags").insert({
