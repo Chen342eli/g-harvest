@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, Flame, Plus, Search, UserPlus, X } from "lucide-react";
+import { ArrowRight, Flame, Plus, Search, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -15,11 +15,12 @@ import {
   usePeopleData,
   addPerson,
   addEncounter,
+  updateEncounter,
   addNameVariation,
   updatePerson,
   generateId,
 } from "@/lib/people-store";
-import type { EncounterVertical, Person, Temperature } from "@/lib/people-types";
+import type { Encounter, EncounterVertical, Person, Temperature } from "@/lib/people-types";
 import { ENCOUNTER_VERTICALS } from "@/lib/people-types";
 import { useSettings } from "@/lib/settings-store";
 import { useHotAccounts, isHotAccountCompany } from "@/lib/hot-accounts-store";
@@ -49,8 +50,33 @@ const EMPTY_DRAFT: Draft = {
   email: "",
 };
 
-export function AddTouchpointDialog() {
-  const [open, setOpen] = useState(false);
+export interface AddTouchpointDialogProps {
+  /** Controlled open state. When omitted, the dialog manages its own state and renders its default trigger button. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Skip the search step and go straight to editing for this person. */
+  initialPersonId?: string;
+  /** If provided, the form edits this existing encounter instead of creating a new one. */
+  initialEncounterId?: string;
+  /** Hide the built-in trigger (useful when controlled from outside). */
+  hideTrigger?: boolean;
+}
+
+export function AddTouchpointDialog({
+  open: controlledOpen,
+  onOpenChange,
+  initialPersonId,
+  initialEncounterId,
+  hideTrigger,
+}: AddTouchpointDialogProps = {}) {
+  const isControlled = controlledOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? controlledOpen! : internalOpen;
+  const setOpen = (next: boolean) => {
+    if (!isControlled) setInternalOpen(next);
+    onOpenChange?.(next);
+  };
+
   const settings = useSettings();
   const data = usePeopleData();
   const accounts = useHotAccounts();
@@ -66,26 +92,60 @@ export function AddTouchpointDialog() {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [temperature, setTemperature] = useState<Temperature | null>(null);
   const [vertical, setVertical] = useState<EncounterVertical | "">("");
+  const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
   const [conferenceId, setConferenceId] = useState<string>("");
   const [repId, setRepId] = useState<string>("");
+  const [encounterId, setEncounterId] = useState<string | null>(null);
 
   const searchRef = useRef<HTMLInputElement>(null);
+  const isEditing = !!encounterId;
 
-  // Reset on open
+  // Initialize on open
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const initialPerson = initialPersonId
+      ? data.people.find((p) => p.id === initialPersonId)
+      : null;
+    const initialEnc = initialEncounterId
+      ? data.encounters.find((e) => e.id === initialEncounterId)
+      : null;
+
+    if (initialPerson) {
+      setDraft({
+        mode: "existing",
+        personId: initialPerson.id,
+        name: initialPerson.fullName,
+        company: initialEnc?.companyAtTime ?? initialPerson.currentCompany ?? "",
+        role: initialEnc?.roleAtTime ?? initialPerson.currentRole ?? "",
+        linkedInUrl: initialPerson.linkedInUrl ?? "",
+        email: initialPerson.email ?? "",
+      });
+      setVertical(
+        (initialEnc?.vertical ?? initialPerson.currentVertical ?? "") as EncounterVertical | "",
+      );
+      setTemperature(initialEnc?.temperature ?? null);
+      setTitle(initialEnc?.title ?? "");
+      setNote(initialEnc?.note ?? "");
+      setConferenceId(initialEnc?.conferenceId ?? settings.activeConferenceId ?? "");
+      setRepId(initialEnc?.repId ?? settings.activeRepId ?? SALES_TEAM[0] ?? "");
+      setEncounterId(initialEnc?.id ?? null);
+      setStep("form");
+    } else {
       setStep("search");
       setQuery("");
       setDraft(EMPTY_DRAFT);
       setTemperature(null);
       setVertical("");
+      setTitle("");
       setNote("");
       setConferenceId(settings.activeConferenceId ?? "");
       setRepId(settings.activeRepId ?? SALES_TEAM[0] ?? "");
+      setEncounterId(null);
       setTimeout(() => searchRef.current?.focus(), 50);
     }
-  }, [open, settings.activeConferenceId, settings.activeRepId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialPersonId, initialEncounterId]);
 
   const match = useMemo(() => {
     if (query.trim().length < 2) return null;
@@ -171,45 +231,69 @@ export function AddTouchpointDialog() {
       addPerson(person);
     }
 
-    addEncounter({
-      id: generateId(),
-      personId,
-      conferenceId,
-      conferenceName: conferenceName || "Conference",
-      repId,
-      timestamp,
-      temperature,
-      vertical: (vertical || undefined) as EncounterVertical | undefined,
-      note: note || undefined,
-      companyAtTime: draft.company || person?.currentCompany,
-      roleAtTime: draft.role || person?.currentRole,
-      captureMethod: "manual",
-    });
-
-    const hot = isHotAccountCompany(draft.company || person?.currentCompany, accounts);
-    toast.success(
-      `${draft.mode === "existing" ? "Touchpoint added" : "Lead created"}: ${draft.name}${hot ? " 🔥" : ""}`,
-    );
+    if (isEditing && encounterId) {
+      const patch: Partial<Encounter> = {
+        conferenceId,
+        conferenceName: conferenceName || "Conference",
+        repId,
+        temperature,
+        vertical: (vertical || undefined) as EncounterVertical | undefined,
+        title: title || undefined,
+        note: note || undefined,
+        companyAtTime: draft.company || person?.currentCompany,
+        roleAtTime: draft.role || person?.currentRole,
+      };
+      updateEncounter(encounterId, patch);
+      toast.success(`Touchpoint updated: ${draft.name}`);
+    } else {
+      addEncounter({
+        id: generateId(),
+        personId,
+        conferenceId,
+        conferenceName: conferenceName || "Conference",
+        repId,
+        timestamp,
+        temperature,
+        vertical: (vertical || undefined) as EncounterVertical | undefined,
+        title: title || undefined,
+        note: note || undefined,
+        companyAtTime: draft.company || person?.currentCompany,
+        roleAtTime: draft.role || person?.currentRole,
+        captureMethod: "manual",
+      });
+      const hot = isHotAccountCompany(draft.company || person?.currentCompany, accounts);
+      toast.success(
+        `${draft.mode === "existing" ? "Touchpoint added" : "Lead created"}: ${draft.name}${hot ? " 🔥" : ""}`,
+      );
+    }
     setOpen(false);
   }
 
+  const dialogTitle = step === "search"
+    ? "Add person or touchpoint"
+    : isEditing
+    ? "Edit touchpoint"
+    : draft.mode === "existing"
+    ? "New touchpoint"
+    : "New lead + touchpoint";
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1.5 rounded-md border border-transparent bg-foreground px-2.5 py-1.5 text-xs font-semibold text-background hover:opacity-90"
-          title="Add a person or log a new touchpoint"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Add person / touchpoint
-        </button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-md border border-transparent bg-foreground px-2.5 py-1.5 text-xs font-semibold text-background hover:opacity-90"
+            title="Add a person or log a new touchpoint"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add person / touchpoint
+          </button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
         <DialogHeader className="border-b border-border px-5 py-3">
-          <DialogTitle className="text-sm font-semibold">
-            {step === "search" ? "Add person or touchpoint" : draft.mode === "existing" ? "New touchpoint" : "New lead + touchpoint"}
-          </DialogTitle>
+          <DialogTitle className="text-sm font-semibold">{dialogTitle}</DialogTitle>
         </DialogHeader>
 
         {step === "search" ? (
@@ -297,7 +381,7 @@ export function AddTouchpointDialog() {
                 />
               </Field>
               <div className="grid grid-cols-2 gap-2">
-                <Field label="Role / title">
+                <Field label="Job title / role">
                   <input
                     value={draft.role}
                     onChange={(e) => setDraft({ ...draft, role: e.target.value })}
@@ -386,6 +470,15 @@ export function AddTouchpointDialog() {
                 </Field>
               </div>
 
+              <Field label="Meeting title">
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder='e.g. "Booth chat — cross-border payouts"'
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                />
+              </Field>
+
               <Field label="Today's read *">
                 <div className="grid grid-cols-3 gap-2">
                   {(["hot", "warm", "cold"] as Temperature[]).map((t) => {
@@ -433,13 +526,23 @@ export function AddTouchpointDialog() {
             </div>
 
             <div className="flex items-center justify-between gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setStep("search")}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                ← Back
-              </button>
+              {isEditing || initialPersonId ? (
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setStep("search")}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  ← Back
+                </button>
+              )}
               <button
                 type="button"
                 disabled={!canSave}
@@ -451,7 +554,7 @@ export function AddTouchpointDialog() {
                     : "bg-muted text-muted-foreground",
                 )}
               >
-                {canSave ? "Save touchpoint" : "Fill required *"}
+                {canSave ? (isEditing ? "Save changes" : "Save touchpoint") : "Fill required *"}
               </button>
             </div>
           </div>
