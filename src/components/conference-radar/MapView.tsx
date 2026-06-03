@@ -326,7 +326,31 @@ function MapViewClient({ conferences, committedIds, onOpenInTable }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conferences, committedIds]);
 
-  const missing = conferences.filter((c) => !coordsFor(c.city, c.country));
+  useEffect(() => {
+    let cancelled = false;
+    const missing = conferences.filter((c) => !getCoords(c));
+    const seen = new Set<string>();
+    missing.forEach((c) => {
+      const key = locationKey(c);
+      if (seen.has(key)) return;
+      seen.add(key);
+      geocodeCity(c.city, c.country).then((coords) => {
+        if (cancelled || !coords) return;
+        setResolved((prev) => (prev[key] ? prev : { ...prev, [key]: coords }));
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conferences]);
+
+  useEffect(() => {
+    renderMarkers(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolved]);
+
+  const missing = conferences.filter((c) => !getCoords(c));
 
   return (
     <div className="space-y-2">
