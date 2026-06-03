@@ -12,6 +12,7 @@ export interface ConferenceRow {
   estimated_audience_size: number;
   tags: string[];
   source_url: string;
+  official_url: string | null;
   sub_vertical_fit: number;
   sub_decision_maker_presence: number;
   sub_audience_quality: number;
