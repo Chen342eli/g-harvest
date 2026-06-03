@@ -90,13 +90,23 @@ function TabButton({
 
 function FaqPanel() {
   return (
-    <section role="tabpanel" id="panel-faq" aria-labelledby="tab-faq" className="space-y-8">
+    <section
+      role="tabpanel"
+      id="panel-faq"
+      aria-labelledby="tab-faq"
+      className="grid grid-cols-1 gap-4 items-start sm:grid-cols-2 lg:grid-cols-3"
+    >
       {FAQ_GROUPS.map((group) => (
-        <div key={group.title} className="space-y-2">
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-            {group.title}
-          </h2>
-          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+        <div
+          key={group.title}
+          className="overflow-hidden rounded-lg border border-border bg-card shadow-sm"
+        >
+          <div className="border-b border-border bg-muted/30 px-4 py-3">
+            <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              {group.title}
+            </h2>
+          </div>
+          <ul className="divide-y divide-border">
             {group.items.map((item, idx) => (
               <FaqRow key={idx} q={item.q} a={item.a} />
             ))}
@@ -115,18 +125,20 @@ function FaqRow({ q, a }: { q: string; a: string }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-muted/40"
+        className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition hover:bg-muted/40"
       >
-        <span className="text-sm font-medium text-foreground">{q}</span>
+        <span className="text-sm font-medium leading-snug text-foreground">{q}</span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            "mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform",
             open && "rotate-180",
           )}
         />
       </button>
       {open && (
-        <div className="px-4 pb-4 pt-0 text-sm leading-relaxed text-muted-foreground">{a}</div>
+        <div className="px-4 pb-4 pt-0 text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+          {a}
+        </div>
       )}
     </li>
   );
