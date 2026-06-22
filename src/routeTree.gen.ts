@@ -22,7 +22,7 @@ import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlanningBuildRouteImport } from './routes/planning_.build'
-import { Route as ApiExportRouteImport } from './routes/api/_export'
+import { Route as ApiExportRouteImport } from './routes/api/export'
 import { Route as ApiPublicAgentRunRouteImport } from './routes/api/public/agent/run'
 
 const TodayRoute = TodayRouteImport.update({
@@ -91,8 +91,8 @@ const PlanningBuildRoute = PlanningBuildRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiExportRoute = ApiExportRouteImport.update({
-  id: '/api/_export',
-  path: '/api',
+  id: '/api/export',
+  path: '/api/export',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicAgentRunRoute = ApiPublicAgentRunRouteImport.update({
@@ -114,7 +114,7 @@ export interface FileRoutesByFullPath {
   '/recap': typeof RecapRoute
   '/settings': typeof SettingsRoute
   '/today': typeof TodayRoute
-  '/api': typeof ApiExportRoute
+  '/api/export': typeof ApiExportRoute
   '/planning/build': typeof PlanningBuildRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
@@ -131,7 +131,7 @@ export interface FileRoutesByTo {
   '/recap': typeof RecapRoute
   '/settings': typeof SettingsRoute
   '/today': typeof TodayRoute
-  '/api': typeof ApiExportRoute
+  '/api/export': typeof ApiExportRoute
   '/planning/build': typeof PlanningBuildRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
@@ -149,7 +149,7 @@ export interface FileRoutesById {
   '/recap': typeof RecapRoute
   '/settings': typeof SettingsRoute
   '/today': typeof TodayRoute
-  '/api/_export': typeof ApiExportRoute
+  '/api/export': typeof ApiExportRoute
   '/planning_/build': typeof PlanningBuildRoute
   '/api/public/agent/run': typeof ApiPublicAgentRunRoute
 }
@@ -168,7 +168,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/settings'
     | '/today'
-    | '/api'
+    | '/api/export'
     | '/planning/build'
     | '/api/public/agent/run'
   fileRoutesByTo: FileRoutesByTo
@@ -185,7 +185,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/settings'
     | '/today'
-    | '/api'
+    | '/api/export'
     | '/planning/build'
     | '/api/public/agent/run'
   id:
@@ -202,7 +202,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/settings'
     | '/today'
-    | '/api/_export'
+    | '/api/export'
     | '/planning_/build'
     | '/api/public/agent/run'
   fileRoutesById: FileRoutesById
@@ -318,10 +318,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlanningBuildRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/_export': {
-      id: '/api/_export'
-      path: '/api'
-      fullPath: '/api'
+    '/api/export': {
+      id: '/api/export'
+      path: '/api/export'
+      fullPath: '/api/export'
       preLoaderRoute: typeof ApiExportRouteImport
       parentRoute: typeof rootRouteImport
     }
