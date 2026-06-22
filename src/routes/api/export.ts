@@ -11,7 +11,7 @@ const TABLES = [
   "do_not_resurrect",
 ] as const;
 
-export const Route = createFileRoute("/api/_export")({
+export const Route = createFileRoute("/api/export")({
   server: {
     handlers: {
       GET: async ({ request }) => {
